@@ -33,4 +33,11 @@ public:
      * Gunakan untuk bersih-bersih, menghentikan suara, dll.
      */
     virtual void OnExit() = 0;
+
+	/**
+    * @brief Mendapatkan nama state sebagai string.
+	* Berguna untuk debugging atau logging.
+	* @return Nama state.
+    */
+	virtual const char* GetName() const = 0;
 };

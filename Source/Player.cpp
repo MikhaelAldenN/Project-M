@@ -6,6 +6,7 @@
 #include "EnemyManager.h"
 #include "Collisions.h"
 #include "ProjectileStraight.h"
+#include "PlayerState_Idle.h"
 
 // =============================================================
 // Player: Constructor & Destructor
@@ -13,10 +14,13 @@ Player::Player()
 {
     model = new Model("Data/Model/Player/Player_placeholder.mdl");
     scale.x = scale.y = scale.z = 0.01f;
+    stateMachine = new StateMachine();
+    stateMachine->ChangeState(new PlayerState_Idle(this));
 }
 Player::~Player()
 {
     delete model;
+    delete stateMachine;
 }
 
 // =============================================================
@@ -35,7 +39,15 @@ void Player::Update(float elapsedTime)
     UpdateVelocity(elapsedTime);
 
     projectileManager.Update(elapsedTime);
+    stateMachine->Update(elapsedTime);
 }
+
+bool Player::IsMoving() const
+{
+    DirectX::XMFLOAT3 moveVec = GetMoveVec();
+    return fabs(moveVec.x) > 0.01f || fabs(moveVec.z) > 0.01f;
+}
+
 void Player::Render(const RenderContext& rc, ModelRenderer* renderer)
 {
     renderer->Render(rc, transform, model, ShaderId::Lambert);
@@ -188,6 +200,13 @@ void Player::DrawDebugGUI()
 
             ImGui::InputFloat3("Scale", &scale.x);
         }
+
+        // === Tambahkan ini: tampilkan FSM state ===
+        const char* stateName = "Unknown";
+        if (stateMachine && stateMachine->GetCurrentState())
+            stateName = stateMachine->GetCurrentState()->GetName();
+
+        ImGui::Text("FSM State: %s", stateName);
     }
     ImGui::End();
 }

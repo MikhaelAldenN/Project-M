@@ -3,6 +3,7 @@
 #include "System/ModelRenderer.h"
 #include "Character.h"
 #include "ProjectileManager.h"
+#include "StateMachine.h"
 
 /// =============================================================
 /// Player
@@ -41,6 +42,10 @@ public:
     void DrawDebugGUI();
     void RenderDebugPrimitive(const RenderContext& rc, ShapeRenderer* renderer);
 
+    // === FSM ===
+    StateMachine* GetStateMachine() { return stateMachine; }
+    bool IsMoving() const;
+
 private:
     // =================================================================
     // Helper Methods
@@ -59,4 +64,5 @@ private:
     float jumpSpeed = 12.0f;
 
     ProjectileManager projectileManager;
+    StateMachine* stateMachine = nullptr;
 };
