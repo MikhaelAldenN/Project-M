@@ -1,19 +1,7 @@
 #include "Character.h"
 
-// =============================================================
-// Character: Movement, physics, and rendering primitives
+// Character's movement, physics, and rendering primitives functions
 
-// -------------------------------------------------------------
-// Jump: Initiate a jump by setting vertical velocity
-// -------------------------------------------------------------
-void Character::Jump(float speed)
-{
-    velocity.y = speed;
-}
-
-// -------------------------------------------------------------
-// UpdateVelocity: Update both vertical and horizontal velocities/movement
-// -------------------------------------------------------------
 void Character::UpdateVelocity(float elapsedTime)
 {
     UpdateVerticalVelocity(elapsedTime);
@@ -22,9 +10,6 @@ void Character::UpdateVelocity(float elapsedTime)
     UpdateHorizontalMove(elapsedTime);
 }
 
-// -------------------------------------------------------------
-// Move: Set move direction and max speed for horizontal movement
-// -------------------------------------------------------------
 void Character::Move(float elapsedTime, float vx, float vz, float speed)
 {
     moveVecX = vx;
@@ -32,9 +17,6 @@ void Character::Move(float elapsedTime, float vx, float vz, float speed)
     maxMoveSpeed = speed;
 }
 
-// -------------------------------------------------------------
-// Turn: Rotate character based on movement vector and speed
-// -------------------------------------------------------------
 void Character::Turn(float elapsedTime, float vx, float vz, float speed)
 {
     speed *= elapsedTime;
@@ -60,76 +42,17 @@ void Character::Turn(float elapsedTime, float vx, float vz, float speed)
         angle.y += rot;
 }
 
-// -------------------------------------------------------------
-// UpdateTransform: Update world transformation matrix
-// -------------------------------------------------------------
-void Character::UpdateTransform()
+void Character::Jump(float speed)
 {
-    DirectX::XMMATRIX S = DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
-    DirectX::XMMATRIX R = DirectX::XMMatrixRotationRollPitchYaw(angle.x, angle.y, angle.z);
-    DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(position.x, position.y, position.z);
-    DirectX::XMMATRIX W = S * R * T;
-    DirectX::XMStoreFloat4x4(&transform, W);
+    velocity.y = speed;
 }
 
-// -------------------------------------------------------------
-// RenderDebugPrimitive: Render character debug shape
-// -------------------------------------------------------------
-void Character::RenderDebugPrimitive(const RenderContext& rc, ShapeRenderer* renderer)
-{
-    renderer->RenderCylinder(rc, position, radius, height, DirectX::XMFLOAT4(0, 0, 0, 1));
-}
 
-// -------------------------------------------------------------
-// ApplyDamage: Apply damage and handle invincibility/death logic
-// -------------------------------------------------------------
-bool Character::ApplyDamage(int damage, float invincibleTime)
-{
-    if (damage == 0) return false;
-    if (health <= 0) return false;
-    if (invincibleTimer > 0) return false;
-
-    invincibleTimer = invincibleTime;
-    health -= damage;
-
-    if (health <= 0)
-        OnDead();
-    else
-        OnDamaged();
-
-    return true;
-}
-
-// -------------------------------------------------------------
-// AddImpulse: Add a velocity impulse to the character
-// -------------------------------------------------------------
-void Character::AddImpulse(const DirectX::XMFLOAT3& impulse)
-{
-    velocity.x += impulse.x;
-    velocity.y += impulse.y;
-    velocity.z += impulse.z;
-}
-
-// -------------------------------------------------------------
-// UpdateInvincibleTimer: Update invincibility timer
-// -------------------------------------------------------------
-void Character::UpdateInvincibleTimer(float elapsedTime)
-{
-    if (invincibleTimer > 0.0f)
-        invincibleTimer -= elapsedTime;
-}
-
-// -------------------------------------------------------------
-// UpdateVerticalVelocity: Apply gravity to vertical velocity
-// -------------------------------------------------------------
 void Character::UpdateVerticalVelocity(float elapsedTime)
 {
     velocity.y += gravity * elapsedTime;
 }
 
-// -------------------------------------------------------------
-// UpdateVerticalMove: Move character vertically, handle ground logic
-// -------------------------------------------------------------
 void Character::UpdateVerticalMove(float elapsedTime)
 {
     position.y += velocity.y * elapsedTime;
@@ -148,9 +71,6 @@ void Character::UpdateVerticalMove(float elapsedTime)
     }
 }
 
-// -------------------------------------------------------------
-// UpdateHorizontalVelocity: Apply friction and acceleration for horizontal movement
-// -------------------------------------------------------------
 void Character::UpdateHorizontalVelocity(float elapsedTime)
 {
     float lenght = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
@@ -197,11 +117,53 @@ void Character::UpdateHorizontalVelocity(float elapsedTime)
     moveVecZ = 0.0f;
 }
 
-// -------------------------------------------------------------
-// UpdateHorizontalMove: Move character horizontally
-// -------------------------------------------------------------
 void Character::UpdateHorizontalMove(float elapsedTime)
 {
     position.x += velocity.x * elapsedTime;
     position.z += velocity.z * elapsedTime;
+}
+
+void Character::UpdateTransform()
+{
+    DirectX::XMMATRIX S = DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
+    DirectX::XMMATRIX R = DirectX::XMMatrixRotationRollPitchYaw(angle.x, angle.y, angle.z);
+    DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(position.x, position.y, position.z);
+    DirectX::XMMATRIX W = S * R * T;
+    DirectX::XMStoreFloat4x4(&transform, W);
+}
+
+bool Character::ApplyDamage(int damage, float invincibleTime)
+{
+    if (damage == 0) return false;
+    if (health <= 0) return false;
+    if (invincibleTimer > 0) return false;
+
+    invincibleTimer = invincibleTime;
+    health -= damage;
+
+    if (health <= 0)
+        OnDead();
+    else
+        OnDamaged();
+
+    return true;
+}
+
+void Character::AddImpulse(const DirectX::XMFLOAT3& impulse)
+{
+    velocity.x += impulse.x;
+    velocity.y += impulse.y;
+    velocity.z += impulse.z;
+}
+
+void Character::UpdateInvincibleTimer(float elapsedTime)
+{
+    if (invincibleTimer > 0.0f)
+        invincibleTimer -= elapsedTime;
+}
+
+
+void Character::RenderDebugPrimitive(const RenderContext& rc, ShapeRenderer* renderer)
+{
+    renderer->RenderCylinder(rc, position, radius, height, DirectX::XMFLOAT4(0, 0, 0, 1));
 }

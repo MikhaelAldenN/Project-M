@@ -17,28 +17,21 @@
 static const int syncInterval = 1;
 static SceneGame sceneGame;
 
-// =============================================================
-// Constructor: Initialize system modules and main scene
 Framework::Framework(HWND hWnd)
     : hWnd(hWnd)
 {
     Input::Instance().Initialize(hWnd);
     Graphics::Instance().Initialize(hWnd);
     ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
-    //sceneGame.Initialize();
     SceneManager::Instance().ChangeScene(new SceneTitle);
 }
 
-// =============================================================
-// Destructor: Cleanup main scene and ImGui
 Framework::~Framework()
 {
     SceneManager::Instance().Clear();
     ImGuiRenderer::Finalize();
 }
 
-// =============================================================
-// Update: Update input, ImGui, and scene
 void Framework::Update(float elapsedTime)
 {
     Input::Instance().Update();
@@ -46,8 +39,6 @@ void Framework::Update(float elapsedTime)
     SceneManager::Instance().Update(elapsedTime);
 }
 
-// =============================================================
-// Render: Render scene, GUI, and present frame
 void Framework::Render(float elapsedTime)
 {
     ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
@@ -64,8 +55,6 @@ void Framework::Render(float elapsedTime)
     Graphics::Instance().Present(syncInterval);
 }
 
-// =============================================================
-// CalculateFrameStats: Show FPS and frame time in window title
 void Framework::CalculateFrameStats()
 {
     static int frames = 0;
@@ -86,8 +75,6 @@ void Framework::CalculateFrameStats()
     }
 }
 
-// =============================================================
-// Run: Main loop (message handling and frame update/render)
 int Framework::Run()
 {
     MSG msg = {};
@@ -112,8 +99,6 @@ int Framework::Run()
     return static_cast<int>(msg.wParam);
 }
 
-// =============================================================
-// HandleMessage: Window message handler (ImGui + core events)
 LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     if (ImGuiRenderer::HandleMessage(hWnd, msg, wParam, lParam))

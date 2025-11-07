@@ -1,6 +1,5 @@
 #include "Camera.h"
 
-// =============================================================
 // SetLookAt: Set camera position, focus, and up vector
 // - Updates view matrix and camera vectors
 void Camera::SetLookAt(const DirectX::XMFLOAT3& eye, const DirectX::XMFLOAT3& focus, const DirectX::XMFLOAT3& up)
@@ -28,7 +27,6 @@ void Camera::SetLookAt(const DirectX::XMFLOAT3& eye, const DirectX::XMFLOAT3& fo
 	this->focus = focus;
 }
 
-// =============================================================
 // SetPerspectiveFov: Set perspective projection matrix
 void Camera::SetPerspectiveFov(float fovY, float aspect, float nearZ, float farZ)
 {

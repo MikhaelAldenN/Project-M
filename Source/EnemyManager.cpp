@@ -1,27 +1,16 @@
 #include "EnemyManager.h"
 #include "Collisions.h"
 
-/// =============================================================
-/// PUBLIC METHODS
-/// =============================================================
-
-// --------------------------------------------------------------
 // Register a new enemy to be managed
-// --------------------------------------------------------------
 void EnemyManager::Register(Enemy* enemy)
 {
     enemies.emplace_back(enemy);
 }
 
-// --------------------------------------------------------------
-// Update the state of all managed enemies
-// - Updates enemies
-// - Handles removals
-// - Runs collision detection
-// --------------------------------------------------------------
+/// Update the state of all managed enemies
 void EnemyManager::Update(float elapsedTime)
 {
-    // --- Update all enemies
+    // Update all enemies
     for (Enemy* enemy : enemies)
     {
         if (enemy)
@@ -30,23 +19,20 @@ void EnemyManager::Update(float elapsedTime)
         }
     }
 
-    // --- Handle pending enemy removals
+    // Handle pending enemy removals
     for (Enemy* enemy : removes)
     {
         enemies.erase(std::remove(enemies.begin(), enemies.end(), enemy), enemies.end());
         delete enemy;
     }
 
-    // --- Clear removal list
+    // Clear removal list
     removes.clear();
 
-    // --- Handle collisions between all enemies
     CollisionEnemyVsEnemies();
 }
 
-// --------------------------------------------------------------
 // Render all managed enemies
-// --------------------------------------------------------------
 void EnemyManager::Render(const RenderContext& rc, ModelRenderer* renderer)
 {
     for (Enemy* enemy : enemies)
@@ -58,9 +44,7 @@ void EnemyManager::Render(const RenderContext& rc, ModelRenderer* renderer)
     }
 }
 
-// --------------------------------------------------------------
 // Render debug primitives for all managed enemies
-// --------------------------------------------------------------
 void EnemyManager::RenderDebugPrimitive(const RenderContext& rc, ShapeRenderer* renderer)
 {
     for (Enemy* enemy : enemies)
@@ -72,17 +56,13 @@ void EnemyManager::RenderDebugPrimitive(const RenderContext& rc, ShapeRenderer* 
     }
 }
 
-// --------------------------------------------------------------
 // Add an enemy to the removal list
-// --------------------------------------------------------------
 void EnemyManager::Remove(Enemy* enemy)
 {
     removes.insert(enemy);
 }
 
-// --------------------------------------------------------------
 // Delete all managed enemies and clear the list
-// --------------------------------------------------------------
 void EnemyManager::Clear()
 {
     for (Enemy* enemy : enemies)
@@ -92,14 +72,8 @@ void EnemyManager::Clear()
     enemies.clear();
 }
 
-/// =============================================================
-/// PRIVATE METHODS
-/// =============================================================
-
-// --------------------------------------------------------------
 // Handle collision detection and response between enemies
 // - Currently only adjusts enemy B's position
-// --------------------------------------------------------------
 void EnemyManager::CollisionEnemyVsEnemies()
 {
     int enemyCount = GetEnemyCount();
@@ -110,14 +84,14 @@ void EnemyManager::CollisionEnemyVsEnemies()
             Enemy* enemyA = GetEnemy(i);
             Enemy* enemyB = GetEnemy(j);
 
-            // --- Collision check
+            // Collision check
             DirectX::XMFLOAT3 outPositionB;
             if (Collision::IntersectSphereVsSphere(
-                enemyA->GetPosition(),   // Enemy A position
-                enemyA->GetRadius(),     // Enemy A radius
-                enemyB->GetPosition(),   // Enemy B position
-                enemyB->GetRadius(),     // Enemy B radius
-                outPositionB             // Output: new pushed-back position for B
+                enemyA->GetPosition(),   
+                enemyA->GetRadius(),     
+                enemyB->GetPosition(),   
+                enemyB->GetRadius(),     
+                outPositionB // Output: new pushed-back position for B
             )) {
                 // Apply new position to enemy B
                 enemyB->SetPosition(outPositionB);

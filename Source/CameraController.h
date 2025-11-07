@@ -3,10 +3,6 @@
 #include <DirectXMath.h>
 #include "Camera.h"
 
-/// =============================================================
-/// CameraControlMode
-/// - Defines how the camera is controlled
-/// =============================================================
 enum class CameraControlMode
 {
     GamePad,
@@ -15,23 +11,16 @@ enum class CameraControlMode
     Free
 };
 
-/// =============================================================
 /// CameraController (Singleton)
 /// - Manages camera movement and input handling
 /// - Supports GamePad, Mouse, and Fixed Follow modes
-/// =============================================================
 class CameraController
 {
 private:
-    // =================================================================
-    // Singleton Pattern: Private constructor and destructor
-    // =================================================================
     CameraController() {}
     ~CameraController() {}
 
-    // =================================================================
     // Data Members
-    // =================================================================
     DirectX::XMFLOAT3 target = { 0.0f, 0.0f, 0.0f };
     DirectX::XMFLOAT3 angle = { 0.0f, 0.0f, 0.0f };
 
@@ -48,18 +37,13 @@ private:
     DirectX::XMFLOAT3 fixedPosition = { 0.0f, 15.0f, -10.0f };
 
 public:
-    // =================================================================
-    // Singleton Instance Access
-    // =================================================================
     static CameraController& Instance()
     {
         static CameraController instance;
         return instance;
     }
 
-    // =================================================================
     // Camera Control Methods
-    // =================================================================
     void Update(float elapsedTime);
     void DrawDebugGUI();
 

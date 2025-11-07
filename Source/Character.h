@@ -3,22 +3,14 @@
 #include <DirectXMath.h>
 #include "System/ShapeRenderer.h"
 
-/// =============================================================
-/// Character
-/// - Base class for all character entities (Player/Enemy)
-/// =============================================================
+// This is the base class for all character entities
 class Character
 {
 public:
-    // =================================================================
-    // Constructor/Destructor
-    // =================================================================
     Character() {};
     virtual ~Character() {};
 
-    // =================================================================
-    // Transform and State
-    // =================================================================
+	// Accessors and Mutators
     void UpdateTransform();
     const DirectX::XMFLOAT3& GetPosition() const { return position; }
     void SetPosition(const DirectX::XMFLOAT3& position) { this->position = position; }
@@ -29,26 +21,22 @@ public:
     float GetRadius() const { return radius; }
     float GetHeight() const { return height; }
 
-    // =================================================================
-    // Rendering & Damage
-    // =================================================================
-    virtual void RenderDebugPrimitive(const RenderContext& rc, ShapeRenderer* renderer);
+	// Damage Handling
     void AddImpulse(const DirectX::XMFLOAT3& impulse);
     bool ApplyDamage(int damage, float invincibleTime);
 
+    virtual void RenderDebugPrimitive(const RenderContext& rc, ShapeRenderer* renderer);
+
 private:
-    // =================================================================
     // Internal Movement/Physics Helpers
-    // =================================================================
     void UpdateVerticalVelocity(float elapsedTime);
     void UpdateVerticalMove(float elapsedTime);
     void UpdateHorizontalVelocity(float elapsedTime);
     void UpdateHorizontalMove(float elapsedTime);
 
 protected:
-    // =================================================================
     // Movement/Actions
-    // =================================================================
+// TODO: Might want to remove or change these for the new Player States implementation
     void Move(float elapsedTime, float vx, float vy, float speed);
     void Turn(float elapsedTime, float vx, float vz, float speed);
     void Jump(float speed);
@@ -56,17 +44,13 @@ protected:
     void UpdateVelocity(float elapsedTime);
     void UpdateInvincibleTimer(float elapsedTime);
 
-    // =================================================================
     // Event Hooks (Override in Derived)
-    // =================================================================
     virtual void OnLanding() {}
     virtual void OnDamaged() {}
     virtual void OnDead() {}
 
 protected:
-    // =================================================================
     // Character Data Members
-    // =================================================================
     DirectX::XMFLOAT3 position = { 0.0f, 0.0f, 0.0f };
     DirectX::XMFLOAT3 angle = { 0.0f, 0.0f, 0.0f };
     DirectX::XMFLOAT3 scale = { 1.0f, 1.0f, 1.0f };
@@ -78,17 +62,19 @@ protected:
     };
 
     DirectX::XMFLOAT3 velocity = { 0, 0, 0 };
-    float gravity = -30.0f;
-    bool isGround = false;
-    float friction = 15.0f;
-    float radius = 0.5f;
-    int health = 5;
-    float height = 2.0f;
-    float invincibleTimer = 1.0f;
-
     float acceleration = 50.0f;
     float maxMoveSpeed = 5.0f;
     float moveVecX = 0.0f;
     float moveVecZ = 0.0f;
+    float friction = 15.0f;
+   
+    float gravity = -30.0f;
     float airControl = 0.3f;
+    bool isGround = false;
+
+    float radius = 0.5f;
+    float height = 2.0f;
+
+    int health = 5;
+    float invincibleTimer = 1.0f;
 };

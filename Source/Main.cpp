@@ -12,7 +12,6 @@
 const LONG SCREEN_WIDTH = 1280;
 const LONG SCREEN_HEIGHT = 720;
 
-// =============================================================
 // Window Procedure: Forward messages to Framework
 LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -20,7 +19,6 @@ LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     return f ? f->HandleMessage(hwnd, msg, wparam, lparam) : DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
-// =============================================================
 // wWinMain: Application entry, window creation, run main loop
 INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line, INT cmd_show)
 {

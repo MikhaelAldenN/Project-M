@@ -5,9 +5,6 @@
 #include "EnemyManager.h"
 #include "EnemySlime.h"
 
-// =============================================================
-// SceneGame::Initialize
-// - Sets up stage, player, camera, and spawns initial enemies
 void SceneGame::Initialize()
 {
     stage = new Stage();
@@ -37,9 +34,6 @@ void SceneGame::Initialize()
     }
 }
 
-// =============================================================
-// SceneGame::Finalize
-// - Cleans up all game objects and managers
 void SceneGame::Finalize()
 {
     Input::Instance().GetMouse().LockCursor(false);
@@ -57,9 +51,6 @@ void SceneGame::Finalize()
     EnemyManager::Instance().Clear();
 }
 
-// =============================================================
-// SceneGame::Update
-// - Updates camera, player, stage, and all enemies
 void SceneGame::Update(float elapsedTime)
 {
     DirectX::XMFLOAT3 target = player->GetPosition();
@@ -74,9 +65,6 @@ void SceneGame::Update(float elapsedTime)
     EnemyManager::Instance().Update(elapsedTime);
 }
 
-// =============================================================
-// SceneGame::Render
-// - Renders all game objects and debug shapes
 void SceneGame::Render()
 {
     Graphics& graphics = Graphics::Instance();
@@ -109,9 +97,6 @@ void SceneGame::Render()
     }
 }
 
-// =============================================================
-// SceneGame::DrawGUI
-// - Draws debug GUI for player and camera
 void SceneGame::DrawGUI()
 {
     player->DrawDebugGUI();

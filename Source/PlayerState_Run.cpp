@@ -3,7 +3,7 @@
 
 void PlayerState_Run::OnEnter() 
 {
-    /* atur animasi lari, dsb */ 
+	// Set animation, functions, etc. for run state here
 }
 
 void PlayerState_Run::Update(float delta_time) 
@@ -12,10 +12,10 @@ void PlayerState_Run::Update(float delta_time)
         player->GetStateMachine()->ChangeState(new PlayerState_Idle(player));
 		return;
     }
-    // logika run lain
+	// Other logic for run state
 }
 
 void PlayerState_Run::OnExit() 
 {
-    /* cleanup jika perlu */ 
+	// cleanup if needed
 }

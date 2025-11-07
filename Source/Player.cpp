@@ -8,8 +8,8 @@
 #include "ProjectileStraight.h"
 #include "PlayerState_Idle.h"
 
-// =============================================================
-// Player: Constructor & Destructor
+//TODO: Come back here for refactoring after implementing more states
+
 Player::Player()
 {
     model = new Model("Data/Model/Player/Player_placeholder.mdl");
@@ -23,8 +23,7 @@ Player::~Player()
     delete stateMachine;
 }
 
-// =============================================================
-// Player: Core Update & Render
+//Core Update
 void Player::Update(float elapsedTime)
 {
     InputMove(elapsedTime);
@@ -54,8 +53,6 @@ void Player::Render(const RenderContext& rc, ModelRenderer* renderer)
     projectileManager.Render(rc, renderer);
 }
 
-// =============================================================
-// Player: Input Handling
 void Player::InputMove(float elapsedTime)
 {
     DirectX::XMFLOAT3 moveVec = GetMoveVec();
@@ -88,15 +85,11 @@ void Player::InputProjectile()
     }
 }
 
-// =============================================================
-// Player: Movement / Actions
 void Player::Jump(float speed)
 {
     velocity.y += speed;
 }
 
-// =============================================================
-// Player: Collision
 void Player::CollisionPlayerVsEnemies()
 {
     EnemyManager& enemyManager = EnemyManager::Instance();
@@ -128,6 +121,7 @@ void Player::CollisionPlayerVsEnemies()
         }
     }
 }
+
 void Player::CollisionProjectilesVsEnemies()
 {
     EnemyManager& enemyManager = EnemyManager::Instance();
@@ -175,8 +169,6 @@ void Player::CollisionProjectilesVsEnemies()
     }
 }
 
-// =============================================================
-// Player: Debug/GUI
 void Player::DrawDebugGUI()
 {
     ImVec2 pos = ImGui::GetMainViewport()->GetWorkPos();
@@ -216,8 +208,7 @@ void Player::RenderDebugPrimitive(const RenderContext& rc, ShapeRenderer* render
     projectileManager.RenderDebugPrimitive(rc, renderer);
 }
 
-// =============================================================
-// Player: Helper for movement vector
+//Helper for movement vector
 DirectX::XMFLOAT3 Player::GetMoveVec() const
 {
     GamePad& gamePad = Input::Instance().GetGamePad();

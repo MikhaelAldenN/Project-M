@@ -3,12 +3,10 @@
 #include "CameraController.h"
 #include "Camera.h"
 
-// =============================================================
 // CameraController::Update
 // - Updates camera behavior based on current control mode
 // - Handles input (GamePad / Mouse) and applies camera movement
 // - Manages cursor lock toggle (via F1)
-// =============================================================
 void CameraController::Update(float elapsedTime)
 {
     DirectX::XMFLOAT3 eye = { 0.0f, 0.0f, 0.0f };
@@ -151,11 +149,9 @@ void CameraController::Update(float elapsedTime)
     }
 }
 
-// =============================================================
 // CameraController::DrawDebugGUI
 // - Draws ImGui debug window for camera settings
 // - Allows switching camera control modes and editing parameters
-// =============================================================
 void CameraController::DrawDebugGUI()
 {
     ImVec2 pos = ImGui::GetMainViewport()->GetWorkPos();

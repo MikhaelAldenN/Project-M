@@ -3,7 +3,7 @@
 
 void PlayerState_Idle::OnEnter() 
 { 
-    /* bisa atur animasi idle, dsb */ 
+    // Put animation, function, etc. for idle state here
 }
 void PlayerState_Idle::Update(float delta_time) 
 {
@@ -11,7 +11,7 @@ void PlayerState_Idle::Update(float delta_time)
         player->GetStateMachine()->ChangeState(new PlayerState_Run(player));
 		return;
     }
-    // logika idle lain
+	// Other logic for idle state
 }
 
-void PlayerState_Idle::OnExit() { /* cleanup jika perlu */ }
+void PlayerState_Idle::OnExit() { /* cleanup if needed */ }

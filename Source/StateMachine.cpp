@@ -1,23 +1,21 @@
 #include "StateMachine.h"
-#include "IState.h" // Include header IState
-#include <cstddef> // Untuk nullptr
+#include "IState.h"
+#include <cstddef>
 
-// Konstruktor: Inisialisasi currentState ke nullptr
 StateMachine::StateMachine() : currentState(nullptr)
 {
-    // Tidak ada isi
+
 }
 
-// Destruktor: Pastikan state terakhir di-OnExit() dan di-delete
 StateMachine::~StateMachine()
 {
-    // Panggil ChangeState dengan nullptr untuk membersihkan state terakhir
+	// Call ChangeState with nullptr to clean up the current state
     ChangeState(nullptr);
 }
 
 void StateMachine::ChangeState(IState* newState)
 {
-    // 1. Panggil OnExit() pada state lama (jika ada) dan hapus
+	// 1. Cleanup current state
     if (currentState != nullptr)
     {
         currentState->OnExit();
@@ -25,10 +23,10 @@ void StateMachine::ChangeState(IState* newState)
         currentState = nullptr;
     }
 
-    // 2. Atur state baru
+	// 2. Set the new state
     currentState = newState;
 
-    // 3. Panggil OnEnter() pada state baru (jika tidak null)
+	// 3. Initialize the new state
     if (currentState != nullptr)
     {
         currentState->OnEnter();
@@ -37,7 +35,6 @@ void StateMachine::ChangeState(IState* newState)
 
 void StateMachine::Update(float delta_time)
 {
-    // Panggil Update() pada state yang aktif
     if (currentState != nullptr)
     {
         currentState->Update(delta_time);

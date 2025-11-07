@@ -4,18 +4,18 @@ void SceneManager::Update(float elapsedTime)
 {
     if (nextScene != nullptr)
     {
-        // Cleanup scene lama
+		// Old scene cleanup
         if (currentScene != nullptr)
         {
             currentScene->Finalize();
             delete currentScene;
         }
 
-        // Set scene baru
+		// Set new scene
         currentScene = nextScene;
         nextScene = nullptr;
 
-        // Inisialisasi hanya jika scene tidak dalam keadaan loading
+		// Initialize new scene
         if (!currentScene->IsReady())
         {
             currentScene->Initialize();

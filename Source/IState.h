@@ -1,43 +1,15 @@
 #pragma once
 
-/**
- * @file IState.h
- * @brief [Fondasi FSM] Poin 1 To-Do List GDD.
- * Ini adalah interface (class abstrak) untuk semua state dalam game.
- * Setiap state (PlayerState_Idle, EnemyState_Stagger, dll.) akan
- * mewarisi (inherit) class ini dan mengimplementasikan fungsinya.
- */
+// Ths is the interface (abstract base class) for all states in the State Machine
 class IState
 {
 public:
-    // Destruktor virtual wajib ada untuk base class
-    // Ini memastikan OnExit() dan destruktor state turunan dipanggil dengan benar
-    // saat kita menghapusnya melalui pointer IState.
     virtual ~IState() {}
 
-    /**
-     * @brief Dipanggil satu kali saat StateMachine memasuki state ini.
-     * Gunakan untuk inisialisasi, memutar animasi, dll.
-     */
     virtual void OnEnter() = 0;
-
-    /**
-     * @brief Dipanggil setiap frame selagi state ini aktif.
-     * Tempatkan logika utama state (pengecekan input, update, dll.) di sini.
-     * @param delta_time Waktu (dalam detik) sejak frame terakhir.
-     */
     virtual void Update(float delta_time) = 0;
-
-    /**
-     * @brief Dipanggil satu kali saat StateMachine meninggalkan state ini.
-     * Gunakan untuk bersih-bersih, menghentikan suara, dll.
-     */
     virtual void OnExit() = 0;
 
-	/**
-    * @brief Mendapatkan nama state sebagai string.
-	* Berguna untuk debugging atau logging.
-	* @return Nama state.
-    */
-	virtual const char* GetName() const = 0;
+	// Returns the name of the state for debugging purposes
+    virtual const char* GetName() const = 0;
 };
