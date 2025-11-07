@@ -12,7 +12,7 @@
 
 Player::Player()
 {
-    model = new Model("Data/Model/Player/Player_placeholder.mdl");
+    model = new Model("Data/Model/Player/HoshimiMiyabi.mdl");
     scale.x = scale.y = scale.z = 0.01f;
     stateMachine = new StateMachine();
     stateMachine->ChangeState(new PlayerState_Idle(this));
