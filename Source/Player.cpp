@@ -12,8 +12,9 @@
 
 Player::Player()
 {
-    model = new Model("Data/Model/Player/HoshimiMiyabi.mdl");
+    model = new Model("Data/Model/Player/AnimationTest.mdl");
     scale.x = scale.y = scale.z = 0.01f;
+    animation = new Animation();
     stateMachine = new StateMachine();
     stateMachine->ChangeState(new PlayerState_Idle(this));
 }
@@ -21,6 +22,7 @@ Player::~Player()
 {
     delete model;
     delete stateMachine;
+    delete animation;
 }
 
 //Core Update
@@ -33,12 +35,14 @@ void Player::Update(float elapsedTime)
     CollisionPlayerVsEnemies();
     CollisionProjectilesVsEnemies();
 
+    stateMachine->Update(elapsedTime);
+    animation->UpdateAnimation(model, elapsedTime);
+
     UpdateTransform();
     model->UpdateTransform();
     UpdateVelocity(elapsedTime);
 
     projectileManager.Update(elapsedTime);
-    stateMachine->Update(elapsedTime);
 }
 
 bool Player::IsMoving() const
@@ -199,6 +203,13 @@ void Player::DrawDebugGUI()
             stateName = stateMachine->GetCurrentState()->GetName();
 
         ImGui::Text("FSM State: %s", stateName);
+
+        //if (ImGui::CollapsingHeader("Animation Debug", ImGuiTreeNodeFlags_DefaultOpen))
+        //{
+        //    ImGui::Text("Is Playing: %s", animation->IsPlaying() ? "TRUE" : "FALSE");
+        //    ImGui::Text("Time: %.2f", animation->GetCurrentTime());
+        //    ImGui::Text("Index: %d", animation->GetCurrentIndex());
+        //}
     }
     ImGui::End();
 }

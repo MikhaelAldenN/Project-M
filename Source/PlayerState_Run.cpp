@@ -4,6 +4,8 @@
 void PlayerState_Run::OnEnter() 
 {
 	// Set animation, functions, etc. for run state here
+	player->GetAnimation()->PlayAnimation(player->GetModel(), "run", true);
+
 }
 
 void PlayerState_Run::Update(float delta_time) 

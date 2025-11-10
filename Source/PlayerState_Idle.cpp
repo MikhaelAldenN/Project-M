@@ -4,6 +4,7 @@
 void PlayerState_Idle::OnEnter() 
 { 
     // Put animation, function, etc. for idle state here
+    player->GetAnimation()->PlayAnimation(player->GetModel(), "idle", true);
 }
 void PlayerState_Idle::Update(float delta_time) 
 {
@@ -11,7 +12,6 @@ void PlayerState_Idle::Update(float delta_time)
         player->GetStateMachine()->ChangeState(new PlayerState_Run(player));
 		return;
     }
-	// Other logic for idle state
 }
 
 void PlayerState_Idle::OnExit() { /* cleanup if needed */ }

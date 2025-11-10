@@ -168,6 +168,9 @@
     <ClCompile Include="Source\StateMachine.cpp">
       <Filter>Source\SFM</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Animation.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\Audio.h">
@@ -325,6 +328,9 @@
     </ClInclude>
     <ClInclude Include="Source\StateMachine.h">
       <Filter>Source\SFM</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Animation.h">
+      <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

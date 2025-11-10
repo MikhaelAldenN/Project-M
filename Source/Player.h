@@ -4,6 +4,7 @@
 #include "Character.h"
 #include "ProjectileManager.h"
 #include "StateMachine.h"
+#include "Animation.h"
 
 /// Player
 /// - Main player character; handles input, movement, projectiles
@@ -29,6 +30,10 @@ public:
     StateMachine* GetStateMachine() { return stateMachine; }
     bool IsMoving() const;
 
+public:
+    Animation* GetAnimation() const { return animation; }
+    Model* GetModel() const { return model; }
+
 private:
     // Helper Methods
     DirectX::XMFLOAT3 GetMoveVec() const;
@@ -38,7 +43,8 @@ private:
 private:
     // Player Data Members
     Model* model = nullptr;
-    float moveSpeed = 5.0f;
+    Animation* animation;
+    float moveSpeed = 7.0f;
     float turnSpeed = DirectX::XMConvertToRadians(720);
     float jumpSpeed = 12.0f;
 
