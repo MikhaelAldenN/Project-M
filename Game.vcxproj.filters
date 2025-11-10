@@ -171,6 +171,9 @@
     <ClCompile Include="Source\Animation.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="PlayerState_Sprint.cpp">
+      <Filter>Source\SFM</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\Audio.h">
@@ -331,6 +334,9 @@
     </ClInclude>
     <ClInclude Include="Source\Animation.h">
       <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerState_Sprint.h">
+      <Filter>Source\SFM</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

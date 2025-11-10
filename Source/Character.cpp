@@ -71,48 +71,71 @@ void Character::UpdateVerticalMove(float elapsedTime)
     }
 }
 
+//void Character::UpdateHorizontalVelocity(float elapsedTime)
+//{
+//    float lenght = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
+//    if (lenght > 0.0f)
+//    {
+//        float friction = this->friction * elapsedTime;
+//        if (position.y > 0)
+//            friction -= airControl * elapsedTime;
+//
+//        if (lenght > friction)
+//        {
+//            float scale = (lenght - friction) / lenght;
+//            velocity.x *= scale;
+//            velocity.z *= scale;
+//        }
+//        else
+//        {
+//            velocity.x = 0.0f;
+//            velocity.z = 0.0f;
+//        }
+//    }
+//
+//    if (lenght <= maxMoveSpeed)
+//    {
+//        float moveVecLenght = sqrtf(moveVecX * moveVecX + moveVecZ * moveVecZ);
+//        if (moveVecLenght > 0.0f)
+//        {
+//            float acceleration = this->acceleration * elapsedTime;
+//            if (position.y > 0)
+//                acceleration -= airControl * elapsedTime;
+//
+//            velocity.x += (moveVecX / moveVecLenght) * acceleration;
+//            velocity.z += (moveVecZ / moveVecLenght) * acceleration;
+//
+//            float lenght = sqrtf(moveVecX * moveVecX + moveVecZ * moveVecZ);
+//            if (lenght > maxMoveSpeed)
+//            {
+//                velocity.x = (moveVecX / lenght) * maxMoveSpeed;
+//                velocity.z = (moveVecZ / lenght) * maxMoveSpeed;
+//            }
+//        }
+//    }
+//    moveVecX = 0.0f;
+//    moveVecZ = 0.0f;
+//}
+
 void Character::UpdateHorizontalVelocity(float elapsedTime)
 {
-    float lenght = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
-    if (lenght > 0.0f)
-    {
-        float friction = this->friction * elapsedTime;
-        if (position.y > 0)
-            friction -= airControl * elapsedTime;
+    float moveVecLenght = sqrtf(moveVecX * moveVecX + moveVecZ * moveVecZ);
 
-        if (lenght > friction)
-        {
-            float scale = (lenght - friction) / lenght;
-            velocity.x *= scale;
-            velocity.z *= scale;
-        }
-        else
-        {
-            velocity.x = 0.0f;
-            velocity.z = 0.0f;
-        }
+    if (moveVecLenght > 0.0f)
+    {
+        // Jika ada input, langsung set kecepatan ke arah input * max speed (abaikan akselerasi untuk respons instan)
+        // Atau tetap pakai akselerasi jika ingin ada rasa 'berat' sedikit saat mulai jalan.
+        // Di sini saya contohkan langsung set kecepatan agar responsif.
+        velocity.x = (moveVecX / moveVecLenght) * maxMoveSpeed;
+        velocity.z = (moveVecZ / moveVecLenght) * maxMoveSpeed;
+    }
+    else
+    {
+        // Jika TIDAK ada input, langsung berhenti total (kecepatan 0)
+        velocity.x = 0.0f;
+        velocity.z = 0.0f;
     }
 
-    if (lenght <= maxMoveSpeed)
-    {
-        float moveVecLenght = sqrtf(moveVecX * moveVecX + moveVecZ * moveVecZ);
-        if (moveVecLenght > 0.0f)
-        {
-            float acceleration = this->acceleration * elapsedTime;
-            if (position.y > 0)
-                acceleration -= airControl * elapsedTime;
-
-            velocity.x += (moveVecX / moveVecLenght) * acceleration;
-            velocity.z += (moveVecZ / moveVecLenght) * acceleration;
-
-            float lenght = sqrtf(moveVecX * moveVecX + moveVecZ * moveVecZ);
-            if (lenght > maxMoveSpeed)
-            {
-                velocity.x = (moveVecX / lenght) * maxMoveSpeed;
-                velocity.z = (moveVecZ / lenght) * maxMoveSpeed;
-            }
-        }
-    }
     moveVecX = 0.0f;
     moveVecZ = 0.0f;
 }

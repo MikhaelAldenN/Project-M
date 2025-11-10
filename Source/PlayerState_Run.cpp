@@ -1,5 +1,6 @@
 #include "PlayerState_Run.h"
 #include "PlayerState_Idle.h"
+#include "PlayerState_Sprint.h"
 
 void PlayerState_Run::OnEnter() 
 {
@@ -10,11 +11,15 @@ void PlayerState_Run::OnEnter()
 
 void PlayerState_Run::Update(float delta_time) 
 {
-    if (!player->IsMoving()) {
+    if (!player->IsRunning()) {
         player->GetStateMachine()->ChangeState(new PlayerState_Idle(player));
 		return;
     }
-	// Other logic for run state
+    // Tambahkan cek transisi ke Sprint
+    if (player->IsSprinting()) {
+        player->GetStateMachine()->ChangeState(new PlayerState_Sprint(player));
+        return;
+    }
 }
 
 void PlayerState_Run::OnExit() 

@@ -45,10 +45,18 @@ void Player::Update(float elapsedTime)
     projectileManager.Update(elapsedTime);
 }
 
-bool Player::IsMoving() const
+bool Player::IsRunning() const
 {
     DirectX::XMFLOAT3 moveVec = GetMoveVec();
     return fabs(moveVec.x) > 0.01f || fabs(moveVec.z) > 0.01f;
+}
+
+bool Player::IsSprinting() const
+{
+    // Cek apakah sedang bergerak DAN tombol SHIFT ditekan.
+    // Kamu bisa tambahkan input gamepad di sini juga nanti.
+    bool isShiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    return IsRunning() && isShiftPressed;
 }
 
 void Player::Render(const RenderContext& rc, ModelRenderer* renderer)
@@ -202,6 +210,11 @@ void Player::DrawDebugGUI()
         if (stateMachine && stateMachine->GetCurrentState())
             stateName = stateMachine->GetCurrentState()->GetName();
 
+        float currentSpeed = sqrtf(velocity.x * velocity.x + velocity.z * velocity.z);
+
+        ImGui::Text("Total Horizontal Speed: %.2f", currentSpeed);
+
+        //ImGui::Text("SPEED: %.2f", this->velocity.x);
         ImGui::Text("FSM State: %s", stateName);
 
         //if (ImGui::CollapsingHeader("Animation Debug", ImGuiTreeNodeFlags_DefaultOpen))
