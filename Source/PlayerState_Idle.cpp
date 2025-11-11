@@ -1,6 +1,9 @@
 #include "PlayerState_Idle.h"
 #include "PlayerState_Run.h"
 #include "PlayerState_Sprint.h"
+#include "PlayerState_Jump.h"
+
+
 
 void PlayerState_Idle::OnEnter() 
 { 
@@ -9,6 +12,11 @@ void PlayerState_Idle::OnEnter()
 }
 void PlayerState_Idle::Update(float delta_time) 
 {
+    if (Input::Instance().GetGamePad().GetButtonDown() & GamePad::BTN_A) {
+        player->GetStateMachine()->ChangeState(new PlayerState_Jump(player));
+        return;
+    }
+
     // Cek Sprint DULUAN sebelum Run.
     // Jika IsRunning true DAN IsSprinting true, dia akan masuk sini.
     if (player->IsSprinting()) {

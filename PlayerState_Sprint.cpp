@@ -1,6 +1,7 @@
 #include "PlayerState_Sprint.h"
 #include "PlayerState_Idle.h"
 #include "PlayerState_Run.h"
+#include "PlayerState_Jump.h"
 
 void PlayerState_Sprint::OnEnter()
 {
@@ -14,6 +15,14 @@ void PlayerState_Sprint::OnEnter()
 
 void PlayerState_Sprint::Update(float delta_time)
 {
+    player->InputMove(delta_time); // Sprint juga butuh gerak
+
+    // Cek Lompat saat sprint (mungkin lompatnya lebih jauh nanti?)
+    if (Input::Instance().GetGamePad().GetButtonDown() & GamePad::BTN_A) {
+        player->GetStateMachine()->ChangeState(new PlayerState_Jump(player));
+        return;
+    }
+
     // Jika berhenti bergerak sama sekali -> Idle
     if (!player->IsRunning())
     {

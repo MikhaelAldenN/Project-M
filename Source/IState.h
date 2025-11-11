@@ -1,5 +1,6 @@
 #pragma once
 #include "Animation.h"
+#include "System/Input.h"
 
 // Ths is the interface (abstract base class) for all states in the State Machine
 class IState

@@ -20,6 +20,7 @@ public:
     void SetScale(const DirectX::XMFLOAT3& scale) { this->scale = scale; }
     float GetRadius() const { return radius; }
     float GetHeight() const { return height; }
+    const DirectX::XMFLOAT3& GetVelocity() const { return velocity; }
 
 	// Damage Handling
     void AddImpulse(const DirectX::XMFLOAT3& impulse);

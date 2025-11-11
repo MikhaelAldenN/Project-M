@@ -18,7 +18,6 @@ public:
     void Render(const RenderContext& rc, ModelRenderer* renderer);
 
     void InputMove(float elapsedTime);
-    void InputSprint();
     void InputJump();
     void InputProjectile();
 
@@ -34,6 +33,8 @@ public:
 
     void SetMoveSpeed(float speed) { moveSpeed = speed; }
     float GetMoveSpeed() const { return moveSpeed; }
+
+    bool IsOnGround() const { return position.y <= 0.0f; }
 
 public:
     Animation* GetAnimation() const { return animation; }

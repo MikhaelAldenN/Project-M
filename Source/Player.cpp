@@ -28,9 +28,9 @@ Player::~Player()
 //Core Update
 void Player::Update(float elapsedTime)
 {
-    InputMove(elapsedTime);
-    InputJump();
-    InputProjectile();
+    //InputMove(elapsedTime);
+    //InputJump();
+    //InputProjectile(); // moved
 
     CollisionPlayerVsEnemies();
     CollisionProjectilesVsEnemies();
@@ -74,7 +74,7 @@ void Player::InputMove(float elapsedTime)
 void Player::InputJump()
 {
     GamePad& gamePad = Input::Instance().GetGamePad();
-    if (gamePad.GetButtonDown() & GamePad::BTN_A)
+    if (gamePad.GetButtonDown() & GamePad::BTN_A || GetKeyState(VK_SHIFT) & 0x8000)
         Jump(jumpSpeed);
 }
 void Player::InputProjectile()

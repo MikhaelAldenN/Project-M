@@ -132,6 +132,7 @@
     <ClInclude Include="Source\IState.h" />
     <ClInclude Include="Source\Player.h" />
     <ClInclude Include="Source\PlayerState_Idle.h" />
+    <ClInclude Include="Source\PlayerState_Jump.h" />
     <ClInclude Include="Source\PlayerState_Run.h" />
     <ClInclude Include="Source\Projectile.h" />
     <ClInclude Include="Source\ProjectileManager.h" />
@@ -187,6 +188,7 @@
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Player.cpp" />
     <ClCompile Include="Source\PlayerState_Idle.cpp" />
+    <ClCompile Include="Source\PlayerState_Jump.cpp" />
     <ClCompile Include="Source\PlayerState_Run.cpp" />
     <ClCompile Include="Source\Projectile.cpp" />
     <ClCompile Include="Source\ProjectileManager.cpp" />
