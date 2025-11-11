@@ -23,7 +23,7 @@ Framework::Framework(HWND hWnd)
     Input::Instance().Initialize(hWnd);
     Graphics::Instance().Initialize(hWnd);
     ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
-    SceneManager::Instance().ChangeScene(new SceneTitle);
+    SceneManager::Instance().ChangeScene(new SceneGame);
 }
 
 Framework::~Framework()

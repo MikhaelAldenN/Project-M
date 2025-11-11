@@ -13,4 +13,6 @@ public:
 
 private:
     Player* player;
+    bool isSprintJump; // <-- BARU: Untuk menandai jika ini adalah lompatan dari sprint
+    bool isFalling;    // <-- BARU: Untuk menandai jika sudah masuk fase jatuh (mencegah play animasi berulang kali)
 };

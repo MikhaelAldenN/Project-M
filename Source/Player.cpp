@@ -12,7 +12,7 @@
 
 Player::Player()
 {
-    model = new Model("Data/Model/Player/AnimationTest.mdl");
+    model = new Model("Data/Model/Player/AnimationTest0.4.mdl");
     scale.x = scale.y = scale.z = 0.01f;
     animation = new Animation();
     stateMachine = new StateMachine();
