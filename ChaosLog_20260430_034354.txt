@@ -1,0 +1,101 @@
+=====================================================================
+                    PROJECT CHAOS - PERFORMANCE LOG
+=====================================================================
+Session Start : 2026-04-30 03:43:54
+---------------------------------------------------------------------
+[SYSTEM SPECS]
+OS            : Windows
+CPU           : 16 Cores
+RAM           : 16087 MB
+---------------------------------------------------------------------
+
+[03:43:54] [INIT] SceneBoss Initialized.
+[03:43:54] [WINDOW] Spawned: player (Latency: 22.59 ms)
+[03:44:02] [WINDOW] Spawned: player (Latency: 13.03 ms)
+[03:44:04] [WINDOW] Spawned: player (Latency: 13.78 ms)
+[03:44:27] [WINDOW] Spawned: debug_win_1 (Latency: 14.64 ms)
+[03:44:28] [WINDOW] Spawned: debug_win_2 (Latency: 14.17 ms)
+[03:44:30] [WINDOW] Spawned: debug_win_3 (Latency: 14.68 ms)
+[03:44:32] [WINDOW] Spawned: debug_win_4 (Latency: 13.27 ms)
+[03:44:34] [WINDOW] Spawned: debug_win_5 (Latency: 15.09 ms)
+[03:44:36] [WINDOW] Spawned: debug_win_6 (Latency: 13.47 ms)
+[03:44:37] [WINDOW] Spawned: debug_win_7 (Latency: 14.19 ms)
+[03:44:38] [WINDOW] Spawned: debug_win_8 (Latency: 13.86 ms)
+[03:44:38] [WINDOW] Spawned: debug_win_9 (Latency: 13.98 ms)
+[03:44:38] [WINDOW] Spawned: debug_win_10 (Latency: 14.70 ms)
+[03:44:38] [WINDOW] Spawned: debug_win_11 (Latency: 12.36 ms)
+[03:44:38] [WINDOW] Spawned: debug_win_12 (Latency: 14.32 ms)
+[03:44:38] [WINDOW] Spawned: debug_win_13 (Latency: 14.38 ms)
+[03:44:40] 
+---------------------------------------------------------------------
+> [PERFORMANCE WARNING] - FPS DROP DETECTED (49.9957 FPS)
+> Active Windows   : 15
+> --- PROFILING BREAKDOWN ---
+> Logic & Physics  : 0.96 ms
+> Render 3D (D3D)  : 5.82 ms
+> Window OS (GDI)  : 0.61 ms
+---------------------------------------------------------------------
+
+[03:44:41] [WINDOW] Spawned: debug_win_14 (Latency: 15.47 ms)
+[03:44:41] [WINDOW] Spawned: debug_win_15 (Latency: 15.92 ms)
+[03:44:41] [WINDOW] Spawned: debug_win_16 (Latency: 13.21 ms)
+[03:44:42] [WINDOW] Spawned: debug_win_17 (Latency: 16.26 ms)
+[03:44:42] [WINDOW] Spawned: debug_win_18 (Latency: 15.29 ms)
+[03:44:42] [WINDOW] Spawned: debug_win_19 (Latency: 14.21 ms)
+[03:44:42] [WINDOW] Spawned: debug_win_20 (Latency: 14.00 ms)
+[03:44:43] 
+---------------------------------------------------------------------
+> [PERFORMANCE WARNING] - FPS DROP DETECTED (44.2733 FPS)
+> Active Windows   : 22
+> --- PROFILING BREAKDOWN ---
+> Logic & Physics  : 3.26 ms
+> Render 3D (D3D)  : 0.76 ms
+> Window OS (GDI)  : 0.60 ms
+---------------------------------------------------------------------
+
+[03:44:43] [WINDOW] Spawned: debug_win_21 (Latency: 13.24 ms)
+[03:44:43] [WINDOW] Spawned: debug_win_22 (Latency: 16.64 ms)
+[03:44:43] [WINDOW] Spawned: debug_win_23 (Latency: 14.85 ms)
+[03:44:43] [WINDOW] Spawned: debug_win_24 (Latency: 15.27 ms)
+[03:44:43] [WINDOW] Spawned: debug_win_25 (Latency: 15.56 ms)
+[03:44:44] [WINDOW] Spawned: debug_win_26 (Latency: 15.09 ms)
+[03:44:44] [WINDOW] Spawned: debug_win_27 (Latency: 15.80 ms)
+[03:44:44] [WINDOW] Spawned: debug_win_28 (Latency: 14.62 ms)
+[03:44:44] [WINDOW] Spawned: debug_win_29 (Latency: 16.06 ms)
+[03:44:44] [WINDOW] Spawned: debug_win_30 (Latency: 16.51 ms)
+[03:44:45] [WINDOW] Spawned: debug_win_31 (Latency: 14.30 ms)
+[03:44:45] [WINDOW] Spawned: debug_win_32 (Latency: 13.42 ms)
+[03:44:45] [WINDOW] Spawned: debug_win_33 (Latency: 12.48 ms)
+[03:44:46] [WINDOW] Spawned: debug_win_34 (Latency: 14.64 ms)
+[03:44:46] [WINDOW] Spawned: debug_win_35 (Latency: 15.44 ms)
+[03:44:46] 
+---------------------------------------------------------------------
+> [PERFORMANCE CRITICAL] - FPS SEVERE DROP (37.8842 FPS)
+> Active Windows   : 37
+> --- PROFILING BREAKDOWN ---
+> Logic & Physics  : 0.95 ms
+> Render 3D (D3D)  : 0.79 ms
+> Window OS (GDI)  : 0.00 ms
+---------------------------------------------------------------------
+
+[03:44:47] [WINDOW] Spawned: debug_win_36 (Latency: 13.79 ms)
+[03:44:47] [WINDOW] Spawned: debug_win_37 (Latency: 12.66 ms)
+[03:44:49] 
+---------------------------------------------------------------------
+> [PERFORMANCE CRITICAL] - FPS SEVERE DROP (34.6651 FPS)
+> Active Windows   : 39
+> --- PROFILING BREAKDOWN ---
+> Logic & Physics  : 1.49 ms
+> Render 3D (D3D)  : 1.24 ms
+> Window OS (GDI)  : 0.81 ms
+---------------------------------------------------------------------
+
+
+=====================================================================
+                       === SESSION CLOSED CLEANLY ===
+=====================================================================
+[SESSION SUMMARY]
+Max Concurrent Windows: 39
+Lowest FPS Recorded   : 32.9878 FPS
+Total Boundary Clamps : 0
+=====================================================================
