@@ -48,8 +48,8 @@ struct SpatialHashGrid
     // Z Range: Covers -900 to +100
     static constexpr int COLS = 20;
     static constexpr int ROWS = 100;
-    static constexpr float OFFSET_X = 100.0f; 
-    static constexpr float OFFSET_Z = 900.0f; 
+    static constexpr float OFFSET_X = 100.0f;
+    static constexpr float OFFSET_Z = 900.0f;
 
     std::vector<size_t> cells[COLS * ROWS];
 
@@ -133,9 +133,9 @@ namespace StageConfig
     // =========================================================
     // DEBUG WALL CONFIGURATION
     // =========================================================
-    static const std::vector<DebugWallData> DEBUG_WALLS = 
+    static const std::vector<DebugWallData> DEBUG_WALLS =
     {
-        
+
     };
 
     // =========================================================
@@ -148,7 +148,7 @@ namespace StageConfig
 
         // Line Void 2
         { {8.2,1.2,-4.4}, {0,0,0}, {8.1,0,0} },
-        
+
         // Line Void 3
         { {-2.3,0.9,5.6}, {0,-51.2,0}, {5.9,0,0} }
     };
@@ -158,7 +158,7 @@ namespace StageConfig
     // =========================================================
     static const std::vector<DebugLineData> DEBUG_LINES_DISABLE =
     {
-        
+
     };
 
     // =========================================================
@@ -185,7 +185,10 @@ enum class DebugLineType { Void, Disable, Enable, Checkpoint };
 class Stage
 {
 public:
-    Stage(ID3D11Device* device);
+    // modelPath opsional: default tetap StageConfig::MODEL_PATH biar scene lama
+    // (SceneGame, SceneBoss) gak kena efek. Scene lain (misal SceneSandbox)
+    // bisa lempar path stage percobaan sendiri.
+    Stage(ID3D11Device* device, const std::string& modelPath = StageConfig::MODEL_PATH);
     ~Stage();
 
     void UpdateTransform();
@@ -222,8 +225,8 @@ public:
 
 private:
     struct HighlightData {
-        DebugLineType type = DebugLineType::Void; 
-        int index = -1; 
+        DebugLineType type = DebugLineType::Void;
+        int index = -1;
     } m_highlightState;
     int m_highlightWallIndex = -1;
 

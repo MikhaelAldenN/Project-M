@@ -13,6 +13,7 @@
 #include "SceneIntro.h"
 #include "SceneGame.h"
 #include "SceneBoss.h"
+#include "SceneSandbox.h"
 #include <memory>
 #include <sstream>
 #include <iostream> 

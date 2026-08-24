@@ -1,11 +1,11 @@
-#include "Stage.h"
+﻿#include "Stage.h"
 
 using namespace DirectX;
 
-Stage::Stage(ID3D11Device* device)
+Stage::Stage(ID3D11Device* device, const std::string& modelPath)
 {
-    // Load the model
-    model = std::make_shared<Model>(device, StageConfig::MODEL_PATH);
+    // Load the model (default: StageConfig::MODEL_PATH, bisa di-override caller)
+    model = std::make_shared<Model>(device, modelPath.c_str());
 
     // Apply defaults
     position = StageConfig::DEFAULT_POS;
@@ -142,8 +142,8 @@ void Stage::RebuildPhysics()
     for (const auto& line : m_linesVoid)
     {
         const float halfLength{ line.Scale.x * 0.5f };
-        const float halfHeight{ 50.0f }; 
-        const float halfDepth{ 0.05f };   
+        const float halfHeight{ 50.0f };
+        const float halfDepth{ 0.05f };
 
         physx::PxBoxGeometry invisibleWallGeom(halfLength, halfHeight, halfDepth);
         physx::PxShape* wallShape{ m_physics->createShape(invisibleWallGeom, *m_material) };

@@ -204,6 +204,7 @@
     <ClInclude Include="Source\Game\Scenes\SceneBoss.h" />
     <ClInclude Include="Source\Game\Scenes\SceneGame.h" />
     <ClInclude Include="Source\Game\Scenes\SceneIntro.h" />
+    <ClInclude Include="Source\Game\Scenes\SceneSandbox.h" />
     <ClInclude Include="Source\Game\Scenes\SceneTitle.h" />
     <ClInclude Include="Source\Game\Scenes\Stage.h" />
     <ClInclude Include="Source\Game\States\PlayerState.h" />
@@ -311,6 +312,7 @@
     <ClCompile Include="Source\Game\Scenes\SceneBoss.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneGame.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneIntro.cpp" />
+    <ClCompile Include="Source\Game\Scenes\SceneSandbox.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneTitle.cpp" />
     <ClCompile Include="Source\Game\Scenes\Stage.cpp" />
     <ClCompile Include="Source\Game\States\PlayerStates.cpp" />
