@@ -47,6 +47,13 @@ SceneSandbox::SceneSandbox()
 
     // --- Stage: pakai model percobaan, bukan stage utama ---
     m_stage = std::make_unique<Stage>(Graphics::Instance().GetDevice(), SANDBOX_STAGE_PATH);
+    
+    // --- Clear unwanted features for SceneSandbox ---
+    m_stage->m_debugWalls.clear();
+    m_stage->m_linesVoid.clear();
+    m_stage->m_linesDisable.clear();
+    m_stage->m_linesEnable.clear();
+    m_stage->m_linesCheckpoint.clear();
 
     // --- PhysX minimal setup (dibutuhkan Stage & Player buat collision) ---
     m_foundation.reset(PxCreateFoundation(PX_PHYSICS_VERSION, m_allocator, m_errorCallback));

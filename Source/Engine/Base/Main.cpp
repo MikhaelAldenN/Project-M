@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
             while (SDL_PollEvent(&event))
             {
                 if (event.type == SDL_EVENT_QUIT) running = false;
-                //if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
+                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
                 if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
                 {
                     // Cek window mana yang barusan diklik tombol silangnya
