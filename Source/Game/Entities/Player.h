@@ -202,6 +202,7 @@ private:
     bool isInputEnabled = true;
     bool invertControls = false;
     bool m_isBackpedaling = false;
+    bool m_useAimFacing = true;
     bool gravityEnabled = true;   // Set false for top-down scenes (e.g. SceneBoss)
     DirectX::XMFLOAT2 currentSmoothInput = { 0.0f, 0.0f };
     DirectX::XMFLOAT2 lastValidInput = { 0.0f, 1.0f };

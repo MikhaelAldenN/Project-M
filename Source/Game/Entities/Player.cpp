@@ -451,7 +451,9 @@ void Player::HandleAimInput(Camera* camera)
         constexpr float aimDeadzoneSq{ 0.04f };
         const float sqLength{ (rx * rx) + (ry * ry) };
 
-        if (sqLength > aimDeadzoneSq)
+        m_useAimFacing = (sqLength > aimDeadzoneSq);
+
+        if (m_useAimFacing)
         {
             const float invLength{ 1.0f / std::sqrt(sqLength) };
 
@@ -469,9 +471,28 @@ void Player::HandleAimInput(Camera* camera)
 
             RotateModelToPoint(trueGamepadWorldPos);
         }
+        else
+        {
+            const DirectX::XMFLOAT2 moveDir{ GetLastValidInput() };
+            if (moveDir.x != 0.0f || moveDir.y != 0.0f)
+            {
+                const DirectX::XMFLOAT3 pPos{ movement->GetPosition() };
+                constexpr float aimDistance{ 1000.0f };
+
+                DirectX::XMFLOAT3 followMoveTarget{
+                    pPos.x + (moveDir.x * aimDistance),
+                    pPos.y,
+                    pPos.z + (moveDir.y * aimDistance)
+                };
+                
+                RotateModelToPoint(followMoveTarget);
+            }            
+        }
     }
     else
     {
+        m_useAimFacing = true;
+
         // Keyboard & Mouse Raycast Logic
         float mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
@@ -555,6 +576,21 @@ void Player::UpdateFootRotation(float dt, float& outSmoothedYaw)
 
     m_isBackpedaling = false;
 
+    // --- Controller aim facing logic ---
+    if (!m_useAimFacing)
+    {
+        while (targetYaw > XM_PI) targetYaw -= XM_2PI;
+        while (targetYaw < -XM_PI) targetYaw += XM_2PI;
+
+        float angleDiff = targetYaw - currentYaw;
+        while (angleDiff > XM_PI) angleDiff -= XM_2PI;
+        while (angleDiff < -XM_PI) angleDiff += XM_2PI;
+
+        outSmoothedYaw = currentYaw + angleDiff * min(PlayerConst::RotSmoothSpeed * dt, 1.0f);
+        return;
+    }
+
+
     XMFLOAT3 pos = movement->GetPosition();
     float dx = m_aimTarget.x - pos.x;
     float dz = m_aimTarget.z - pos.z;
@@ -598,6 +634,7 @@ void Player::UpdateAimConstraint(float dt, float& inOutSmoothedYaw, bool& outSho
     outRelativeAngle = 0.0f;
 
     if (!model || !activeCamera) return;
+    if (!m_useAimFacing) return;
 
     DirectX::XMFLOAT3 pos = movement->GetPosition();
     float dx = m_aimTarget.x - pos.x;
