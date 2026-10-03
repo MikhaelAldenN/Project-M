@@ -23,6 +23,7 @@
 #include "DebugHostWindow.h"
 #include "DebugUI.h"
 
+class GameCanvas;
 
 class Framework
 {
@@ -54,12 +55,15 @@ private:
     void RegisterSampleDebugPanels();
 #endif
 
-
     static Framework* pInstance;
     HighResolutionTimer timer;
 
     std::unique_ptr<Scene> scene;
     std::unique_ptr<Scene> nextScene;
+
+    // Off-screen 1920x1080 target that scenes draw into (see GameCanvas.h).
+    // Null if its GPU resources could not be created.
+    std::unique_ptr<GameCanvas> m_gameCanvas;
 
 #if defined(_DEBUG)
     // Created after Graphics::Initialize(), hence a pointer and not a direct member.

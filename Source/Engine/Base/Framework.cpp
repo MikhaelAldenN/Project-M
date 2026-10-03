@@ -1,6 +1,7 @@
 ﻿#include "Framework.h"
 #include "DebugUI.h"
 #include "Engine/Common/FitRect.h"
+#include "Engine/Graphics/GameCanvas.h"
 
 // ========================================================
 // Jembatan Win32 ke ImGui
@@ -82,8 +83,20 @@ Framework::Framework()
     // Load Resources
     ResourceManager::Instance().LoadFont("VGA_FONT", "Data/Font/IBM_VGA_32px_0.png", "Data/Font/IBM_VGA_32px.fnt");
 
+    // Why before the scene: needs the device, and must exist before the first Render.
+    m_gameCanvas = std::make_unique<GameCanvas>();
+    if (m_gameCanvas->Initialize(Graphics::Instance().GetDevice()))
+    {
+        OutputDebugStringA("[GameCanvas] Ready.\n");
+    }
+    else
+    {
+        OutputDebugStringA("[GameCanvas] Initialize failed, scenes render directly to the main window.\n");
+        m_gameCanvas.reset();
+    }
+
     // Init Scene
-#if 0
+#if 1
     scene = std::make_unique<SceneSandbox>();
 #else
     scene = std::make_unique<SceneBoss>();

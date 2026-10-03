@@ -138,6 +138,7 @@
     <ClInclude Include="Source\Engine\Graphics\CameraController.h" />
     <ClInclude Include="Source\Engine\Graphics\FontTTF.h" />
     <ClInclude Include="Source\Engine\Graphics\FreeCameraController.h" />
+    <ClInclude Include="Source\Engine\Graphics\GameCanvas.h" />
     <ClInclude Include="Source\Engine\Graphics\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Primitive.h" />
     <ClInclude Include="Source\Engine\Graphics\stb_truetype.h" />
@@ -260,6 +261,7 @@
     <ClCompile Include="Source\Engine\Graphics\CameraController.cpp" />
     <ClCompile Include="Source\Engine\Graphics\FontTTF.cpp" />
     <ClCompile Include="Source\Engine\Graphics\FreeCameraController.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\GameCanvas.cpp" />
     <ClCompile Include="Source\Engine\Graphics\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Primitive.cpp" />
     <ClCompile Include="Source\Engine\Graphics\UberShader.cpp" />
@@ -361,6 +363,14 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\BasicVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\GameCanvasBlitPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\GameCanvasBlitVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
