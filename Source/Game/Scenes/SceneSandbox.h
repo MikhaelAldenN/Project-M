@@ -42,14 +42,11 @@ public:
     void Update(float elapsedTime) override;
     void Render(float elapsedTime, Camera* camera = nullptr) override;
     void DrawGUI() override;
-    void OnResize(int width, int height) override;
 
     Camera* GetMainCamera() const { return m_mainCamera.get(); }
 
 private:
     struct Config {
-        static constexpr float DEFAULT_SCREEN_W{ 1920.0f };
-        static constexpr float DEFAULT_SCREEN_H{ 1080.0f };
         static constexpr float GRAVITY{ -9.81f };
         static constexpr float CAM_FOV{ 45.0f };
         static constexpr float CAM_NEAR{ 0.1f };

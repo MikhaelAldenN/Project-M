@@ -5,6 +5,7 @@
 #include "System/CollisionManager.h"
 #include "System/Graphics.h"
 #include "InputHelper.h"
+#include "Engine/Common/Constants.h"
 
 #include "Player.h"
 #include "PlayerStates.h"
@@ -14,13 +15,8 @@ using namespace DirectX;
 
 SceneSandbox::SceneSandbox()
 {
-    float screenW{ Config::DEFAULT_SCREEN_W };
-    float screenH{ Config::DEFAULT_SCREEN_H };
-
-    if (auto window{ Framework::Instance()->GetMainWindow() }) {
-        screenW = static_cast<float>(window->GetWidth());
-        screenH = static_cast<float>(window->GetHeight());
-    }
+    constexpr float canvasAspect{ static_cast<float>(Beyond::Config::CANVAS_WIDTH)
+           / static_cast<float>(Beyond::Config::CANVAS_HEIGHT) };
 
     // --- Camera: top-down, sama style-nya SceneGame ---
     auto& camCtrl{ CameraController::Instance() };
@@ -31,7 +27,7 @@ SceneSandbox::SceneSandbox()
     camCtrl.SetFixedRollOffset(0.0f);
 
     m_mainCamera = std::make_shared<Camera>();
-    m_mainCamera->SetPerspectiveFov(XMConvertToRadians(Config::CAM_FOV), screenW / screenH, Config::CAM_NEAR, Config::CAM_FAR);
+    m_mainCamera->SetPerspectiveFov(XMConvertToRadians(Config::CAM_FOV), canvasAspect, Config::CAM_NEAR, Config::CAM_FAR);
 
     XMFLOAT3 startPos{ m_cameraPosition };
     startPos.x = 0.0f;
@@ -222,13 +218,5 @@ void SceneSandbox::DrawDebugPanel()
         ImGui::Separator();
         ImGui::Text("Player Pos: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
         ImGui::Text("Player HP: %.1f", m_player->GetHP());
-    }
-}
-
-void SceneSandbox::OnResize(int width, int height)
-{
-    if (height <= 0) height = 1;
-    if (m_mainCamera) {
-        m_mainCamera->SetPerspectiveFov(DirectX::XMConvertToRadians(Config::CAM_FOV), static_cast<float>(width) / static_cast<float>(height), Config::CAM_NEAR, Config::CAM_FAR);
     }
 }
