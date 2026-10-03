@@ -10,6 +10,13 @@
 #include "Engine/Common/Constants.h"
 #include "Engine/Graphics/GameCanvas.h"
 
+namespace
+{
+    // 0 = present immediately. Frame pacing is owned by the limiter in Main.cpp;
+    // a second wait on vblank here made frames miss their slot.
+    constexpr int k_presentSyncInterval{ 0 };
+}
+
 void WindowManager::Update(float dt)
 {
     if (m_dirtyPriority)
@@ -55,7 +62,6 @@ void WindowManager::EnforceWindowPriorities()
 
 void WindowManager::RenderAll(float dt, Scene* scene, const GameCanvas* canvas)
 {
-    bool vsyncApplied = false;
     auto context = Graphics::Instance().GetDeviceContext();
 
     for (auto& win : windows)
@@ -112,11 +118,7 @@ void WindowManager::RenderAll(float dt, Scene* scene, const GameCanvas* canvas)
             }
         }
 
-        // Pengaturan V-Sync (Biarkan window pertama atau transparan yang mengatur pacing)
-        int syncInterval = (win->IsTransparent() || vsyncApplied) ? 0 : 1;
-        if (!vsyncApplied && syncInterval == 1) vsyncApplied = true;
-
-        win->EndRender(syncInterval);
+        win->EndRender(k_presentSyncInterval);
     }
 }
 
