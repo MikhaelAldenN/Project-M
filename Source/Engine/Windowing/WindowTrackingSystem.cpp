@@ -78,7 +78,7 @@ bool WindowTrackingSystem::AddTrackedWindow(
                 tw->window->SetAlwaysOnTop(config.isAlwaysOnTop);
 
                 if (config.fpsLimit > 0.0f) tw->window->SetTargetFPS(config.fpsLimit);
-                if (config.name == "player") tw->window->SetDraggable(false);
+                tw->window->LockUserMoveAndResize();
 
                 // Set Posisi Awal agar tidak nge-blink dari koordinat -10000
                 if (getTargetPos) {
@@ -129,8 +129,7 @@ bool WindowTrackingSystem::AddTrackedWindow(
         window->SetTargetFPS(config.fpsLimit);
     }
 
-    // Hardcoded logic: Player window usually shouldn't be draggable by mouse
-    if (config.name == "player") window->SetDraggable(false);
+    window->LockUserMoveAndResize();
 
     // 2. Create Camera for this window
     auto camera = std::make_shared<Camera>();

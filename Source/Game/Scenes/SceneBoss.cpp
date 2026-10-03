@@ -249,7 +249,6 @@ void SceneBoss::InitializeSubWindows()
         if (playerWin && playerWin->window)
         {
             SDL_Window* sdlWin = playerWin->window->GetSDLWindow();
-            SDL_SetWindowResizable(sdlWin, true);
             SDL_SetWindowBordered(sdlWin, true);
         }
     }
@@ -1910,7 +1909,6 @@ void SceneBoss::SpawnDebugWindow()
     TrackedWindow* tracked = m_windowSystem->GetTrackedWindow(config.name);
     if (tracked && tracked->window)
     {
-        SDL_SetWindowResizable(tracked->window->GetSDLWindow(), true);
         SDL_SetWindowBordered(tracked->window->GetSDLWindow(), true);
     }
 
@@ -1937,7 +1935,6 @@ void SceneBoss::SpawnTransparentWindow(float bgAlpha, const std::string& typeSuf
     if (tracked && tracked->window)
     {
         tracked->window->SetBackgroundAlpha(bgAlpha);
-        tracked->window->SetDraggable(true);
         tracked->window->SetBorderVisible(true);
     }
 
