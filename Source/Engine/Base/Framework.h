@@ -41,6 +41,9 @@ public:
     LRESULT CALLBACK HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
     void OnSubWindowClosed(Uint32 sdlWindowID);
 
+    // True if the event belonged to the debug host window (always false outside Debug builds).
+    [[nodiscard]] bool HandleDebugHostEvent(const SDL_Event& event);
+
 private:
     void CalculateFrameStats(float dt);
 

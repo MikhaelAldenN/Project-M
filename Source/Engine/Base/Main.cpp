@@ -88,8 +88,10 @@ int main(int argc, char* argv[])
             SDL_Event event;
             while (SDL_PollEvent(&event))
             {
-                if (event.type == SDL_EVENT_QUIT) running = false;
-                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
+                // Debug host window events never reach game logic.
+                if (framework && framework->HandleDebugHostEvent(event)) continue;
+
+                if (event.type == SDL_EVENT_QUIT) running = false;                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
                 if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
                 {
                     // Cek window mana yang barusan diklik tombol silangnya

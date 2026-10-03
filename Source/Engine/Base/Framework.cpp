@@ -4,6 +4,7 @@
 // Jembatan Win32 ke ImGui
 // ========================================================
 static WNDPROC s_OriginalWndProc = nullptr;
+static HWND s_HookedWnd = nullptr; // window whose WndProc is currently replaced
 
 LRESULT CALLBACK ImGuiHookWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -52,15 +53,29 @@ Framework::Framework()
     );
 
     Input::Instance().Initialize(hwnd);
-    ImGuiRenderer::Initialize(hwnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
-    s_OriginalWndProc = (WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)ImGuiHookWndProc);
+
+    // ImGui binds to exactly one OS window: the debug host in Debug builds,
+    // the game window otherwise.
+    HWND imguiHwnd{ hwnd };
 
 #if defined(_DEBUG)
     m_debugHost = std::make_unique<DebugHostWindow>();
-    // Why: showing a new window takes focus; give it back to the game.
-    SDL_RaiseWindow(mainWin->GetSDLWindow());
+    if (m_debugHost->IsValid())
+    {
+        imguiHwnd = m_debugHost->GetHwnd();
+        WindowManager::Instance().SetImGuiOnMainWindow(false);
+        // Why: showing a new window takes focus; give it back to the game.
+        SDL_RaiseWindow(mainWin->GetSDLWindow());
+    }
+    else
+    {
+        m_debugHost.reset(); // fall back to drawing ImGui on the game window
+    }
 #endif
 
+    ImGuiRenderer::Initialize(imguiHwnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
+    s_HookedWnd = imguiHwnd;
+    s_OriginalWndProc = (WNDPROC)SetWindowLongPtr(imguiHwnd, GWLP_WNDPROC, (LONG_PTR)ImGuiHookWndProc);
     // Load Resources
     ResourceManager::Instance().LoadFont("VGA_FONT", "Data/Font/IBM_VGA_32px_0.png", "Data/Font/IBM_VGA_32px.fnt");
 
@@ -75,6 +90,16 @@ Framework::Framework()
 Framework::~Framework()
 {
     scene.reset();
+
+    // Why: restore SDL's WndProc while the hooked window still exists, so its
+    // destroy messages never reach ImGui after the context is gone.
+    if (s_HookedWnd && s_OriginalWndProc)
+    {
+        SetWindowLongPtr(s_HookedWnd, GWLP_WNDPROC, (LONG_PTR)s_OriginalWndProc);
+        s_HookedWnd = nullptr;
+        s_OriginalWndProc = nullptr;
+    }
+
     WindowManager::Instance().ClearAll();
     ImGuiRenderer::Finalize();
     pInstance = nullptr;
@@ -97,6 +122,8 @@ void Framework::Render(float elapsedTime)
     if (m_debugHost)
     {
         m_debugHost->BeginRender();
+        // The frame's ImGui draw data goes to the debug window's back buffer.
+        ImGuiRenderer::Render(Graphics::Instance().GetDeviceContext());
         m_debugHost->Present();
     }
 #endif
@@ -212,4 +239,12 @@ void Framework::OnSubWindowClosed(Uint32 sdlWindowID)
     if (boss) {
         boss->CloseSubWindowBySDLID(sdlWindowID);
     }
+}
+
+bool Framework::HandleDebugHostEvent([[maybe_unused]] const SDL_Event& event)
+{
+#if defined(_DEBUG)
+    if (m_debugHost) return m_debugHost->HandleEvent(event);
+#endif
+    return false;
 }

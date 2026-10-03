@@ -35,8 +35,16 @@ public:
     // Presents without vsync so the game's frame pacing is untouched.
     void Present();
 
+    // Returns true if the event belongs to this window. The caller must then
+    // skip its own handling, so game logic never reacts to debug window events.
+    [[nodiscard]] bool HandleEvent(const SDL_Event& event);
+
+    // Native handle for the ImGui platform backend. Null if the window is invalid.
+    [[nodiscard]] HWND GetHwnd() const;
+
 private:
     Beyond::Window m_window{};
+    SDL_WindowID m_windowId{ 0 }; // 0 is SDL's "no window" id
     bool m_isValid{ false };
 };
 

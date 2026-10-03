@@ -67,9 +67,10 @@ void WindowManager::RenderAll(float dt, Scene* scene)
         if (win.get() == windows.front().get())
         {
             if (scene) scene->Render(dt, win->GetCamera());
-            ImGuiRenderer::Render(Graphics::Instance().GetDeviceContext());
-        }
-        // Jika ini Sub Window (Windowkill, dsb)
+            if (m_imguiOnMainWindow) {
+                ImGuiRenderer::Render(Graphics::Instance().GetDeviceContext());
+            }
+        }        // Jika ini Sub Window (Windowkill, dsb)
         else
         {
             if (scene && win->ShouldRenderScene()) {

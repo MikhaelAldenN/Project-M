@@ -51,6 +51,9 @@ public:
     void SetTopmost(bool enabled) { m_topmostEnabled = enabled; MarkPriorityDirty(); }
     bool IsTopmost() const { return m_topmostEnabled; }
 
+    // False when another window (the debug host) draws ImGui instead of the main window.
+    void SetImGuiOnMainWindow(bool enabled) { m_imguiOnMainWindow = enabled; }
+
 private:
     WindowManager() = default;
     ~WindowManager() = default;
@@ -64,4 +67,5 @@ private:
     Beyond::Window* debugWindow = nullptr;
 
     bool m_dirtyPriority = false;
+    bool m_imguiOnMainWindow = true;
 };
