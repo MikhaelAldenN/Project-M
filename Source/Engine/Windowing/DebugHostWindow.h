@@ -42,6 +42,9 @@ public:
     // Native handle for the ImGui platform backend. Null if the window is invalid.
     [[nodiscard]] HWND GetHwnd() const;
 
+    // True while this window is the OS foreground window.
+    [[nodiscard]] bool HasFocus() const;
+
 private:
     Beyond::Window m_window{};
     SDL_WindowID m_windowId{ 0 }; // 0 is SDL's "no window" id

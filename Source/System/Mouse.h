@@ -67,6 +67,8 @@ public:
 	// CURSOR LOCK FUNCTION
 	void LockCursor(bool lock);
 
+	void SetSuppressed(bool suppressed) { isSuppressed = suppressed; }
+
 	DirectX::XMFLOAT3 GetWorldPosition(
 		const DirectX::XMFLOAT4X4& viewMatrix,
 		const DirectX::XMFLOAT4X4& projMatrix
@@ -83,6 +85,7 @@ private:
 	int				screenHeight = 0;
 	HWND			hWnd = nullptr;
 	bool 			isCursorLocked = false;
+	bool			isSuppressed = false;
 	POINT			centerPosition = {};
 	float			deltaX = 0;
 	float			deltaY = 0;

@@ -11,6 +11,8 @@ public:
 	// Update state setiap frame
 	void Update();
 
+	void UpdateSuppressed();
+
 	// Cek apakah tombol DITEKAN (sekali saja saat turun)
 	bool IsTriggered(int key) const;
 

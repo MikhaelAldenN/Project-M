@@ -385,12 +385,15 @@ void Player::HandleMovementInput(float dt)
     {
         targetX = 0.0f;
         targetZ = 0.0f;
-        if (GetAsyncKeyState('W') & 0x8000) targetZ += 1.0f;
-        if (GetAsyncKeyState('S') & 0x8000) targetZ -= 1.0f;
-        if (GetAsyncKeyState('A') & 0x8000) targetX -= 1.0f;
-        if (GetAsyncKeyState('D') & 0x8000) targetX += 1.0f;
-    }
-
+        if (!Input::Instance().IsKeyboardMouseSuppressed())
+        {
+            if (GetAsyncKeyState('W') & 0x8000) targetZ += 1.0f;
+            if (GetAsyncKeyState('S') & 0x8000) targetZ -= 1.0f;
+            if (GetAsyncKeyState('A') & 0x8000) targetX -= 1.0f;
+            if (GetAsyncKeyState('D') & 0x8000) targetX += 1.0f;
+        }
+    }   
+    
     // 5. Apply Inversion cleanly
     if (invertControls)
     {
@@ -492,6 +495,8 @@ void Player::HandleAimInput(Camera* camera)
     else
     {
         m_useAimFacing = true;
+
+        if (Input::Instance().IsKeyboardMouseSuppressed()) return;
 
         // Keyboard & Mouse Raycast Logic
         float mouseX, mouseY;

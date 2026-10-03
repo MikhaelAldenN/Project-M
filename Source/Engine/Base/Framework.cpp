@@ -147,6 +147,12 @@ void Framework::Update(float elapsedTime)
     }
 
     CalculateFrameStats(elapsedTime);
+
+#if defined(_DEBUG)
+    // Keyboard and mouse buttons stop driving the game while the debug window has focus.
+    Input::Instance().SetKeyboardMouseSuppressed(m_debugHost && m_debugHost->HasFocus());
+#endif
+
     Input::Instance().Update();
     AudioManager::Instance().Update(elapsedTime);
 

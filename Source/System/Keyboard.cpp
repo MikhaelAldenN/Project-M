@@ -13,6 +13,13 @@ void Keyboard::Update()
 	}
 }
 
+void Keyboard::UpdateSuppressed()
+{
+	// Why: keeping the previous/current history lets held keys release cleanly instead of sticking.
+	memcpy(previousKeys, currentKeys, sizeof(currentKeys));
+	memset(currentKeys, 0, sizeof(currentKeys));
+}
+
 bool Keyboard::IsTriggered(int key) const
 {
 	// Triggered = Sekarang ditekan (High bits), Sebelumnya tidak

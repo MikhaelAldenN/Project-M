@@ -83,4 +83,9 @@ HWND DebugHostWindow::GetHwnd() const
         nullptr));
 }
 
+bool DebugHostWindow::HasFocus() const
+{
+    return m_isValid && ::GetForegroundWindow() == GetHwnd();
+}
+
 #endif // _DEBUG

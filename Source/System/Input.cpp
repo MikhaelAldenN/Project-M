@@ -11,9 +11,15 @@ void Input::Initialize(HWND hWnd)
 
 void Input::Update()
 {
-	gamePad->Update();
-	mouse->Update();
-	keyboard->Update();
+    gamePad->Update();
+    mouse->SetSuppressed(m_isKbmSuppressed);
+    mouse->Update();
+    if (m_isKbmSuppressed) {
+        keyboard->UpdateSuppressed();
+    }
+    else {
+        keyboard->Update();
+    }
     
     // ---------------------------------------------------------
     // GAMEPAD DETECTION
@@ -70,7 +76,8 @@ void Input::Update()
     if (isGamepadActive) {
         m_lastUsedDevice = InputDevice::Gamepad;
     }
-    else if (isKbmActive) {
+    // Why: typing in the debug window must not flip the game's active device.
+    else if (isKbmActive && !m_isKbmSuppressed) {
         m_lastUsedDevice = InputDevice::Keyboard;
     }
 
@@ -80,8 +87,7 @@ void Input::Update()
 void Input::UpdateCursorVisibility() noexcept
 {
     // The strict rule: Keyboard = Visible, Gamepad = Hidden.
-    const bool shouldBeVisible{ m_lastUsedDevice == InputDevice::Keyboard };
-
+    const bool shouldBeVisible{ m_isKbmSuppressed || m_lastUsedDevice == InputDevice::Keyboard };
     // Early Exit
     if (m_isCursorVisible == shouldBeVisible) return;
 
