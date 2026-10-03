@@ -5,6 +5,8 @@
 #include <exception> 
 #include "WindowManager.h"
 #include <thread>
+#include <array>
+#include <cstdio>
 
 #include "Framework.h"
 
@@ -51,6 +53,58 @@ void TestPureWin32Transparency()
 // Di main(), panggil sebelum framework:
 // TestPureWin32Transparency();
 
+namespace
+{
+    // Writes one debug-output line: active DPI awareness and primary display size.
+    // Must run after SDL_Init(SDL_INIT_VIDEO), because it queries SDL displays.
+    void LogDisplayStartupInfo()
+    {
+        struct NamedContext
+        {
+            DPI_AWARENESS_CONTEXT context{ nullptr };
+            const char* name{ "" };
+        };
+        // Not constexpr: the Win32 context macros are pointer casts.
+        const std::array<NamedContext, 5> knownContexts{ {
+            { DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, "per-monitor v2" },
+            { DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE,    "per-monitor v1" },
+            { DPI_AWARENESS_CONTEXT_SYSTEM_AWARE,         "system" },
+            { DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED,    "unaware (GDI scaled)" },
+            { DPI_AWARENESS_CONTEXT_UNAWARE,              "unaware" },
+        } };
+
+        const DPI_AWARENESS_CONTEXT activeContext{ GetThreadDpiAwarenessContext() };
+        const char* awarenessName{ "unknown" };
+        for (const auto& known : knownContexts)
+        {
+            if (AreDpiAwarenessContextsEqual(activeContext, known.context))
+            {
+                awarenessName = known.name;
+                break;
+            }
+        }
+
+        const SDL_DisplayID primaryDisplay{ SDL_GetPrimaryDisplay() };
+        SDL_Rect bounds{};
+        if (!SDL_GetDisplayBounds(primaryDisplay, &bounds))
+        {
+            OutputDebugStringA("[Display] SDL_GetDisplayBounds failed: ");
+            OutputDebugStringA(SDL_GetError());
+            OutputDebugStringA("\n");
+        }
+
+        // Why both sizes: SceneBoss and WindowTrackingSystem read GetSystemMetrics,
+        // which is DPI-virtualized when the process is not per-monitor aware.
+        std::array<char, 256> line{};
+        std::snprintf(line.data(), line.size(),
+            "[Display] DPI awareness: %s | SDL primary: %dx%d | GetSystemMetrics: %dx%d | content scale: %.2f\n",
+            awarenessName, bounds.w, bounds.h,
+            GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
+            SDL_GetDisplayContentScale(primaryDisplay));
+        OutputDebugStringA(line.data());
+    }
+}
+
 int main(int argc, char* argv[])
 {
     std::thread safetyThread(EmergencyWatchdog);
@@ -62,6 +116,8 @@ int main(int argc, char* argv[])
         MessageBoxA(NULL, SDL_GetError(), "SDL Init Failed", MB_OK | MB_ICONERROR);
         return -1;
     }
+
+    LogDisplayStartupInfo();
 
     //TestPureWin32Transparency();
     try

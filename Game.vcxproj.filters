@@ -732,6 +732,9 @@
     <ClInclude Include="Source\Engine\Windowing\DebugUI.h">
       <Filter>Source\Engine\Windowing</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Common\FitRect.h">
+      <Filter>Source\Engine\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Basic.hlsli">
@@ -845,5 +848,8 @@
     <Image Include="Data\Icon\ChroniclesOfChaos.ico">
       <Filter>Source\Icon</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="app.manifest" />
   </ItemGroup>
 </Project>

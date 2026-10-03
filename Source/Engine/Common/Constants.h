@@ -9,5 +9,8 @@ namespace Beyond {
         constexpr float CAM_FOV = 60.0f;
         constexpr float CAM_NEAR = 0.1f;
         constexpr float CAM_FAR = 1000.0f;
+
+        constexpr int CANVAS_WIDTH = 1920;
+        constexpr int CANVAS_HEIGHT = 1080;
     }
 }

@@ -132,6 +132,7 @@
     <ClInclude Include="Source\Engine\Base\MathUtils.h" />
     <ClInclude Include="Source\Engine\Base\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Common\Constants.h" />
+    <ClInclude Include="Source\Engine\Common\FitRect.h" />
     <ClInclude Include="Source\Engine\Graphics\BitmapFont.h" />
     <ClInclude Include="Source\Engine\Graphics\Camera.h" />
     <ClInclude Include="Source\Engine\Graphics\CameraController.h" />
@@ -430,6 +431,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Data\Icon\ChroniclesOfChaos.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="app.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

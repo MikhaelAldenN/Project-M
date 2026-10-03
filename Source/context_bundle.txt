@@ -5929,3 +5929,158 @@ PATH: Engine\Windowing\WindowTrackingSystem.h
 125:    float m_fov = 60.0f;
 126:};
  
+================================================ 
+FILE: Main.cpp 
+PATH: Engine\Base\Main.cpp 
+================================================ 
+1:﻿#include <windows.h>
+2:#include <memory>
+3:#include <SDL3/SDL.h> 
+4:#include <iostream> 
+5:#include <exception> 
+6:#include "WindowManager.h"
+7:#include <thread>
+9:#include "Framework.h"
+11:void EmergencyWatchdog()
+12:{
+13:    while (true)
+14:    {
+15:        bool ctrlPressed = (GetAsyncKeyState(VK_CONTROL) & 0x8000);
+16:        bool f12Pressed = (GetAsyncKeyState(VK_F12) & 0x8000);
+18:        if (ctrlPressed && f12Pressed)
+19:        {
+20:            Beep(200, 50);
+21:            OutputDebugStringA("!!! EMERGENCY EXIT TRIGGERED !!!\n");
+22:            ExitProcess(-1);
+23:        }
+24:        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+25:    }
+26:}
+28:void TestPureWin32Transparency()
+29:{
+30:    WNDCLASSA wc = {};
+31:    wc.lpfnWndProc = DefWindowProcA;
+32:    wc.hInstance = GetModuleHandle(NULL);
+33:    wc.lpszClassName = "TestTransparent";
+34:    RegisterClassA(&wc);
+36:    HWND hwnd = CreateWindowExA(
+37:        WS_EX_LAYERED,
+38:        "TestTransparent", "Test Transparent",
+39:        WS_OVERLAPPEDWINDOW | WS_VISIBLE,  // ← pakai border agar kelihatan
+40:        200, 200, 400, 400,
+41:        NULL, NULL, GetModuleHandle(NULL), NULL
+42:    );
+44:    // Alpha 128 = 50% transparan seluruh window
+45:    SetLayeredWindowAttributes(hwnd, 0, 128, LWA_ALPHA);
+47:    Sleep(3000); // Lihat selama 3 detik tanpa MessageBox menghalangi
+48:    DestroyWindow(hwnd);
+49:}
+51:// Di main(), panggil sebelum framework:
+52:// TestPureWin32Transparency();
+54:int main(int argc, char* argv[])
+55:{
+56:    std::thread safetyThread(EmergencyWatchdog);
+57:    safetyThread.detach();
+59:    // Init SDL
+60:    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+61:    {
+62:        MessageBoxA(NULL, SDL_GetError(), "SDL Init Failed", MB_OK | MB_ICONERROR);
+63:        return -1;
+64:    }
+66:    //TestPureWin32Transparency();
+67:    try
+68:    {
+69:        auto framework = std::make_unique<Framework>();
+71:        bool running = true;
+72:        Uint64 lastTime = SDL_GetPerformanceCounter();
+73:        Uint64 frequency = SDL_GetPerformanceFrequency();
+75:        // ==========================================
+76:        // KONFIGURASI FPS CAP
+77:        // ==========================================
+78:        const double targetFPS = 60.0; // Silakan ganti ke 30, 90, atau 120
+79:        const Uint64 targetTicksPerFrame = frequency / targetFPS;
+80:        const Uint64 yieldThreshold = frequency / 500; // Batas aman 2ms untuk CPU napas
+82:        while (running)
+83:        {
+84:            // 1. Catat waktu persis saat frame dimulai
+85:            Uint64 frameStart = SDL_GetPerformanceCounter();
+88:            SDL_Event event;
+89:            while (SDL_PollEvent(&event))
+90:            {
+91:                // Debug host window events never reach game logic.
+92:                if (framework && framework->HandleDebugHostEvent(event)) continue;
+94:                if (event.type == SDL_EVENT_QUIT) running = false;                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
+95:                if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
+96:                {
+97:                    // Cek window mana yang barusan diklik tombol silangnya
+98:                    SDL_Window* closedWin = SDL_GetWindowFromID(event.window.windowID);
+99:                    Beyond::Window* mainWin = framework ? framework->GetMainWindow() : nullptr;
+101:                    if (mainWin && closedWin == mainWin->GetSDLWindow()) {
+102:                        // Yang disilang adalah MAIN WINDOW -> Matikan game!
+103:                        running = false;
+104:                    }
+105:                    else {
+106:                        // Yang disilang adalah SUB-WINDOW (Dummy) -> Suruh Framework hapus!
+107:                        if (framework) framework->OnSubWindowClosed(event.window.windowID);
+108:                    }
+109:                }
+111:                if (event.type == SDL_EVENT_WINDOW_RESIZED || event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
+112:                {
+113:                    SDL_Window* resizedWin = SDL_GetWindowFromID(event.window.windowID);
+114:                    if (resizedWin) {
+115:                        WindowManager::Instance().HandleResize(resizedWin, event.window.data1, event.window.data2);
+116:                    }
+117:                }
+119:            }
+121:            Uint64 currentTime = SDL_GetPerformanceCounter();
+122:            float elapsedTime = (float)(currentTime - lastTime) / (float)frequency;
+123:            lastTime = currentTime;
+125:            if (elapsedTime > 0.05f) elapsedTime = 0.05f;
+127:            if (framework)
+128:            {
+129:                framework->Update(elapsedTime);
+130:                framework->Render(elapsedTime);
+131:            }
+133:            if (!WindowManager::Instance().HasWindows())
+134:            {
+135:                running = false;
+136:            }
+138:            // ==========================================
+139:            // 2. LOGIKA PEMBATAS FPS (HYBRID SPIN-WAIT)
+140:            // ==========================================
+141:            while (true)
+142:            {
+143:                Uint64 now = SDL_GetPerformanceCounter();
+144:                Uint64 ticksPassed = now - frameStart;
+146:                // Jika waktu frame sudah mencapai batas (misal 16.66ms), lanjut ke frame berikutnya!
+147:                if (ticksPassed >= targetTicksPerFrame)
+148:                {
+149:                    break;
+150:                }
+152:                // Jika sisa waktu masih > 2ms, suruh thread CPU mengalah sebentar
+153:                if (targetTicksPerFrame - ticksPassed > yieldThreshold)
+154:                {
+155:                    std::this_thread::yield();
+156:                }
+157:            }
+158:        }
+159:    }
+161:    catch (const std::exception& e)
+162:    {
+163:        std::string errorMessage = "Runtime Error Occurred:\n";
+164:        errorMessage += e.what();
+165:        MessageBoxA(NULL, errorMessage.c_str(), "CRITICAL ERROR", MB_OK | MB_ICONERROR);
+167:        OutputDebugStringA(errorMessage.c_str());
+169:        SDL_Quit();
+170:        return -1;
+171:    }
+172:    catch (...)
+173:    {
+174:        MessageBoxA(NULL, "Unknown Error Occurred!", "CRITICAL ERROR", MB_OK | MB_ICONERROR);
+175:        SDL_Quit();
+176:        return -1;
+177:    }
+179:    SDL_Quit();
+180:    return 0;
+181:}
+ 
