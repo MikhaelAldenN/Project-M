@@ -499,26 +499,20 @@ void Player::HandleAimInput(Camera* camera)
         if (Input::Instance().IsKeyboardMouseSuppressed()) return;
 
         // Keyboard & Mouse Raycast Logic
-        float mouseX, mouseY;
-        SDL_GetMouseState(&mouseX, &mouseY);
-
-        // Safely fetch dynamic screen size
-        float screenW{ 1920.0f };
-        float screenH{ 1080.0f };
-        if (auto window{ Framework::Instance()->GetMainWindow() }) {
-            screenW = static_cast<float>(window->GetWidth());
-            screenH = static_cast<float>(window->GetHeight());
-        }
+        // Why through InputHelper: the scene image is scaled and letterboxed inside the
+        // window, so raw window pixels are not the pixels the camera projected to.
+        const Beyond::MouseViewPos mouse{ Beyond::InputHelper::GetMouseViewPos() };
+        if (mouse.viewWidth <= 0.0f || mouse.viewHeight <= 0.0f) return;
 
         DirectX::XMMATRIX view{ DirectX::XMLoadFloat4x4(&camera->GetView()) };
         DirectX::XMMATRIX proj{ DirectX::XMLoadFloat4x4(&camera->GetProjection()) };
         DirectX::XMMATRIX world{ DirectX::XMMatrixIdentity() };
 
-        DirectX::XMVECTOR nearPoint{ DirectX::XMVectorSet(mouseX, mouseY, 0.0f, 0.0f) };
-        DirectX::XMVECTOR farPoint{ DirectX::XMVectorSet(mouseX, mouseY, 1.0f, 0.0f) };
+        DirectX::XMVECTOR nearPoint{ DirectX::XMVectorSet(mouse.x, mouse.y, 0.0f, 0.0f) };
+        DirectX::XMVECTOR farPoint{ DirectX::XMVectorSet(mouse.x, mouse.y, 1.0f, 0.0f) };
 
-        nearPoint = DirectX::XMVector3Unproject(nearPoint, 0, 0, screenW, screenH, 0.0f, 1.0f, proj, view, world);
-        farPoint = DirectX::XMVector3Unproject(farPoint, 0, 0, screenW, screenH, 0.0f, 1.0f, proj, view, world);
+        nearPoint = DirectX::XMVector3Unproject(nearPoint, 0, 0, mouse.viewWidth, mouse.viewHeight, 0.0f, 1.0f, proj, view, world);
+        farPoint = DirectX::XMVector3Unproject(farPoint, 0, 0, mouse.viewWidth, mouse.viewHeight, 0.0f, 1.0f, proj, view, world);
 
         DirectX::XMVECTOR rayDir{ DirectX::XMVector3Normalize(DirectX::XMVectorSubtract(farPoint, nearPoint)) };
         DirectX::XMFLOAT3 origin, dir;

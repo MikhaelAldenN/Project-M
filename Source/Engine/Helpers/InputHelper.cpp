@@ -2,37 +2,54 @@
 #include "Engine/Common/Constants.h"
 #include "System/Input.h"
 #include <SDL3/SDL.h>
+#include "Framework.h"
+#include "Engine/Common/FitRect.h"
 
 namespace Beyond {
-    DirectX::XMFLOAT3 InputHelper::GetMouseWorldPos(const DirectX::XMFLOAT3& cameraPos) {
-        // Last cursor position read while input was live. Why: while the debug
-        // window has focus the aim must hold still, not follow the cursor.
-        static float s_lastMouseX{ 0.0f };
-        static float s_lastMouseY{ 0.0f };
-
-        if (!Input::Instance().IsKeyboardMouseSuppressed()) {
-            // SDL3: Mengambil posisi mouse terhadap seluruh area monitor
-            SDL_GetGlobalMouseState(&s_lastMouseX, &s_lastMouseY);
+    MouseViewPos InputHelper::GetMouseViewPos()
+    {
+        const Framework* framework{ Framework::Instance() };
+        const Window* mainWindow{ framework ? framework->GetMainWindow() : nullptr };
+        if (!mainWindow || !mainWindow->GetSDLWindow())
+        {
+            return MouseViewPos{};
         }
 
-        const float mouseX{ s_lastMouseX };
-        const float mouseY{ s_lastMouseY };
+        // Why global minus window origin: SDL_GetMouseState is relative to whichever
+        // window holds mouse focus, which is a sub-window whenever the cursor is over one.
+        float globalX{ 0.0f };
+        float globalY{ 0.0f };
+        SDL_GetGlobalMouseState(&globalX, &globalY);
 
-        SDL_Rect displayBounds;
-        // SDL3: Mengambil resolusi monitor utama yang aktif
-        SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &displayBounds);
+        int windowX{ 0 };
+        int windowY{ 0 };
+        SDL_GetWindowPosition(mainWindow->GetSDLWindow(), &windowX, &windowY);
 
-        float monitorCenterX = displayBounds.w / 2.0f;
-        float monitorCenterY = displayBounds.h / 2.0f;
+        const float localX{ globalX - static_cast<float>(windowX) };
+        const float localY{ globalY - static_cast<float>(windowY) };
+        const int windowWidth{ mainWindow->GetWidth() };
+        const int windowHeight{ mainWindow->GetHeight() };
 
-        // Hitung jarak mouse dari tengah monitor dalam pixel
-        float pixelOffsetX = mouseX - monitorCenterX;
-        float pixelOffsetY = mouseY - monitorCenterY;
+        if (!framework->GetActiveCanvas())
+        {
+            // The scene fills the window 1:1.
+            return MouseViewPos{ localX, localY,
+                static_cast<float>(windowWidth), static_cast<float>(windowHeight) };
+        }
 
-        // Konversi ke unit dunia + Tambahkan posisi kamera untuk mendukung scrolling
-        float worldX = (pixelOffsetX / Config::PIXEL_TO_UNIT_RATIO) + cameraPos.x;
-        float worldZ = (-pixelOffsetY / Config::PIXEL_TO_UNIT_RATIO) + cameraPos.z;
+        // Same rect WindowManager::RenderAll blits the canvas into.
+        const PixelRect image{ FitRect(PixelRect{ 0, 0, windowWidth, windowHeight },
+            Config::CANVAS_WIDTH, Config::CANVAS_HEIGHT) };
+        if (image.width <= 0 || image.height <= 0)
+        {
+            return MouseViewPos{}; // minimized window
+        }
 
-        return DirectX::XMFLOAT3(worldX, 0.0f, worldZ);
+        const float canvasWidth{ static_cast<float>(Config::CANVAS_WIDTH) };
+        const float canvasHeight{ static_cast<float>(Config::CANVAS_HEIGHT) };
+        return MouseViewPos{
+            (localX - static_cast<float>(image.x)) * canvasWidth / static_cast<float>(image.width),
+            (localY - static_cast<float>(image.y)) * canvasHeight / static_cast<float>(image.height),
+            canvasWidth, canvasHeight };
     }
 }

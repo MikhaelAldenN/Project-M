@@ -96,8 +96,8 @@ Framework::Framework()
     }
 
     // Init Scene
-#if 0
-    scene = std::make_unique<SceneIntro>();
+#if 1
+    scene = std::make_unique<SceneSandbox>();
 #else
     scene = std::make_unique<SceneBoss>();
 #endif
@@ -127,6 +127,14 @@ void Framework::ChangeScene(std::unique_ptr<Scene> newScene) { nextScene = std::
 Beyond::Window* Framework::GetMainWindow() const
 {
     return WindowManager::Instance().GetWindowByIndex(0);
+}
+
+const GameCanvas* Framework::GetActiveCanvas() const
+{
+    // SceneBoss is the one scene that skips the canvas: its main window covers the
+    // monitor and it treats the desktop as the world.
+    const bool isSceneBoss{ dynamic_cast<SceneBoss*>(scene.get()) != nullptr };
+    return isSceneBoss ? nullptr : m_gameCanvas.get();
 }
 
 void Framework::Render(float elapsedTime)
