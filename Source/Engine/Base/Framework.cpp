@@ -82,7 +82,7 @@ Framework::Framework()
     ResourceManager::Instance().LoadFont("VGA_FONT", "Data/Font/IBM_VGA_32px_0.png", "Data/Font/IBM_VGA_32px.fnt");
 
     // Init Scene
-#if 1
+#if 0
     scene = std::make_unique<SceneSandbox>();
 #else
     scene = std::make_unique<SceneBoss>();

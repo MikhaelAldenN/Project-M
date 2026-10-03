@@ -26,6 +26,7 @@
 #include "PhysXUtils.h"
 #include "Boss.h"
 #include "HUDRenderer.h"
+#include "DebugUI.h"
 
 // =========================================================
 // SCENE BOSS - WINDOWKILL MODE
@@ -63,6 +64,7 @@ private:
     void InitializeSubWindows();
 
     // --- Debug & System Helpers ---
+    void DrawDebugPanel();
     void ResetEverything();
     void SpawnDebugWindow();
     void SpawnTransparentWindow(float bgAlpha, const std::string& typeSuffix);
@@ -188,4 +190,10 @@ private:
     float m_overdriveBossHpTriggerPercent = 30.0f; // Default: Uncap aktif saat HP Boss di bawah 30%
     bool  m_forceUncapOverride = false;            // Kontrol manual untuk memaksa mode Uncap
     bool  m_lastUncapState = false;                // Menyimpan status state frame sebelumnya
+
+#if defined(_DEBUG)
+    // Keeps the "WINDOWKILL MASTER CONTROL" tab registered while this scene lives.
+    // Declared last: destroyed first, before any member the callback reads.
+    DebugPanelHandle m_debugPanel{};
+#endif
 };

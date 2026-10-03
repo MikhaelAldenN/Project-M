@@ -134,6 +134,11 @@ SceneBoss::SceneBoss()
 
     AddLog("SceneBoss initialized. Windowkill system online.");
     PerformanceLogger::Instance().LogInfo("[INIT] SceneBoss constructor complete.");
+
+#if defined(_DEBUG)
+    // Capturing `this` is safe: the handle is a member and dies with this scene.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "WINDOWKILL MASTER CONTROL", [this]() { DrawDebugPanel(); });
+#endif
 }
 
 SceneBoss::~SceneBoss()
@@ -590,7 +595,10 @@ void SceneBoss::Update(float elapsedTime)
     PerformanceLogger::Instance().EndFrameCheck(0.0f, activeWins);
 #endif
 
+#if !defined(_DEBUG)
+    // Release keeps the floating window until ImGui is removed (beta).
     DrawGUI();
+#endif
 
     // --- LOGIKA OTOMATISASI OVERDRIVE PLAYER ---
     //if (m_player && m_navi)
@@ -928,10 +936,20 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
         ImGui::SetNextWindowSize(m_debugPanelSize, ImGuiCond_FirstUseEver);
 
-    ImGui::Begin("WINDOWKILL MASTER CONTROL", nullptr,
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+        ImGui::Begin("WINDOWKILL MASTER CONTROL", nullptr,
+            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
-    m_debugPanelSize = ImGui::GetWindowSize();
+        m_debugPanelSize = ImGui::GetWindowSize();
+
+        DrawDebugPanel();
+
+        ImGui::End();
+    }
+
+    void SceneBoss::DrawDebugPanel()
+    {
+        // Why: once the scene change is pending, phase and window state are being torn down.
+        if (m_isPendingSceneChange) return;
 
         if (ImGui::BeginTabBar("MasterControlTabs"))
         {
@@ -1718,10 +1736,8 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
         ImGui::EndTabBar();
     }
-
-    ImGui::End();
-
 }
+
 
 void SceneBoss::OnResize(int /*width*/, int /*height*/)
 {
