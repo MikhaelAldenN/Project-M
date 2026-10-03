@@ -38,18 +38,10 @@ void BossPhase01::Enter(Boss* boss) {
 
     m_rainAttack.reset();
 
-    // ----- Setup OS window -----
-    int screenW = GetSystemMetrics(SM_CXSCREEN);
-    int screenH = GetSystemMetrics(SM_CYSCREEN);
-
     Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
     if (mainWindow && mainWindow->GetSDLWindow()) {
-        SDL_Window* sdlWin = mainWindow->GetSDLWindow();
         mainWindow->SetPriority(50);
-        SDL_SetWindowAlwaysOnTop(sdlWin, false);
-        SDL_SetWindowBordered(sdlWin, false);
-        SDL_SetWindowPosition(sdlWin, 0, 0);
-        SDL_SetWindowSize(sdlWin, screenW, screenH + 1);
+        SDL_SetWindowAlwaysOnTop(mainWindow->GetSDLWindow(), false);
     }
 
     if (boss && boss->GetMainWindow()) {

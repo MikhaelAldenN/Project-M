@@ -41,6 +41,8 @@ public:
     // Helper untuk mengambil Main Window (Window index 0)
     Beyond::Window* GetMainWindow() const;
 
+    // The canvas every scene is drawn into. Null only when the canvas could not be
+    // created; scenes then draw straight to the main window.
     [[nodiscard]] const GameCanvas* GetActiveCanvas() const;
 
     LRESULT CALLBACK HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

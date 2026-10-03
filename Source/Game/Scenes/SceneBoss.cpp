@@ -21,6 +21,7 @@
 #include "EffectManager.h"
 #include "WindowShatter.h"
 #include "AttackParamManager.h"
+#include "Engine/Common/Constants.h"
 using namespace DirectX;
 
 // =========================================================
@@ -112,15 +113,9 @@ SceneBoss::SceneBoss()
     InitializeSubWindows();
 
     // --- Death Fade Effects ---
-    float screenW = static_cast<float>(GetSystemMetrics(SM_CXSCREEN));
-    float screenH = static_cast<float>(GetSystemMetrics(SM_CYSCREEN));
-    if (auto window = Framework::Instance()->GetMainWindow()) {
-        screenW = static_cast<float>(window->GetWidth());
-        screenH = static_cast<float>(window->GetHeight());
-    }
-
+    // Post-process only ever runs on the main camera, which draws into the game canvas.
     m_postProcess = std::make_unique<PostProcessManager>();
-    m_postProcess->Initialize(static_cast<int>(screenW), static_cast<int>(screenH));
+    m_postProcess->Initialize(Beyond::Config::CANVAS_WIDTH, Beyond::Config::CANVAS_HEIGHT);
 
     m_fadeSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Game/Black.png");
     m_whiteSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Game/White.png");
@@ -772,12 +767,13 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
     // =========================================================
     if (m_fadeAlpha > 0.001f && m_fadeSprite)
     {
-        float screenW = static_cast<float>(GetSystemMetrics(SM_CXSCREEN));
-        float screenH = static_cast<float>(GetSystemMetrics(SM_CYSCREEN));
-        if (auto window = Framework::Instance()->GetMainWindow()) {
-            screenW = static_cast<float>(window->GetWidth());
-            screenH = static_cast<float>(window->GetHeight());
-        }
+        // Why the viewport: Render runs once per window (canvas, then each sub-window),
+        // and the overlay must cover whichever target is bound right now.
+        D3D11_VIEWPORT viewport{};
+        UINT viewportCount{ 1 };
+        dc->RSGetViewports(&viewportCount, &viewport);
+        const float screenW{ viewport.Width };
+        const float screenH{ viewport.Height };
 
         dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
         dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
@@ -795,12 +791,11 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
 
     if (m_whiteAlpha > 0.001f && m_whiteSprite)
     {
-        float screenW = static_cast<float>(GetSystemMetrics(SM_CXSCREEN));
-        float screenH = static_cast<float>(GetSystemMetrics(SM_CYSCREEN));
-        if (auto window = Framework::Instance()->GetMainWindow()) {
-            screenW = static_cast<float>(window->GetWidth());
-            screenH = static_cast<float>(window->GetHeight());
-        }
+        D3D11_VIEWPORT viewport{};
+        UINT viewportCount{ 1 };
+        dc->RSGetViewports(&viewportCount, &viewport);
+        const float screenW{ viewport.Width };
+        const float screenH{ viewport.Height };
 
         dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
         dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::NoTestNoWrite), 0);

@@ -301,6 +301,18 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
         }
     }
 
+    if (tracked.role == WindowRole::MAIN_VIEWPORT)
+    {
+        // The main window shows the whole arena through the game canvas, wherever the
+        // OS window sits and whatever its size: project the full screen rect instead
+        // of the window's own rect.
+        int screenW{ 0 };
+        int screenH{ 0 };
+        GetScreenDimensions(screenW, screenH);
+        UpdateOffCenterProjection(tracked.camera.get(), 0, 0, screenW, screenH, GetUnifiedCameraHeight());
+        return;
+    }
+
     // 4. THE MAGIC FIX: Proyeksikan 3D menggunakan posisi OS Asli, BUKAN target.
     UpdateOffCenterProjection(tracked.camera.get(), osX, osY, tracked.state.actualW, tracked.state.actualH, GetUnifiedCameraHeight());
 }
