@@ -348,6 +348,9 @@
     <ClCompile Include="Source\Game\Scenes\SceneSandbox.cpp">
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Windowing\DebugHostWindow.cpp">
+      <Filter>Source\Engine\Windowing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\BasicShader.h">
@@ -719,6 +722,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Scenes\SceneSandbox.h">
       <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Windowing\DebugHostWindow.h">
+      <Filter>Source\Engine\Windowing</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

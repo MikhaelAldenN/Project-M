@@ -20,6 +20,7 @@
 #include <imgui.h>
 #include <SDL3/SDL.h>
 #include "AttackParamManager.h"
+#include "DebugHostWindow.h"
 
 class Framework
 {
@@ -48,4 +49,11 @@ private:
 
     std::unique_ptr<Scene> scene;
     std::unique_ptr<Scene> nextScene;
+
+#if defined(_DEBUG)
+    // Created after Graphics::Initialize(), hence a pointer and not a direct member.
+    // Declared last: destroyed after ~Framework's body, so after ImGui is finalized.
+    std::unique_ptr<DebugHostWindow> m_debugHost;
+#endif
+
 };

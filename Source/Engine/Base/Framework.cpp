@@ -55,6 +55,12 @@ Framework::Framework()
     ImGuiRenderer::Initialize(hwnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
     s_OriginalWndProc = (WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)ImGuiHookWndProc);
 
+#if defined(_DEBUG)
+    m_debugHost = std::make_unique<DebugHostWindow>();
+    // Why: showing a new window takes focus; give it back to the game.
+    SDL_RaiseWindow(mainWin->GetSDLWindow());
+#endif
+
     // Load Resources
     ResourceManager::Instance().LoadFont("VGA_FONT", "Data/Font/IBM_VGA_32px_0.png", "Data/Font/IBM_VGA_32px.fnt");
 
@@ -85,6 +91,15 @@ Beyond::Window* Framework::GetMainWindow() const
 void Framework::Render(float elapsedTime)
 {
     WindowManager::Instance().RenderAll(elapsedTime, scene.get());
+
+#if defined(_DEBUG)
+    // Drawn after every game window so it never affects their render state.
+    if (m_debugHost)
+    {
+        m_debugHost->BeginRender();
+        m_debugHost->Present();
+    }
+#endif
 }
 
 void Framework::Update(float elapsedTime)
