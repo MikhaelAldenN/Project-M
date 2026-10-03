@@ -101,6 +101,11 @@ SceneSandbox::SceneSandbox()
     m_collisionManager->Initialize(m_player.get(), m_stage.get(), nullptr, nullptr);
 
     m_player->SetCollisionManager(m_collisionManager.get());
+
+#if defined(_DEBUG)
+    // Capturing `this` is safe: the handle is a member and dies with this scene.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Sandbox", [this]() { DrawDebugPanel(); });
+#endif
 }
 
 SceneSandbox::~SceneSandbox()
@@ -166,7 +171,11 @@ void SceneSandbox::Render(float elapsedTime, Camera* camera)
         primRenderer->Render(dc, targetCam->GetView(), targetCam->GetProjection(), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
     }
 
+#if !defined(_DEBUG)
+    // Release keeps the floating window until ImGui is removed (beta).
     DrawGUI();
+#endif
+
 }
 
 void SceneSandbox::RenderScene(const float elapsedTime, Camera* camera)
@@ -194,7 +203,12 @@ void SceneSandbox::RenderScene(const float elapsedTime, Camera* camera)
 void SceneSandbox::DrawGUI()
 {
     ImGui::Begin("Sandbox");
+    DrawDebugPanel();
+    ImGui::End();
+}
 
+void SceneSandbox::DrawDebugPanel()
+{
     ImGui::TextDisabled("Stage: %s", SANDBOX_STAGE_PATH);
     ImGui::Separator();
 
@@ -209,8 +223,6 @@ void SceneSandbox::DrawGUI()
         ImGui::Text("Player Pos: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
         ImGui::Text("Player HP: %.1f", m_player->GetHP());
     }
-
-    ImGui::End();
 }
 
 void SceneSandbox::OnResize(int width, int height)

@@ -11,6 +11,7 @@
 #include "PhysXUtils.h"
 #include "Scene.h"
 #include "System/Light.h"
+#include "DebugUI.h"
 
 // ==========================================
 // FORWARD DECLARATIONS
@@ -62,6 +63,8 @@ private:
 
     void RenderScene(float elapsedTime, Camera* camera);
 
+    void DrawDebugPanel();
+
     std::unique_ptr<Player> m_player{};
     std::unique_ptr<Stage> m_stage{};
     std::unique_ptr<CollisionManager> m_collisionManager{};
@@ -93,4 +96,11 @@ private:
     bool m_showGrid{ true };
     bool m_showStageDebug{ true };
     bool m_showPlayerInfo{ true };
+
+#if defined(_DEBUG)
+    // Keeps the "Sandbox" tab registered while this scene lives.
+    // Declared last: destroyed first, before any member the callback reads.
+    DebugPanelHandle m_debugPanel{};
+#endif
+
 };
