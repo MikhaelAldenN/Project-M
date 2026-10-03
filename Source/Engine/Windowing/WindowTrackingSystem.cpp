@@ -9,13 +9,14 @@ using namespace DirectX;
 
 WindowTrackingSystem::WindowTrackingSystem()
 {
-    // Pre-cache screen dimensions agar tidak hit SDL setiap frame awal
-    SDL_Rect bounds;
-    if (SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &bounds))
-    {
-        m_cachedScreenWidth = bounds.w;
-        m_cachedScreenHeight = bounds.h;
-    }
+}
+
+void WindowTrackingSystem::SetArenaRect(const Beyond::PixelRect& rect)
+{
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    m_arenaRect = rect;
+    m_pixelToUnitRatio = static_cast<float>(rect.height) / Beyond::Config::ARENA_HEIGHT_UNITS;
 }
 
 WindowTrackingSystem::~WindowTrackingSystem()
@@ -185,16 +186,6 @@ TrackedWindow* WindowTrackingSystem::GetTrackedWindow(const std::string& name)
 
 void WindowTrackingSystem::Update(float dt)
 {
-    // 1. Update Screen Cache (Resolusi layar mungkin berubah)
-    m_cacheUpdateTimer += dt;
-    if (m_cacheUpdateTimer >= 1.0f)
-    {
-        m_cachedScreenWidth = GetSystemMetrics(SM_CXSCREEN);
-        m_cachedScreenHeight = GetSystemMetrics(SM_CYSCREEN);
-        m_cacheUpdateTimer = 0.0f;
-    }
-
-    // 2. Update Semua Window
     for (auto& tracked : m_trackedWindows)
     {
         if (!tracked->isActive) continue;
@@ -306,10 +297,8 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
         // The main window shows the whole arena through the game canvas, wherever the
         // OS window sits and whatever its size: project the full screen rect instead
         // of the window's own rect.
-        int screenW{ 0 };
-        int screenH{ 0 };
-        GetScreenDimensions(screenW, screenH);
-        UpdateOffCenterProjection(tracked.camera.get(), 0, 0, screenW, screenH, GetUnifiedCameraHeight());
+        UpdateOffCenterProjection(tracked.camera.get(),
+            m_arenaRect.x, m_arenaRect.y, m_arenaRect.width, m_arenaRect.height, GetUnifiedCameraHeight());
         return;
     }
 
@@ -319,9 +308,6 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
 
 void WindowTrackingSystem::UpdateOffCenterProjection(Camera* targetCam, int winX, int winY, int winW, int winH, float camHeight)
 {
-    int screenW, screenH;
-    GetScreenDimensions(screenW, screenH);
-
     // [FIX 3] Gunakan posisi kamera saat ini (yang sudah mengandung Shake dari CameraController)
     // Jangan dipaksa ke (0, camHeight, 0) agar getarannya sinkron di semua jendela.
     DirectX::XMFLOAT3 currentPos = targetCam->GetPosition();
@@ -335,59 +321,45 @@ void WindowTrackingSystem::UpdateOffCenterProjection(Camera* targetCam, int winX
     float farZ = 1000.0f;
     float halfFovTan = tanf(DirectX::XMConvertToRadians(m_fov) * 0.5f);
 
+    // The full frustum covers the arena rect; a window gets the slice of it
+    // that its own desktop rect cuts out.
+    const double arenaW{ static_cast<double>(m_arenaRect.width) };
+    const double arenaH{ static_cast<double>(m_arenaRect.height) };
+
     float halfHeight = nearZ * halfFovTan;
-    float halfWidth = halfHeight * ((float)screenW / screenH);
+    float halfWidth = halfHeight * static_cast<float>(arenaW / arenaH);
 
-    double screenWd = (double)screenW;
-    double screenHd = (double)screenH;
+    const double localX{ static_cast<double>(winX - m_arenaRect.x) };
+    const double localY{ static_cast<double>(winY - m_arenaRect.y) };
 
-    float l = (float)((winX / screenWd) * 2.0 - 1.0);
-    float r = (float)(((winX + winW) / screenWd) * 2.0 - 1.0);
-    float t = (float)(1.0 - (winY / screenHd) * 2.0);
-    float b = (float)(1.0 - ((winY + winH) / screenHd) * 2.0);
+    float l = (float)((localX / arenaW) * 2.0 - 1.0);
+    float r = (float)(((localX + winW) / arenaW) * 2.0 - 1.0);
+    float t = (float)(1.0 - (localY / arenaH) * 2.0);
+    float b = (float)(1.0 - ((localY + winH) / arenaH) * 2.0);
 
     targetCam->SetOffCenterProjection(l * halfWidth, r * halfWidth, b * halfHeight, t * halfHeight, nearZ, farZ);
 }
 // =========================================================
 // MATH HELPERS
 // =========================================================
-void WindowTrackingSystem::GetScreenDimensions(int& outWidth, int& outHeight)
-{
-    if (m_cachedScreenWidth > 0) {
-        outWidth = m_cachedScreenWidth;
-        outHeight = m_cachedScreenHeight;
-        return;
-    }
-
-    // SDL3: Pengganti GetSystemMetrics(SM_CXSCREEN)
-    SDL_Rect bounds;
-    if (SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &bounds)) {
-        outWidth = bounds.w;
-        outHeight = bounds.h;
-
-        m_cachedScreenWidth = outWidth;
-        m_cachedScreenHeight = outHeight;
-    }
-}
 
 void WindowTrackingSystem::WorldToScreenPos(const DirectX::XMFLOAT3& worldPos, float& outScreenX, float& outScreenY)
 {
-    int screenW, screenH;
-    GetScreenDimensions(screenW, screenH);
-
-    // Konversi sederhana: Tengah layar + (Posisi World * Ratio)
+    // World origin sits at the centre of the arena rect.
     // Note: Z world menjadi Y layar (negatif) karena coordinate system game ini
-    outScreenX = (screenW * 0.5f) + (worldPos.x * m_pixelToUnitRatio);
-    outScreenY = (screenH * 0.5f) - (worldPos.z * m_pixelToUnitRatio);
+    const float centerX{ static_cast<float>(m_arenaRect.x) + static_cast<float>(m_arenaRect.width) * 0.5f };
+    const float centerY{ static_cast<float>(m_arenaRect.y) + static_cast<float>(m_arenaRect.height) * 0.5f };
+
+    outScreenX = centerX + (worldPos.x * m_pixelToUnitRatio);
+    outScreenY = centerY - (worldPos.z * m_pixelToUnitRatio);
 }
 
 float WindowTrackingSystem::GetUnifiedCameraHeight()
 {
-    int screenW, screenH;
-    GetScreenDimensions(screenW, screenH);
+    // Height at which the vertical FOV spans exactly the arena height. It no longer
+    // depends on the monitor: pixels per unit already absorb the rect size.
     float halfFovTan = tanf(XMConvertToRadians(m_fov) * 0.5f);
-    // Rumus trigonometri untuk mencari ketinggian kamera agar 1 unit world = X pixel layar
-    return (screenH * 0.5f) / (m_pixelToUnitRatio * halfFovTan);
+    return (Beyond::Config::ARENA_HEIGHT_UNITS * 0.5f) / halfFovTan;
 }
 
 void WindowTrackingSystem::RemoveTrackedWindow(const std::string& name)

@@ -35,7 +35,7 @@ SceneBoss::SceneBoss()
 
     // --- Window Tracking System ---
     m_windowSystem = std::make_unique<WindowTrackingSystem>();
-    m_windowSystem->SetPixelToUnitRatio(k_pixelToUnitRatio);
+    m_windowSystem->SetArenaRect(Framework::Instance()->GetGameImageRect());
     m_windowSystem->SetFOV(k_fov);
 
     // --- Camera ---
@@ -441,7 +441,7 @@ void SceneBoss::Update(float elapsedTime)
 
     // Kunci Rasio Piksel ke default agar ukuran dunia stabil
     float dynamicPixelRatio = k_pixelToUnitRatio;
-    m_windowSystem->SetPixelToUnitRatio(dynamicPixelRatio);
+    m_windowSystem->SetArenaRect(Framework::Instance()->GetGameImageRect());
 
     // =========================================================
     // [FIX] UPDATE KAMERA & CAMERA SHAKE (GABUNGAN)
@@ -1814,7 +1814,7 @@ void SceneBoss::AddLog(const std::string& message)
 
     // 3. Rebuild Window System & Camera
     m_windowSystem = std::make_unique<WindowTrackingSystem>();
-    m_windowSystem->SetPixelToUnitRatio(k_pixelToUnitRatio);
+    m_windowSystem->SetArenaRect(Framework::Instance()->GetGameImageRect());
     m_windowSystem->SetFOV(k_fov);
 
     const float unifiedHeight = m_windowSystem->GetUnifiedCameraHeight();

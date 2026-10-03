@@ -12,5 +12,10 @@ namespace Beyond {
 
         constexpr int CANVAS_WIDTH = 1920;
         constexpr int CANVAS_HEIGHT = 1080;
+
+        // Boss arena size in world units. The game canvas shows exactly this area,
+        // which is 40 pixels per unit at canvas resolution.
+        constexpr float ARENA_WIDTH_UNITS = 48.0f;
+        constexpr float ARENA_HEIGHT_UNITS = 27.0f;
     }
 }

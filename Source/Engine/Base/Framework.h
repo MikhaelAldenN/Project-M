@@ -22,6 +22,7 @@
 #include "AttackParamManager.h"
 #include "DebugHostWindow.h"
 #include "DebugUI.h"
+#include "Engine/Common/FitRect.h"
 
 class GameCanvas;
 
@@ -44,6 +45,13 @@ public:
     // The canvas every scene is drawn into. Null only when the canvas could not be
     // created; scenes then draw straight to the main window.
     [[nodiscard]] const GameCanvas* GetActiveCanvas() const;
+
+    // Where the game image sits on the desktop, in desktop pixels: the letterboxed
+    // canvas area of the main window while that window is showing, otherwise the
+    // largest canvas-shaped rect of the primary display (during Windowkill the main
+    // window is hidden and the desktop itself is the play field).
+    // Empty if neither can be queried.
+    [[nodiscard]] Beyond::PixelRect GetGameImageRect() const;
 
     LRESULT CALLBACK HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
     void OnSubWindowClosed(Uint32 sdlWindowID);

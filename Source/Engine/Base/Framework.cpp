@@ -2,6 +2,7 @@
 #include "DebugUI.h"
 #include "Engine/Common/FitRect.h"
 #include "Engine/Graphics/GameCanvas.h"
+#include "Engine/Common/Constants.h"
 
 // ========================================================
 // Jembatan Win32 ke ImGui
@@ -134,6 +135,34 @@ const GameCanvas* Framework::GetActiveCanvas() const
     return m_gameCanvas.get();
 }
 
+Beyond::PixelRect Framework::GetGameImageRect() const
+{
+    const Beyond::Window* mainWin{ GetMainWindow() };
+    SDL_Window* sdlWin{ mainWin ? mainWin->GetSDLWindow() : nullptr };
+
+    const SDL_WindowFlags notShowing{ SDL_WINDOW_HIDDEN | SDL_WINDOW_MINIMIZED };
+    if (sdlWin && (SDL_GetWindowFlags(sdlWin) & notShowing) == 0)
+    {
+        int windowX{ 0 };
+        int windowY{ 0 };
+        SDL_GetWindowPosition(sdlWin, &windowX, &windowY);
+
+        // Same rect WindowManager::RenderAll blits the canvas into, moved to desktop space.
+        return Beyond::FitRect(
+            Beyond::PixelRect{ windowX, windowY, mainWin->GetWidth(), mainWin->GetHeight() },
+            Beyond::Config::CANVAS_WIDTH, Beyond::Config::CANVAS_HEIGHT);
+    }
+
+    SDL_Rect display{};
+    if (!SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &display))
+    {
+        return Beyond::PixelRect{};
+    }
+    return Beyond::FitRect(
+        Beyond::PixelRect{ display.x, display.y, display.w, display.h },
+        Beyond::Config::CANVAS_WIDTH, Beyond::Config::CANVAS_HEIGHT);
+}
+
 void Framework::Render(float elapsedTime)
 {
     // SceneBoss is the one scene that skips the canvas: its main window covers the
@@ -141,7 +170,7 @@ void Framework::Render(float elapsedTime)
     const bool isSceneBoss{ dynamic_cast<SceneBoss*>(scene.get()) != nullptr };
     const GameCanvas* canvas{ isSceneBoss ? nullptr : m_gameCanvas.get() };
 
-    WindowManager::Instance().RenderAll(elapsedTime, scene.get(), canvas);
+    WindowManager::Instance().RenderAll(elapsedTime, scene.get(), GetActiveCanvas());
 
 #if defined(_DEBUG)
 
