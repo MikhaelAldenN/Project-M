@@ -15,7 +15,6 @@ public:
     ~PostProcessManager() = default;
 
     void Initialize(int screenWidth, int screenHeight);
-    void OnResize(int width, int height);
 
     void BeginCapture();
     void EndCapture(float dt);

@@ -47,7 +47,6 @@ public:
     void Shutdown();
     void Render(float elapsedTime, Camera* camera = nullptr) override;
     void DrawGUI() override;
-    void OnResize(int width, int height) override;
 
     [[nodiscard]] Camera* GetMainCamera() const { return m_mainCamera.get(); }
     [[nodiscard]] Player* GetPlayer()     const { return m_player.get(); }

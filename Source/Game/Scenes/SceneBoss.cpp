@@ -1727,13 +1727,6 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
     }
 }
 
-
-void SceneBoss::OnResize(int /*width*/, int /*height*/)
-{
-    // Intentionally empty: off-center projection is recalculated per sub-window
-    // every frame inside WindowTrackingSystem::UpdateOffCenterProjection.
-}
-
 // =========================================================
 // DEBUG / SYSTEM HELPERS
 // =========================================================
