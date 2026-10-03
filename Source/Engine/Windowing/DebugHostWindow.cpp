@@ -26,6 +26,12 @@ DebugHostWindow::DebugHostWindow(const DebugHostWindowConfig& config)
     m_window.SetDraggable(false);
 
     m_windowId = SDL_GetWindowID(m_window.GetSDLWindow());
+
+    if (config.isAlwaysOnTop && !SDL_SetWindowAlwaysOnTop(m_window.GetSDLWindow(), true))
+    {
+        OutputDebugStringA("[DebugHostWindow] Always-on-top request failed.\n");
+    }
+
     SDL_ShowWindow(m_window.GetSDLWindow());
 }
 

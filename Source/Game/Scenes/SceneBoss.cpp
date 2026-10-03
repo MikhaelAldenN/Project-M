@@ -32,11 +32,6 @@ SceneBoss::SceneBoss()
     PerformanceLogger::Instance().Initialize();
     PerformanceLogger::Instance().LogInfo("[INIT] SceneBoss constructor begin.");
 
-    // Disable ImGui multi-viewport while in this scene (restored in destructor)
-#ifdef NAVI_DEBUG_GUI
-    ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
-#endif
-
     // --- Window Tracking System ---
     m_windowSystem = std::make_unique<WindowTrackingSystem>();
     m_windowSystem->SetPixelToUnitRatio(k_pixelToUnitRatio);
@@ -143,10 +138,6 @@ SceneBoss::SceneBoss()
 
 SceneBoss::~SceneBoss()
 {
-    // Restore ImGui multi-viewport for other scenes
-#ifdef NAVI_DEBUG_GUI
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-#endif
     Shutdown();
 }
 
@@ -177,7 +168,6 @@ void SceneBoss::Shutdown()
     WindowManager::Instance().SetTopmost(false);
 
     // RESTORE ENGINE STATES
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     CameraController::Instance().ClearCamera();
 
     // EXPLICIT ENTITY DESTRUCTION ORDER

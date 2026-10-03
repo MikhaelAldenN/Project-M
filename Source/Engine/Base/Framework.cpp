@@ -82,7 +82,7 @@ Framework::Framework()
     ResourceManager::Instance().LoadFont("VGA_FONT", "Data/Font/IBM_VGA_32px_0.png", "Data/Font/IBM_VGA_32px.fnt");
 
     // Init Scene
-#if 0
+#if 1
     scene = std::make_unique<SceneSandbox>();
 #else
     scene = std::make_unique<SceneBoss>();
@@ -141,11 +141,7 @@ void Framework::Update(float elapsedTime)
 {
     if (nextScene)
     {
-        scene = std::move(nextScene); // SceneBoss destructor runs here
-        // SceneBoss destructor re-enables ViewportsEnable but platform
-        // functions (Platform_CreateWindow etc.) are NULL — this crashes NewFrame.
-        // Force it back off until a scene explicitly sets it up.
-        ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+        scene = std::move(nextScene); // the previous scene's destructor runs here
     }
 
     CalculateFrameStats(elapsedTime);

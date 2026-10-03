@@ -11,6 +11,8 @@ struct DebugHostWindowConfig
     std::string title{ "Project M - Debug" };
     int width{ 560 };
     int height{ 900 };
+    bool isAlwaysOnTop{ true };
+
 };
 
 // Debug-only OS window that will host the whole debug UI.
