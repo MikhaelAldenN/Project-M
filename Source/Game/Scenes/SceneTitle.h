@@ -24,6 +24,7 @@
 #include "System/Input.h"
 #include "System/Graphics.h"
 #include <imgui.h>
+#include "DebugUI.h"
 
 class SceneTitle : public Scene
 {
@@ -153,4 +154,13 @@ private:
 
     // --- Debug GUI Helpers ---
     void GUIPostProcessTab();
+
+    void DrawDebugPanel();
+
+
+#if defined(_DEBUG)
+    // Keeps the "Title Scene Debugger" tab registered while this scene lives.
+    // Declared last: destroyed first, before any member the callback reads.
+    DebugPanelHandle m_debugPanel{};
+#endif
 };

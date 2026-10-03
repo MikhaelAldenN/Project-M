@@ -11,6 +11,11 @@ SceneIntro::SceneIntro()
     CreateRenderTarget();     
 
     //AudioManager::Instance().PlayMusic("Data/Sound/BGM_Intro.wav", true, 0.0f);
+
+#if defined(_DEBUG)
+// Capturing `this` is safe: the handle is a member and dies with this scene.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Bios Inspector", [this]() { DrawDebugPanel(); });
+#endif
 }
 
 void SceneIntro::Update(float elapsedTime)
@@ -132,22 +137,27 @@ void SceneIntro::OnResize(int width, int height)
     CreateRenderTarget();
 }
 
-void SceneIntro::DrawGUI() 
+void SceneIntro::DrawGUI()
 {
     ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Bios Inspector", nullptr))
     {
-        if (ImGui::BeginTabBar("InspectorTabs"))
-        {
-            if (ImGui::BeginTabItem("Post-Process & FX"))
-            {
-                GUIPostProcessTab();
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
-        }
+        DrawDebugPanel();
     }
     ImGui::End();
+}
+
+void SceneIntro::DrawDebugPanel()
+{
+    if (ImGui::BeginTabBar("InspectorTabs"))
+    {
+        if (ImGui::BeginTabItem("Post-Process & FX"))
+        {
+            GUIPostProcessTab();
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
 }
 
 void SceneIntro::GUIPostProcessTab()

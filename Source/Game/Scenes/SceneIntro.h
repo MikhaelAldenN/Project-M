@@ -13,6 +13,7 @@
 #include "Framework.h"
 #include "ResourceManager.h"
 #include "UberShader.h"
+#include "DebugUI.h"
 
 class SceneIntro : public Scene
 {
@@ -35,6 +36,9 @@ private:
     // Helper for the GUI
     void GUIPostProcessTab();
 
+    // Draws the debug controls only, with no ImGui window around them.
+    void DrawDebugPanel();
+
     // GUI State
     struct PostProcessState
     {
@@ -56,4 +60,10 @@ private:
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResourceView;
     Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilTexture;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
+
+#if defined(_DEBUG)
+    // Keeps the "Bios Inspector" tab registered while this scene lives.
+    // Declared last: destroyed first, before any member the callback reads.
+    DebugPanelHandle m_debugPanel{};
+#endif
 };

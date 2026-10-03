@@ -51,6 +51,11 @@ SceneTitle::SceneTitle()
     m_primitive = std::make_unique<Primitive>(device);
     m_uiOption = std::make_unique<UIOption>();
     m_uiOption->Initialize(m_primitive.get());
+
+#if defined(_DEBUG)
+    // Capturing `this` is safe: the handle is a member and dies with this scene.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Title Scene Debugger", [this]() { DrawDebugPanel(); });
+#endif
 }
 
 bool SceneTitle::IsUpTriggered() noexcept
@@ -504,7 +509,12 @@ void SceneTitle::OnResize(int width, int height)
 void SceneTitle::DrawGUI()
 {
     ImGui::Begin("Title Scene Debugger");
+    DrawDebugPanel();
+    ImGui::End();
+}
 
+void SceneTitle::DrawDebugPanel()
+{
     if (ImGui::BeginTabBar("InspectorTabs"))
     {
         if (ImGui::BeginTabItem("Post-Process & FX"))
@@ -514,7 +524,6 @@ void SceneTitle::DrawGUI()
         }
         ImGui::EndTabBar();
     }
-    ImGui::End();
 }
 
 void SceneTitle::GUIPostProcessTab()
