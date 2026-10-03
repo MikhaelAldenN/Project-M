@@ -123,11 +123,13 @@ void Framework::Render(float elapsedTime)
     // Drawn after every game window so it never affects their render state.
     if (m_debugHost)
     {
-        m_debugHost->BeginRender();
-        
         // Last ImGui submission of the frame, after every scene has issued its own.
+        // Why before BeginRender: panel callbacks may create or destroy game windows,
+        // and that must not be able to replace the debug window's bound render target.
         DebugUI::Instance().Draw();
-        
+
+        m_debugHost->BeginRender();
+
         // The frame's ImGui draw data goes to the debug window's back buffer.
         ImGuiRenderer::Render(Graphics::Instance().GetDeviceContext());
         m_debugHost->Present();
