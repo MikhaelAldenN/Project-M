@@ -76,7 +76,14 @@ XMFLOAT3 CameraController::CalculateHermitePos(const XMFLOAT3& p0, const XMFLOAT
 // CORE LOGIC
 // =========================================================
 
-CameraController::CameraController() {}
+CameraController::CameraController()
+{
+#if defined(_DEBUG)
+    // Capturing `this` is safe: the handle is a member of this singleton, and it
+    // holds the registry weakly, so shutdown order against DebugUI does not matter.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Camera Controller", [this]() { DrawDebugPanel(); });
+#endif
+}
 
 CameraController& CameraController::Instance()
 {
@@ -559,10 +566,17 @@ void CameraController::StopSequence()
 
 void CameraController::DrawDebugGUI()
 {
-    auto camera = m_activeCamera.lock();
-    if (!camera) return;
+    if (m_activeCamera.expired()) return;
 
     ImGui::Begin("Camera Controller");
+    DrawDebugPanel();
+    ImGui::End();
+}
+
+void CameraController::DrawDebugPanel()
+{
+    auto camera = m_activeCamera.lock();
+    if (!camera) return;
 
     // Helper lambda for radio buttons
     auto ModeRadio = [&](const char* label, CameraControlMode mode) {
@@ -596,8 +610,6 @@ void CameraController::DrawDebugGUI()
         }
         if (ImGui::Button("Stop")) StopSequence();
     }
-
-    ImGui::End();
 }
 
 CameraController::SequenceTimeInfo CameraController::GetSequenceProgress() const

@@ -5,6 +5,7 @@
 #include <vector>
 #include <functional>
 #include <algorithm>
+#include "DebugUI.h"
 
 // Forward declaration
 class Camera;
@@ -145,6 +146,8 @@ private:
     void UpdateFreeCamera(float dt, std::shared_ptr<Camera>& camera);
     void UpdateOrbitCamera(float dt, std::shared_ptr<Camera>& camera);
 
+    void DrawDebugPanel();
+
     // --- Math Helpers (Static/Pure) ---
     //static float ApplyEasing(float t, EasingType type);
     static DirectX::XMFLOAT3 LerpFloat3(const DirectX::XMFLOAT3& start, const DirectX::XMFLOAT3& end, float t);
@@ -207,4 +210,10 @@ private:
     float m_trauma = 0.0f;
     float m_traumaDecay = 1.5f; // Seberapa cepat getaran hilang per detik
     DirectX::XMFLOAT3 m_shakeOffset = { 0.0f, 0.0f, 0.0f };
+
+#if defined(_DEBUG)
+    // Keeps the "Camera Controller" tab registered for the life of this singleton.
+    // Declared last: destroyed first, before any member the callback reads.
+    DebugPanelHandle m_debugPanel{};
+#endif
 };
