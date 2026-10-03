@@ -216,6 +216,11 @@ SceneGame::SceneGame()
     m_whiteSprite = std::make_unique<Sprite>(Graphics::Instance().GetDevice(), "Data/Sprite/Scene Game/White.png");
     EffectManager::Instance().PreloadEffect("Data/Effect/Hit.efk");
     EffectManager::Instance().PreloadEffect("Data/Effect/FakeBossPoison.efk");
+
+#if defined(_DEBUG)
+    // Capturing `this` is safe: the handle is a member and dies with this scene.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Stage Debug Inspector", [this]() { DrawDebugPanel(); });
+#endif
 }
 
 SceneGame::~SceneGame()
@@ -1036,7 +1041,10 @@ void SceneGame::Render(float elapsedTime, Camera* camera)
         m_postProcess->EndCapture(renderTime);
     }
 
+#if !defined(_DEBUG)
+    // Release keeps the floating window until ImGui is removed (beta).
     DrawGUI();
+#endif
 
     if (m_dialogueBox)
     {
@@ -1169,8 +1177,15 @@ void SceneGame::DrawGUI()
 {
     if (!m_stage) return;
 
-    // --- FIX: Create the actual ImGui Window ---
     ImGui::Begin("Stage Debug Inspector");
+    DrawDebugPanel();
+    ImGui::End();
+}
+
+void SceneGame::DrawDebugPanel()
+{
+    // Why: the stage is destroyed in the Navi defeat sequence while this scene still lives.
+    if (!m_stage) return;
 
     ImGui::Spacing();
     if (ImGui::CollapsingHeader("Debug Line Transform", ImGuiTreeNodeFlags_DefaultOpen))
@@ -1270,10 +1285,8 @@ void SceneGame::DrawGUI()
 
         ImGui::Unindent();
     }
-
-    // --- FIX: End the ImGui Window ---
-    ImGui::End(); 
 }
+
 
 void SceneGame::OnResize(int width, int height)
 {

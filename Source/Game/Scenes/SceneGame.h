@@ -18,6 +18,7 @@
 #include "UberShader.h"
 #include "UIDialogueBox.h"
 #include "UIPause.h"
+#include "DebugUI.h"
 
 // ==========================================
 // FORWARD DECLARATIONS
@@ -73,6 +74,8 @@ private:
     };
 
     void RenderScene(float elapsedTime, Camera* camera);
+
+    void DrawDebugPanel();
 
     struct PostProcessState {
         bool MasterEnabled{ true };
@@ -202,4 +205,10 @@ private:
     DirectX::XMFLOAT3 m_fakeBossEffectRotation{ 0.000f, 25.000f, 0.000f };
     DirectX::XMFLOAT3 m_cinematicStartTarget{ 0.0f, 0.0f, 0.0f };
     DirectX::XMFLOAT3 m_cinematicEndTarget{ 0.0f, 0.0f, 0.0f };
+
+#if defined(_DEBUG)
+    // Keeps the "Stage Debug Inspector" tab registered while this scene lives.
+    // Declared last: destroyed first, before any member the callback reads.
+    DebugPanelHandle m_debugPanel{};
+#endif
 };
