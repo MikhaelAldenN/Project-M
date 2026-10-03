@@ -24,7 +24,6 @@ public:
     void Update(float elapsedTime) override;
     void Render(float dt, Camera* camera = nullptr) override;
     void DrawGUI() override;
-    void OnResize(int width, int height) override;
 
     Camera* GetCamera() const { return camera.get(); }
 
