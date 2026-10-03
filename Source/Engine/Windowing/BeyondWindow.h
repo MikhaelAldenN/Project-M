@@ -33,7 +33,7 @@ namespace Beyond
 
         void SetTitle(const char* title);
         void SetAlwaysOnTop(bool isTop);
-        void SetDraggable(bool isDraggable) { m_isDraggable = isDraggable; }
+        void SetDraggable(bool isDraggable);
         bool IsDraggable() const { return m_isDraggable; }
 
         void SetPriority(int priority) { m_priority = priority; }

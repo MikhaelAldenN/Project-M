@@ -222,6 +222,22 @@ namespace Beyond
         if (m_sdlWindow) SDL_SetWindowAlwaysOnTop(m_sdlWindow, isTop);
     }
 
+    void Window::SetDraggable(bool isDraggable)
+    {
+        m_isDraggable = isDraggable;
+        if (!m_sdlWindow) return;
+
+        // Why: while a hit-test callback is installed, SDL treats every point the callback
+        // calls "normal" as client area, so the OS never sees the resize border.
+        // A non-draggable window therefore runs without a callback (null = OS default).
+        if (!SDL_SetWindowHitTest(m_sdlWindow, isDraggable ? WindowHitTestCallback : nullptr, this))
+        {
+            OutputDebugStringA("[BeyondWindow] SDL_SetWindowHitTest failed: ");
+            OutputDebugStringA(SDL_GetError());
+            OutputDebugStringA("\n");
+        }
+    }
+
     void Window::SetClickThrough(bool clickThrough)
     {
         m_isClickThrough = clickThrough;

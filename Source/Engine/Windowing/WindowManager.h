@@ -8,6 +8,7 @@
 
 // Forward Declaration
 class Scene;
+class GameCanvas;
 
 class WindowManager
 {
@@ -21,8 +22,10 @@ public:
 
     // --- CORE FUNCTIONS ---
     void Update(float dt);
-    void RenderAll(float dt, Scene* scene);
-    void HandleResize(SDL_Window* sdlWindow, int width, int height);
+    // `canvas` is borrowed for this call only. When not null, the main window's scene
+        // is drawn into it and then scaled into the window; null draws straight to the window.
+    void RenderAll(float dt, Scene* scene, const GameCanvas* canvas = nullptr);
+    void HandleResize(SDL_Window* sdlWindow, int width, int height);    
     void ClearAll();
 
     // --- USER FUNCTIONS ---

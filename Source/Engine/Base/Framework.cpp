@@ -131,9 +131,15 @@ Beyond::Window* Framework::GetMainWindow() const
 
 void Framework::Render(float elapsedTime)
 {
-    WindowManager::Instance().RenderAll(elapsedTime, scene.get());
+    // SceneBoss is the one scene that skips the canvas: its main window covers the
+    // monitor and it treats the desktop as the world.
+    const bool isSceneBoss{ dynamic_cast<SceneBoss*>(scene.get()) != nullptr };
+    const GameCanvas* canvas{ isSceneBoss ? nullptr : m_gameCanvas.get() };
+
+    WindowManager::Instance().RenderAll(elapsedTime, scene.get(), canvas);
 
 #if defined(_DEBUG)
+
     // Drawn after every game window so it never affects their render state.
     if (m_debugHost)
     {
