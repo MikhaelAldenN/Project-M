@@ -9,17 +9,10 @@ namespace {
 
 SceneTitle::SceneTitle()
 {
+    // Why only "show": the title is entered from SceneBoss, which hides the main
+    // window during Windowkill. Window size and style belong to the engine, not the scene.
     if (auto window{ Framework::Instance()->GetMainWindow() }) {
-        SDL_Window* sdlWin = window->GetSDLWindow();
-
-        SDL_ShowWindow(sdlWin);
-        SDL_SetWindowBordered(sdlWin, false);
-        SDL_SetWindowResizable(sdlWin, false);
-
-        int fullW = GetSystemMetrics(SM_CXSCREEN);
-        int fullH = GetSystemMetrics(SM_CYSCREEN);
-        SDL_SetWindowSize(sdlWin, fullW, fullH);
-        SDL_SetWindowPosition(sdlWin, 0, 0);
+        SDL_ShowWindow(window->GetSDLWindow());
     }
 
     camera = std::make_unique<Camera>();
@@ -495,11 +488,6 @@ void SceneTitle::ExecuteMenuSelection() noexcept
     default:
         break;
     }
-}
-
-void SceneTitle::OnResize(int width, int height)
-{
-    if (postProcess) postProcess->OnResize(width, height);
 }
 
 // =========================================================

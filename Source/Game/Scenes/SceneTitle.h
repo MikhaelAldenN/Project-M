@@ -35,7 +35,6 @@ public:
     // Core Loop
     void Update(float elapsedTime) override;
     void Render(float dt, Camera* camera = nullptr) override;
-    void OnResize(int width, int height) override;
 
     // Debug / Tools
     void DrawGUI() override;
