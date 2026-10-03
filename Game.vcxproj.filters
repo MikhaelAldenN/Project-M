@@ -351,6 +351,9 @@
     <ClCompile Include="Source\Engine\Windowing\DebugHostWindow.cpp">
       <Filter>Source\Engine\Windowing</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Windowing\DebugUI.cpp">
+      <Filter>Source\Engine\Windowing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\BasicShader.h">
@@ -724,6 +727,9 @@
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Windowing\DebugHostWindow.h">
+      <Filter>Source\Engine\Windowing</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Windowing\DebugUI.h">
       <Filter>Source\Engine\Windowing</Filter>
     </ClInclude>
   </ItemGroup>

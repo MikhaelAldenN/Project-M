@@ -165,6 +165,7 @@
     <ClInclude Include="Source\Engine\VFX\JuiceEngine.h" />
     <ClInclude Include="Source\Engine\Windowing\BeyondWindow.h" />
     <ClInclude Include="Source\Engine\Windowing\DebugHostWindow.h" />
+    <ClInclude Include="Source\Engine\Windowing\DebugUI.h" />
     <ClInclude Include="Source\Engine\Windowing\WindowManager.h" />
     <ClInclude Include="Source\Engine\Windowing\WindowPool.h" />
     <ClInclude Include="Source\Engine\Windowing\WindowShatter.h" />
@@ -279,6 +280,7 @@
     <ClCompile Include="Source\Engine\VFX\JuiceEngine.cpp" />
     <ClCompile Include="Source\Engine\Windowing\BeyondWindow.cpp" />
     <ClCompile Include="Source\Engine\Windowing\DebugHostWindow.cpp" />
+    <ClCompile Include="Source\Engine\Windowing\DebugUI.cpp" />
     <ClCompile Include="Source\Engine\Windowing\WindowManager.cpp" />
     <ClCompile Include="Source\Engine\Windowing\WindowPool.cpp" />
     <ClCompile Include="Source\Engine\Windowing\WindowShatter.cpp" />

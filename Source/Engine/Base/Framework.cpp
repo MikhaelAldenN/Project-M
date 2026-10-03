@@ -1,4 +1,5 @@
 ﻿#include "Framework.h"
+#include "DebugUI.h"
 
 // ========================================================
 // Jembatan Win32 ke ImGui
@@ -66,6 +67,7 @@ Framework::Framework()
         WindowManager::Instance().SetImGuiOnMainWindow(false);
         // Why: showing a new window takes focus; give it back to the game.
         SDL_RaiseWindow(mainWin->GetSDLWindow());
+        RegisterSampleDebugPanels();
     }
     else
     {
@@ -122,6 +124,10 @@ void Framework::Render(float elapsedTime)
     if (m_debugHost)
     {
         m_debugHost->BeginRender();
+        
+        // Last ImGui submission of the frame, after every scene has issued its own.
+        DebugUI::Instance().Draw();
+        
         // The frame's ImGui draw data goes to the debug window's back buffer.
         ImGuiRenderer::Render(Graphics::Instance().GetDeviceContext());
         m_debugHost->Present();
@@ -248,3 +254,31 @@ bool Framework::HandleDebugHostEvent([[maybe_unused]] const SDL_Event& event)
 #endif
     return false;
 }
+
+#if defined(_DEBUG)
+void Framework::RegisterSampleDebugPanels()
+{
+    // Column sample: a stateless panel.
+    m_sampleColumnPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::column, "Frame", []()
+        {
+            const float fps{ ImGui::GetIO().Framerate }; // ImGui's rolling average
+            ImGui::Text("%.2f ms", fps > 0.0f ? 1000.0f / fps : 0.0f);
+            ImGui::Text("%.1f FPS", fps);
+        });
+
+    // Tab sample: a panel that reads its owner's state. Capturing `this` is safe
+    // because the handle is a member and is destroyed together with this object.
+    m_sampleTabPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Framework", [this]()
+        {
+            const Beyond::Window* mainWin{ GetMainWindow() };
+            if (!mainWin)
+            {
+                ImGui::TextUnformatted("Main window: none");
+                return;
+            }
+
+            ImGui::Text("Main window: %d x %d", mainWin->GetWidth(), mainWin->GetHeight());
+            ImGui::Text("Scene: %s", scene ? "loaded" : "none");
+        });
+}
+#endif

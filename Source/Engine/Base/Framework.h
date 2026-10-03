@@ -21,6 +21,8 @@
 #include <SDL3/SDL.h>
 #include "AttackParamManager.h"
 #include "DebugHostWindow.h"
+#include "DebugUI.h"
+
 
 class Framework
 {
@@ -47,6 +49,12 @@ public:
 private:
     void CalculateFrameStats(float dt);
 
+#if defined(_DEBUG)
+    // Registers the two placeholder panels that prove the DebugUI flow.
+    void RegisterSampleDebugPanels();
+#endif
+
+
     static Framework* pInstance;
     HighResolutionTimer timer;
 
@@ -57,6 +65,11 @@ private:
     // Created after Graphics::Initialize(), hence a pointer and not a direct member.
     // Declared last: destroyed after ~Framework's body, so after ImGui is finalized.
     std::unique_ptr<DebugHostWindow> m_debugHost;
+
+    // Placeholder panels; replace with real ones in step 2.
+    DebugPanelHandle m_sampleColumnPanel;
+    DebugPanelHandle m_sampleTabPanel;
+
 #endif
 
 };
