@@ -1121,14 +1121,10 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
                 // --- TOMBOL HEAL & RESPAWN BOSS ---
                 if (ImGui::Button("Heal Boss to Full", ImVec2(180.0f, 30.0f))) {
-                    if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase())) {
-                        normalPhase->SetHP(normalPhase->GetMaxHP());
-                        AddLog("Boss healed to full HP.");
-                    }
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Respawn Boss", ImVec2(180.0f, 30.0f))) {
-                    if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase())) {
+                    ImGui::Separator();
+
+                    if (ImGui::Button("Respawn Boss", ImVec2(180.0f, 30.0f))) {
+                        if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase())) {
                         // Hapus logika savedParams, cukup buat ulang Phase 1 yang bersih
                         m_navi->ChangePhase(std::make_unique<BossPhase01>(m_player.get()));
                         AddLog("Boss respawned (Phase 1 Normal).");
@@ -1389,22 +1385,6 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                     if (wkPhase->IsPlayerCaged()) {
                         ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "AI will stay gated until the cage breaks.");
                     }
-
-                        ImGui::Separator();
-                        ImGui::PushID("WindowkillDamage");
-
-                        // [FIX] Mengambil parameter dari struct baru
-                        auto& bp = AttackParamManager::Instance().GetBlasterParams();
-                        auto& bounce = AttackParamManager::Instance().GetBouncingParams();
-                        auto& boom = AttackParamManager::Instance().GetBoomerangParams();
-                        auto& spear = AttackParamManager::Instance().GetUndyneParams();
-
-                        ImGui::SliderInt("Orbital Laser Damage", &bp.beamDamage, 1, 200);
-                        ImGui::SliderInt("Targeted Laser Damage", &bp.beamDamage, 1, 200); // [FIX] Menggunakan bp karena digabung
-                        ImGui::SliderInt("Bouncing Window Damage", &bounce.damage, 1, 200);
-                        ImGui::SliderInt("Boomerang Damage", &boom.damage, 1, 200);
-                        ImGui::SliderInt("Undyne Spear Damage", &spear.damage, 1, 500);
-                        ImGui::PopID();
                 }
 
                 ImGui::PushID("OrbitalLaserBlock");
@@ -1447,17 +1427,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                         ImGui::SliderFloat("Spawn Spread (Width)", &bp.spawnSpreadX, 10.0f, 100.0f);
                         ImGui::SliderFloat("Charge Delay (Telegraph)", &bp.chargeDelay, 0.1f, 3.0f, "%.2f sec");
                         ImGui::SliderFloat("Fire Duration", &bp.fireDuration, 0.1f, 3.0f, "%.2f sec");
-                    }
-
-                    if (ImGui::CollapsingHeader("Targeted Blaster Config", ImGuiTreeNodeFlags_DefaultOpen)) {
-                        auto& tParams = AttackParamManager::Instance().GetBlasterParams(); // [FIX] Disambungkan ke BlasterParams krn struct-nya sama
-                        ImGui::SliderInt("Targeted Count", &tParams.spawnCount, 1, 20);
-                        ImGui::DragFloat("Targeted Spawn Delay", &tParams.spawnDelay, 0.05f, 0.05f, 2.0f, "%.2f sec");
-                        ImGui::DragFloat("Targeted Drop In", &tParams.dropInDuration, 0.05f, 0.1f, 2.0f, "%.2f sec");
-                        ImGui::DragFloat("Targeted Charge", &tParams.chargeDelay, 0.05f, 0.1f, 2.0f, "%.2f sec");
-                        ImGui::DragFloat("Targeted Fire Dur", &tParams.fireDuration, 0.05f, 0.1f, 3.0f, "%.2f sec");
-                        // [FIX] Parameter Z fixed dan Hitbox Width dihapus
-                        ImGui::SliderInt("Targeted Damage per Tick", &tParams.beamDamage, 1, 100);
+                        ImGui::DragFloat("Targeted Drop In", &bp.dropInDuration, 0.05f, 0.1f, 2.0f, "%.2f sec");
                     }
                     ImGui::PopID();
 
