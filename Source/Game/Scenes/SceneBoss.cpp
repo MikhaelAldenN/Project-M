@@ -937,25 +937,12 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
             if (ImGui::CollapsingHeader("System Metrics & Time", ImGuiTreeNodeFlags_DefaultOpen))
             {
-                const float fps = ImGui::GetIO().Framerate;
-                ImVec4 fpsColor = (fps < 40.0f) ? ImVec4(1, 0, 0, 1) : (fps < 50.0f) ? ImVec4(1, 1, 0, 1) : ImVec4(0, 1, 0, 1);
-                ImGui::TextColored(fpsColor, "FPS: %.1f (%.2f ms) [cap: 60]", fps, 1000.0f / fps);
-
-                static float s_frametimes[90] = {};
-                static int   s_offset = 0;
-                s_frametimes[s_offset] = 1000.0f / fps;
-                s_offset = (s_offset + 1) % IM_ARRAYSIZE(s_frametimes);
-                ImGui::PlotLines("Frametime", s_frametimes, IM_ARRAYSIZE(s_frametimes), s_offset, nullptr, 0.0f, 33.0f, ImVec2(0, 50));
-
-                ImGui::Separator();
                 ImGui::SliderFloat("Time Scale", &m_timeScale, 0.1f, 3.0f, "%.1fx");
                 if (ImGui::Button("Reset Time (1.0x)")) m_timeScale = 1.0f;
             }
 
             if (ImGui::CollapsingHeader("Window Tracking Config"))
             {
-                ImGui::Text("Active Windows: %zu", m_windowSystem->GetWindows().size());
-
                 if (ImGui::Button("Spawn Dummy Window", ImVec2(-1.0f, 30.0f))) SpawnDebugWindow();
                 if (ImGui::Button("Spawn Transparent (Hollow)", ImVec2(-1.0f, 30.0f))) SpawnTransparentWindow(0.0f, "Hollow");
                 if (ImGui::Button("Spawn Transparent (Solid)", ImVec2(-1.0f, 30.0f))) SpawnTransparentWindow(1.0f / 255.0f, "Solid");
@@ -1418,37 +1405,10 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                         ImGui::SliderInt("Boomerang Damage", &boom.damage, 1, 200);
                         ImGui::SliderInt("Undyne Spear Damage", &spear.damage, 1, 500);
                         ImGui::PopID();
-                    }
+                }
 
-                if (ImGui::CollapsingHeader("System Metrics & Time", ImGuiTreeNodeFlags_DefaultOpen))
-                {
-                    const float fps = ImGui::GetIO().Framerate;
-                    ImVec4 fpsColor = (fps < 40.0f) ? ImVec4(1, 0, 0, 1) : (fps < 50.0f) ? ImVec4(1, 1, 0, 1) : ImVec4(0, 1, 0, 1);
-                    ImGui::TextColored(fpsColor, "FPS: %.1f (%.2f ms) [cap: 60]", fps, 1000.0f / fps);
-
-                    static float s_frametimes[90] = {};
-                    static int   s_offset = 0;
-                    s_frametimes[s_offset] = 1000.0f / fps;
-                    s_offset = (s_offset + 1) % IM_ARRAYSIZE(s_frametimes);
-                    ImGui::PlotLines("Frametime", s_frametimes, IM_ARRAYSIZE(s_frametimes), s_offset, nullptr, 0.0f, 33.0f, ImVec2(0, 50));
-
-                    int activeWins = 0;
-                    int sleepingWins = 0;
-                    for (const auto& tw : m_windowSystem->GetWindows()) {
-                        if (tw->isActive) activeWins++;
-                        else sleepingWins++;
-                    }
-
-                    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Active OS Windows: %d", activeWins);
-                    ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Pooled (Sleeping) Windows: %d", sleepingWins);
-
-                        ImGui::Separator();
-                        ImGui::SliderFloat("Time Scale", &m_timeScale, 0.1f, 3.0f, "%.1fx");
-                        if (ImGui::Button("Reset Time (1.0x)")) m_timeScale = 1.0f;
-                    }
-
-                    ImGui::PushID("OrbitalLaserBlock");
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
+                ImGui::PushID("OrbitalLaserBlock");
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
 
                     // [FIX MUTLAK] MENGGUNAKAN ADDATTACK DARI FSM
