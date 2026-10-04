@@ -147,6 +147,15 @@ int main(int argc, char* argv[])
                 // Debug host window events never reach game logic.
                 if (framework && framework->HandleDebugHostEvent(event)) continue;
 
+#if defined(_DEBUG)
+                // F11 switches the main window between windowed and borderless.
+                // Debug only: a shipped build always covers the display.
+                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_F11 && !event.key.repeat)
+                {
+                    if (framework) framework->ToggleMainWindowMode();
+                }
+#endif
+
                 if (event.type == SDL_EVENT_QUIT) running = false;                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
                 if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
                 {

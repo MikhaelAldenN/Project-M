@@ -420,18 +420,10 @@ void BossPhase02::Update(float dt, Boss* boss) {
             return;
         }
 
-        // Main window ke depan
-        int screenW = GetSystemMetrics(SM_CXSCREEN);
-        int screenH = GetSystemMetrics(SM_CYSCREEN);
-
         Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
         if (mainWindow && mainWindow->GetSDLWindow()) {
             SDL_Window* sdlWin = mainWindow->GetSDLWindow();
             SDL_ShowWindow(sdlWin);
-            SDL_SetWindowBordered(sdlWin, false);
-            SDL_SetWindowResizable(sdlWin, false);
-            SDL_SetWindowPosition(sdlWin, 0, 0);
-            SDL_SetWindowSize(sdlWin, screenW, screenH + 1);
             SDL_SetWindowAlwaysOnTop(sdlWin, true);
 
             mainWindow->SetPriority(0);

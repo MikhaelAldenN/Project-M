@@ -42,6 +42,20 @@ public:
     // Helper untuk mengambil Main Window (Window index 0)
     Beyond::Window* GetMainWindow() const;
 
+    // How the main window occupies the desktop. The game image is always the 16:9
+    // canvas, letterboxed into whatever size the window has.
+    enum class WindowMode
+    {
+        windowed,   // bordered, resizable, free size (Debug default)
+        borderless, // no border, covers the primary display (Release default)
+    };
+
+    // The only place that changes the main window's border, size and position.
+    // Scenes and phases must not call SDL for that themselves.
+    void SetMainWindowMode(WindowMode mode);
+    [[nodiscard]] WindowMode GetMainWindowMode() const { return m_mainWindowMode; }
+    void ToggleMainWindowMode();
+
     // The canvas every scene is drawn into. Null only when the canvas could not be
     // created; scenes then draw straight to the main window.
     [[nodiscard]] const GameCanvas* GetActiveCanvas() const;
@@ -72,6 +86,8 @@ private:
 
     std::unique_ptr<Scene> scene;
     std::unique_ptr<Scene> nextScene;
+
+    WindowMode m_mainWindowMode{ WindowMode::windowed };
 
     // Off-screen 1920x1080 target that scenes draw into (see GameCanvas.h).
     // Null if its GPU resources could not be created.

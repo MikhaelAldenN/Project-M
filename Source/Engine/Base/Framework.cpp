@@ -27,6 +27,22 @@ LRESULT CALLBACK ImGuiHookWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 Framework* Framework::pInstance = nullptr;
 
+namespace
+{
+    // Windowed mode: starting size and position, and the smallest size the user can drag to.
+    constexpr int k_windowedWidth{ 1600 };
+    constexpr int k_windowedHeight{ 900 };
+    constexpr int k_windowedX{ 5 };
+    constexpr int k_windowedY{ 35 };
+    constexpr int k_minWindowWidth{ 640 };
+    constexpr int k_minWindowHeight{ 360 };
+
+    // Borderless mode is one row taller than the display. Carried over unchanged from
+    // the per-scene code this replaces (screenH + 1); the original reason is not
+    // documented, so it is kept until proven unnecessary.
+    constexpr int k_borderlessExtraHeight{ 1 };
+}
+
 Framework::Framework()
 {
     pInstance = this;
@@ -41,12 +57,14 @@ Framework::Framework()
     mainWin->SetPriority(0);
     mainWin->SetDraggable(false);
 
+    // Why before ShowWindow: the window appears in its final shape, without a
+    // visible jump from the creation size.
+#if defined(_DEBUG)
+    SetMainWindowMode(WindowMode::windowed);
+#else
+    SetMainWindowMode(WindowMode::borderless);
+#endif
     SDL_ShowWindow(mainWin->GetSDLWindow());
-    // Tambahkan flag Resizable agar bisa di-drag ujungnya
-    SDL_SetWindowResizable(mainWin->GetSDLWindow(), true);
-    SDL_SetWindowBordered(mainWin->GetSDLWindow(), true);
-    //SDL_SetWindowPosition(mainWin->GetSDLWindow(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-    SDL_SetWindowPosition(mainWin->GetSDLWindow(), 5, 35);
 
     // Posisikan di tengah saat awal
 
@@ -128,6 +146,49 @@ void Framework::ChangeScene(std::unique_ptr<Scene> newScene) { nextScene = std::
 Beyond::Window* Framework::GetMainWindow() const
 {
     return WindowManager::Instance().GetWindowByIndex(0);
+}
+
+void Framework::SetMainWindowMode(WindowMode mode)
+{
+    Beyond::Window* mainWin{ GetMainWindow() };
+    SDL_Window* sdlWin{ mainWin ? mainWin->GetSDLWindow() : nullptr };
+    if (!sdlWin) return;
+
+    switch (mode)
+    {
+    case WindowMode::borderless:
+    {
+        SDL_Rect display{};
+        if (!SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &display))
+        {
+            OutputDebugStringA("[Framework] SDL_GetDisplayBounds failed, window mode unchanged: ");
+            OutputDebugStringA(SDL_GetError());
+            OutputDebugStringA("\n");
+            return;
+        }
+        SDL_SetWindowResizable(sdlWin, false);
+        SDL_SetWindowBordered(sdlWin, false);
+        SDL_SetWindowPosition(sdlWin, display.x, display.y);
+        SDL_SetWindowSize(sdlWin, display.w, display.h + k_borderlessExtraHeight);
+        break;
+    }
+    case WindowMode::windowed:
+        SDL_SetWindowBordered(sdlWin, true);
+        SDL_SetWindowResizable(sdlWin, true);
+        SDL_SetWindowMinimumSize(sdlWin, k_minWindowWidth, k_minWindowHeight);
+        SDL_SetWindowSize(sdlWin, k_windowedWidth, k_windowedHeight);
+        SDL_SetWindowPosition(sdlWin, k_windowedX, k_windowedY);
+        break;
+    }
+
+    m_mainWindowMode = mode;
+}
+
+void Framework::ToggleMainWindowMode()
+{
+    SetMainWindowMode(m_mainWindowMode == WindowMode::windowed
+        ? WindowMode::borderless
+        : WindowMode::windowed);
 }
 
 const GameCanvas* Framework::GetActiveCanvas() const
