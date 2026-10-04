@@ -77,8 +77,26 @@ private:
     void CalculateFrameStats(float dt);
 
 #if defined(_DEBUG)
-    // Registers the two placeholder panels that prove the DebugUI flow.
-    void RegisterDebugMenuBar(); 
+    // Scenes the debug window's Scene menu can load.
+    enum class DebugScene
+    {
+        none, // no request pending / scene type not recognised
+        intro,
+        title,
+        game,
+        sandbox,
+        boss,
+    };
+
+    // Registers Framework's part of the debug window's menu bar.
+    void RegisterDebugMenuBar();
+
+    // Which DebugScene the current scene is; none if there is no scene.
+    [[nodiscard]] DebugScene IdentifyDebugScene() const;
+
+    // Destroys the current scene, then creates the requested one. Does nothing
+    // if no request is pending. Must run outside any DebugUI callback.
+    void ProcessDebugSceneRequest();
 #endif
 
     static Framework* pInstance;
@@ -101,6 +119,9 @@ private:
     // Created after Graphics::Initialize(), hence a pointer and not a direct member.
     // Declared last: destroyed after ~Framework's body, so after ImGui is finalized.
     std::unique_ptr<DebugHostWindow> m_debugHost;
+
+    // Set by the Scene menu, consumed at the start of the next Update.
+    DebugScene m_debugSceneRequest{ DebugScene::none };
 
     // Declared last: unregistered before anything its callback could read is destroyed.
     DebugPanelHandle m_menuBarPanel;

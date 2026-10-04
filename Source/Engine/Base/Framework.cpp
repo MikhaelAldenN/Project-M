@@ -254,6 +254,10 @@ void Framework::Render(float elapsedTime)
 
 void Framework::Update(float elapsedTime)
 {
+#if defined(_DEBUG)
+    ProcessDebugSceneRequest();
+#endif
+
     if (nextScene)
     {
         scene = std::move(nextScene); // the previous scene's destructor runs here
@@ -390,8 +394,37 @@ bool Framework::HandleDebugHostEvent([[maybe_unused]] const SDL_Event& event)
 #if defined(_DEBUG)
 void Framework::RegisterDebugMenuBar()
 {
-    m_menuBarPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::menuBar, "Framework", []()
+    // Capturing `this` is safe: the handle is a member and is destroyed with this object.
+    m_menuBarPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::menuBar, "Framework", [this]()
         {
+            if (ImGui::BeginMenu("Scene"))
+            {
+                const DebugScene current{ IdentifyDebugScene() };
+
+                // Why only store the request: a scene constructor registers a panel,
+                // which is not allowed while panel callbacks are running.
+                const auto sceneItem{ [this, current](const char* label, DebugScene target)
+                    {
+                        if (ImGui::MenuItem(label, nullptr, current == target))
+                        {
+                            m_debugSceneRequest = target;
+                        }
+                    } };
+
+                sceneItem("Intro", DebugScene::intro);
+                sceneItem("Title", DebugScene::title);
+                sceneItem("Game", DebugScene::game);
+                sceneItem("Sandbox", DebugScene::sandbox);
+                sceneItem("Boss", DebugScene::boss);
+
+                ImGui::Separator();
+                if (ImGui::MenuItem("Reload", nullptr, false, current != DebugScene::none))
+                {
+                    m_debugSceneRequest = current;
+                }
+                ImGui::EndMenu();
+            }
+
             // Why a fixed sample: the text keeps one position while its digits change.
             constexpr const char* widestText{ "000.00 ms  0000.0 FPS" };
             const float textWidth{ ImGui::CalcTextSize(widestText).x };
@@ -400,5 +433,40 @@ void Framework::RegisterDebugMenuBar()
             const float fps{ ImGui::GetIO().Framerate }; // ImGui's rolling average
             ImGui::Text("%6.2f ms  %6.1f FPS", fps > 0.0f ? 1000.0f / fps : 0.0f, fps);
         });
+}
+
+Framework::DebugScene Framework::IdentifyDebugScene() const
+{
+    const Scene* const current{ scene.get() };
+    if (dynamic_cast<const SceneIntro*>(current)) return DebugScene::intro;
+    if (dynamic_cast<const SceneTitle*>(current)) return DebugScene::title;
+    if (dynamic_cast<const SceneGame*>(current)) return DebugScene::game;
+    if (dynamic_cast<const SceneSandbox*>(current)) return DebugScene::sandbox;
+    if (dynamic_cast<const SceneBoss*>(current)) return DebugScene::boss;
+    return DebugScene::none;
+}
+
+void Framework::ProcessDebugSceneRequest()
+{
+    if (m_debugSceneRequest == DebugScene::none) return;
+
+    const DebugScene request{ m_debugSceneRequest };
+    m_debugSceneRequest = DebugScene::none;
+
+    // Why destroy first: scenes own OS windows and drive singletons (WindowManager,
+    // audio, effects); the old one must release them before the new one claims them.
+    // A scene queued through ChangeScene is dropped, the debug request wins.
+    nextScene.reset();
+    scene.reset();
+
+    switch (request)
+    {
+    case DebugScene::intro:   scene = std::make_unique<SceneIntro>(); break;
+    case DebugScene::title:   scene = std::make_unique<SceneTitle>(); break;
+    case DebugScene::game:    scene = std::make_unique<SceneGame>(); break;
+    case DebugScene::sandbox: scene = std::make_unique<SceneSandbox>(); break;
+    case DebugScene::boss:    scene = std::make_unique<SceneBoss>(); break;
+    case DebugScene::none:    break;
+    }
 }
 #endif
