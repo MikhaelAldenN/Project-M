@@ -4,15 +4,38 @@
 #include <random>
 #include <algorithm>
 #include <windows.h> 
+#include "Framework.h"
+#include "Engine/Common/Constants.h"
+#include "Engine/Common/FitRect.h"
+
+namespace
+{
+    // Desktop rect the arena maps onto: the same rect WindowTrackingSystem places its
+    // windows against, so shatter windows line up with them.
+    Beyond::PixelRect GetArenaRect()
+    {
+        const Framework* framework{ Framework::Instance() };
+        const Beyond::PixelRect rect{ framework ? framework->GetGameImageRect() : Beyond::PixelRect{} };
+        if (rect.width > 0 && rect.height > 0)
+        {
+            return rect;
+        }
+        // Keeps the math valid if neither the window nor the display can be queried.
+        return Beyond::PixelRect{ 0, 0, Beyond::Config::CANVAS_WIDTH, Beyond::Config::CANVAS_HEIGHT };
+    }
+
+    // Desktop pixels per canvas pixel. Sizes and speeds in this file are canvas pixels.
+    float GetDesktopScale(const Beyond::PixelRect& arenaRect)
+    {
+        return static_cast<float>(arenaRect.height) / static_cast<float>(Beyond::Config::CANVAS_HEIGHT);
+    }
+}
 
 WindowShatter::WindowShatter(const char* title, DirectX::XMFLOAT2 startPos, DirectX::XMFLOAT2 velocity, int size, int priority)
     : m_width(static_cast<float>(size))
     , m_height(static_cast<float>(size))
     , m_title(title)
 {
-    m_screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    m_screenHeight = GetSystemMetrics(SM_CYSCREEN);
-
     m_isNativeWindow = false;
     m_window = nullptr;
     m_virtualWorldPos = { startPos.x, 0.0f, startPos.y };
@@ -78,11 +101,13 @@ void WindowShatter::UpdateNativeState(float dt)
 
     try {
         // [WRAPPED] Protect SDL calls
+        const float desktopScale{ GetDesktopScale(GetArenaRect()) };
+
         int curX, curY;
         SDL_GetWindowPosition(m_window->GetSDLWindow(), &curX, &curY);
 
-        int nextX = static_cast<int>(roundf(curX + m_physics.velocity.x * dt));
-        int nextY = static_cast<int>(roundf(curY + m_physics.velocity.y * dt));
+        int nextX = static_cast<int>(roundf(curX + m_physics.velocity.x * desktopScale * dt));
+        int nextY = static_cast<int>(roundf(curY + m_physics.velocity.y * desktopScale * dt));
 
         if (nextX != curX || nextY != curY)
         {
@@ -96,7 +121,8 @@ void WindowShatter::UpdateNativeState(float dt)
         if (m_width < 10.0f) m_width = 10.0f;
         if (m_height < 10.0f) m_height = 10.0f;
 
-        SDL_SetWindowSize(m_window->GetSDLWindow(), static_cast<int>(m_width), static_cast<int>(m_height));
+        SDL_SetWindowSize(m_window->GetSDLWindow(),
+            static_cast<int>(m_width * desktopScale), static_cast<int>(m_height * desktopScale));
 
         int realW, realH;
         SDL_GetWindowSize(m_window->GetSDLWindow(), &realW, &realH);
@@ -121,7 +147,11 @@ void WindowShatter::TransitionToNativeWindow()
     float screenX, screenY;
     ConvertWorldToScreen(m_virtualWorldPos, screenX, screenY);
 
-    m_window = WindowManager::Instance().CreateGameWindow(m_title.c_str(), (int)m_width, (int)m_height);
+    const float desktopScale{ GetDesktopScale(GetArenaRect()) };
+    const float desktopWidth{ m_width * desktopScale };
+    const float desktopHeight{ m_height * desktopScale };
+
+    m_window = WindowManager::Instance().CreateGameWindow(m_title.c_str(), (int)desktopWidth, (int)desktopHeight);
 
     if (m_window)
     {
@@ -136,8 +166,8 @@ void WindowShatter::TransitionToNativeWindow()
         // Border Aktif
         SDL_SetWindowBordered(m_window->GetSDLWindow(), true);
 
-        int finalX = (int)(screenX - (m_width * 0.5f));
-        int finalY = (int)(screenY - (m_height * 0.5f));
+        int finalX = (int)(screenX - (desktopWidth * 0.5f));
+        int finalY = (int)(screenY - (desktopHeight * 0.5f));
 
         SDL_SetWindowPosition(m_window->GetSDLWindow(), finalX, finalY);
 
@@ -157,6 +187,19 @@ void WindowShatter::WakeUp()
 {
     m_isSleeping = false;
     if (m_window) {
+        // Why re-placed here: the window was created hidden seconds ago, and the arena
+        // rect may have moved or changed size since (main window dragged or resized).
+        float screenX, screenY;
+        ConvertWorldToScreen(m_virtualWorldPos, screenX, screenY);
+
+        const float desktopScale{ GetDesktopScale(GetArenaRect()) };
+        const float desktopWidth{ m_width * desktopScale };
+        const float desktopHeight{ m_height * desktopScale };
+
+        SDL_SetWindowSize(m_window->GetSDLWindow(), (int)desktopWidth, (int)desktopHeight);
+        SDL_SetWindowPosition(m_window->GetSDLWindow(),
+            (int)(screenX - (desktopWidth * 0.5f)), (int)(screenY - (desktopHeight * 0.5f)));
+
         SDL_ShowWindow(m_window->GetSDLWindow());
     }
 }
@@ -193,11 +236,18 @@ void WindowShatter::EnforceScreenBounds()
 
     bool bounced = false;
 
-    if (x <= 0) { x = 0; m_physics.velocity.x *= -m_physics.bounceDamping; bounced = true; }
-    else if (x + realW >= m_screenWidth) { x = m_screenWidth - realW; m_physics.velocity.x *= -m_physics.bounceDamping; bounced = true; }
+    // Shards bounce off the edges of the arena rect, like every other sub-window.
+    const Beyond::PixelRect arena{ GetArenaRect() };
+    const int left{ arena.x };
+    const int top{ arena.y };
+    const int right{ arena.x + arena.width };
+    const int bottom{ arena.y + arena.height };
 
-    if (y <= 0) { y = 0; m_physics.velocity.y *= -m_physics.bounceDamping; bounced = true; }
-    else if (y + realH >= m_screenHeight) { y = m_screenHeight - realH; m_physics.velocity.y *= -m_physics.bounceDamping; bounced = true; }
+    if (x <= left) { x = left; m_physics.velocity.x *= -m_physics.bounceDamping; bounced = true; }
+    else if (x + realW >= right) { x = right - realW; m_physics.velocity.x *= -m_physics.bounceDamping; bounced = true; }
+
+    if (y <= top) { y = top; m_physics.velocity.y *= -m_physics.bounceDamping; bounced = true; }
+    else if (y + realH >= bottom) { y = bottom - realH; m_physics.velocity.y *= -m_physics.bounceDamping; bounced = true; }
 
     if (bounced) {
         SDL_SetWindowPosition(m_window->GetSDLWindow(), x, y);
@@ -207,8 +257,13 @@ void WindowShatter::EnforceScreenBounds()
 
 void WindowShatter::ConvertWorldToScreen(const DirectX::XMFLOAT3& worldPos, float& outX, float& outY) const
 {
-    outX = (m_screenWidth * 0.5f) + (worldPos.x * PIXEL_TO_UNIT_RATIO);
-    outY = (m_screenHeight * 0.5f) - (worldPos.z * PIXEL_TO_UNIT_RATIO);
+    // Same mapping as WindowTrackingSystem::WorldToScreenPos: world origin at the
+    // centre of the arena rect.
+    const Beyond::PixelRect arena{ GetArenaRect() };
+    const float desktopPixelsPerUnit{ PIXEL_TO_UNIT_RATIO * GetDesktopScale(arena) };
+
+    outX = static_cast<float>(arena.x) + (static_cast<float>(arena.width) * 0.5f) + (worldPos.x * desktopPixelsPerUnit);
+    outY = static_cast<float>(arena.y) + (static_cast<float>(arena.height) * 0.5f) - (worldPos.z * desktopPixelsPerUnit);
 }
 
 // =========================================================

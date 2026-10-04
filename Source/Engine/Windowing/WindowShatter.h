@@ -69,10 +69,9 @@ private:
     bool m_markedForDestroy = false;
     DirectX::XMFLOAT3 m_virtualWorldPos;
 
+    // Logical size in canvas pixels; the OS window is this times the desktop scale.
     float m_width = 0.0f;
     float m_height = 0.0f;
-    int m_screenWidth = 0;
-    int m_screenHeight = 0;
 
     static constexpr float MIN_SIZE = 150.0f;
     static constexpr float PIXEL_TO_UNIT_RATIO = 40.0f;
