@@ -1137,6 +1137,14 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
             {
                 ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "=== BOSS MASTER CONTROLS ===");
 
+                // Why: tuning is not saved from the panel; edit the file by hand, then reload.
+                // Attacks already running keep their own copy, only new ones use the reloaded values.
+                if (ImGui::Button("Reload AttackParams.json")) {
+                    const bool isLoaded{ AttackParamManager::Instance().Reload() };
+                    AddLog(isLoaded ? "AttackParams.json reloaded."
+                        : "AttackParams.json reload failed, params unchanged.");
+                }
+
                 // 1. Health Bar Player
                 float pHP = m_player->GetHP();
                 float pMaxHP = m_player->GetMaxHP();
