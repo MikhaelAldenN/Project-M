@@ -459,6 +459,14 @@ void Framework::ProcessDebugSceneRequest()
     nextScene.reset();
     scene.reset();
 
+    // Why: Windowkill hides the main window and only SceneTitle shows it again.
+    // Every scene picked from the menu must start with the window visible.
+    Beyond::Window* const mainWin{ GetMainWindow() };
+    if (mainWin && mainWin->GetSDLWindow())
+    {
+        SDL_ShowWindow(mainWin->GetSDLWindow());
+    }
+
     switch (request)
     {
     case DebugScene::intro:   scene = std::make_unique<SceneIntro>(); break;
