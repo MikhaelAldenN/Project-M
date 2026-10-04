@@ -1157,6 +1157,10 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
                         ImGui::ProgressBar(bHpProgress, ImVec2(-1.0f, 18.0f));
                         ImGui::PopStyleColor();
+                        // Why: 0 runs the real "HP depleted" path into the next phase.
+                        if (ImGui::SliderInt("Set boss HP", &bHP, 0, bMaxHP, "%d", ImGuiSliderFlags_AlwaysClamp)) {
+                            normalPhase->SetHP(bHP);
+                        }
                     }
                     else {
                         if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
@@ -1668,6 +1672,10 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
                             ImGui::ProgressBar(bHpProgress, ImVec2(-1.0f, 18.0f));
                             ImGui::PopStyleColor();
+                            // Why: 0 runs the real death sequence instead of a debug shortcut.
+                            if (ImGui::SliderInt("Set boss HP", &bHP, 0, bMaxHP, "%d", ImGuiSliderFlags_AlwaysClamp)) {
+                                wkPhase->SetHP(bHP);
+                            }
                         }
                         else {
                             ImGui::Text("Boss HP (Tracked): [Windowkill Phase Active]");
