@@ -64,7 +64,6 @@ private:
 
     // --- Debug & System Helpers ---
     void DrawDebugPanel();
-    void ResetEverything();
     void SpawnDebugWindow();
     void SpawnTransparentWindow(float bgAlpha, const std::string& typeSuffix);
     void AddLog(const std::string& message);

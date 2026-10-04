@@ -972,9 +972,8 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
             if (ImGui::CollapsingHeader("Window Tracking Config"))
             {
-                if (ImGui::Checkbox("[All] Toggle Topmost (triggers reset)", &m_topmostEnabled)) {
+                if (ImGui::Checkbox("Topmost", &m_topmostEnabled)) {
                     WindowManager::Instance().SetTopmost(m_topmostEnabled);
-                    ResetEverything();
                 }
 
                 if (m_navi) {
@@ -1013,7 +1012,6 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                     InitializeSubWindows();
                     m_spawnCount = 0;
                 }
-                if (ImGui::Button("HARD RESET", ImVec2(-1.0f, 40.0f))) ResetEverything();
                 ImGui::PopStyleColor();
             }
 
@@ -1089,10 +1087,9 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                 }
 
                 if (ImGui::CollapsingHeader("Wing Animation & Render")) {
-                    float p2u = wkPhase->GetPixelToUnit();
                     float gScale = wkPhase->GetWingGlobalScale();
-                    if (ImGui::SliderFloat("Pixel to Unit Ratio", &p2u, 1.0f, 100.0f)) wkPhase->SetScalingParams(p2u, gScale);
-                    if (ImGui::SliderFloat("Global Wing Scale", &gScale, 0.1f, 5.0f)) wkPhase->SetScalingParams(p2u, gScale);
+                    // Why GetPixelToUnit: the ratio is a fixed 40 and no longer tunable here.
+                    if (ImGui::SliderFloat("Global Wing Scale", &gScale, 0.1f, 5.0f)) wkPhase->SetScalingParams(wkPhase->GetPixelToUnit(), gScale);
 
                     int currentSeed = static_cast<int>(wkPhase->GetWingSeed());
                     if (ImGui::InputInt("Wing Seed", &currentSeed)) wkPhase->SetWingSeed(static_cast<unsigned int>(currentSeed));
@@ -1785,100 +1782,6 @@ void SceneBoss::AddLog(const std::string& message)
             CameraController::Instance().Update(0.016f);
         }
     }
-
-    void SceneBoss::ResetEverything()
-    {
-        CameraController::Instance().ClearCamera();
-
-    // 1. Destroy everything (Navi harus hancur sebelum WindowSystem)
-    m_navi.reset();
-    m_collisionManager.reset();
-    m_enemyManager.reset();
-    m_itemManager.reset();
-    m_stage.reset();
-    WindowShatterManager::Instance().Clear();
-    m_player->RestoreShootDelay();
-
-
-    if (m_windowSystem) m_windowSystem->ClearAll();
-    m_player.reset();
-
-    // 2. Rebuild PhysX
-    m_defaultMaterial.reset();
-    m_controllerManager.reset();
-    m_scene.reset();
-    m_dispatcher.reset();
-    m_physics.reset();
-    m_foundation.reset();
-    InitializePhysics();
-
-    // 3. Rebuild Window System & Camera
-    m_windowSystem = std::make_unique<WindowTrackingSystem>();
-    m_windowSystem->SetArenaRect(Framework::Instance()->GetGameImageRect());
-    m_windowSystem->SetFOV(k_fov);
-
-    const float unifiedHeight = m_windowSystem->GetUnifiedCameraHeight();
-    m_mainCamera = std::make_shared<Camera>();
-    m_mainCamera->SetPerspectiveFov(XMConvertToRadians(k_fov), 1920.0f / 1080.0f, k_camNear, k_camFar);
-    m_mainCamera->SetPosition(0.0f, unifiedHeight, 0.0f);
-    m_mainCamera->LookAt({ 0.0f, 0.0f, 0.0f });
-
-    CameraController::Instance().SetActiveCamera(m_mainCamera);
-    CameraController::Instance().SetControlMode(CameraControlMode::FixedStatic);
-    CameraController::Instance().SetFixedSetting(XMFLOAT3(0.0f, unifiedHeight, 0.0f));
-
-    // 4. Rebuild Player & Managers
-    ID3D11Device* device = Graphics::Instance().GetDevice();
-
-    m_player = std::make_unique<Player>();
-    m_player->InitPhysics(m_controllerManager.get(), m_defaultMaterial.get(), PlayerConst::CapsuleHalfHeight);
-    PlayerConfig bossConfig{};
-    bossConfig.moveSpeed = 20.0f;
-    bossConfig.dashSpeed = 60.0f;         // Kembalikan nilai dash
-    bossConfig.gravityEnabled = false;    // Pastikan gravity mati saat reset!
-
-    m_player->ApplyConfig(bossConfig);
-
-    m_player->SetPosition(0.0f, 0.0f, -8.0f);
-
-    m_stage = std::make_unique<Stage>(device);
-
-    m_collisionManager = std::make_unique<CollisionManager>();
-    m_collisionManager->Initialize(m_player.get(), m_stage.get(), m_enemyManager.get(), m_itemManager.get());
-    m_player->SetCollisionManager(m_collisionManager.get());
-
-    // =========================================================
-    // [FIX] INISIALISASI NAVI BOSS & SET FASE AWAL!
-    // =========================================================
-    m_navi = std::make_unique<Boss>();
-    m_navi->Initialize(m_windowSystem.get());
-
-    // Beri otak ke Navi agar masuk ke Mode Layar Penuh!
-    m_navi->ChangePhase(std::make_unique<BossPhase01>());
-    // =========================================================
-
-    m_player->SetMaxHP(m_player->GetMaxHP());
-    m_player->scale = { 1.0f, 1.0f, 1.0f }; // Kembalikan badan player jika tadi mati
-
-    if (m_collisionManager) m_collisionManager->SetBoss(m_navi.get());
-
-    // 5. Finalize
-    m_timeScale = 1.0f;
-    m_spawnCount = 0;
-    m_currentStretch = { 0.0f, 0.0f };
-    m_stretchOffset = { 0.0f, 0.0f };
-    m_showGrid = false;
-    m_autoSyncMainWindow = false; // Tetap false agar tidak merusak Fullscreen Fase 1
-
-    //m_topmostEnabled = true;
-    m_playerWindowTransparent = true;
-    m_debugLogs.clear();
-
-    WindowManager::Instance().SetTopmost(m_topmostEnabled);
-    InitializeSubWindows();
-
-    AddLog("HARD RESET: All systems successfully restored.");
-}
 
 void SceneBoss::SpawnDebugWindow()
 {
