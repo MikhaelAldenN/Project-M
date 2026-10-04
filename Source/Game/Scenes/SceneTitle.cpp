@@ -47,7 +47,7 @@ SceneTitle::SceneTitle()
 
 #if defined(_DEBUG)
     // Capturing `this` is safe: the handle is a member and dies with this scene.
-    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Title Scene Debugger", [this]() { DrawDebugPanel(); });
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Title", [this]() { DrawDebugPanel(); }); 
 #endif
 }
 

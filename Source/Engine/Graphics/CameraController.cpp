@@ -81,7 +81,7 @@ CameraController::CameraController()
 #if defined(_DEBUG)
     // Capturing `this` is safe: the handle is a member of this singleton, and it
     // holds the registry weakly, so shutdown order against DebugUI does not matter.
-    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Camera Controller", [this]() { DrawDebugPanel(); });
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Camera", [this]() { DrawDebugPanel(); }); 
 #endif
 }
 

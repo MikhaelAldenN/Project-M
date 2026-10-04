@@ -115,8 +115,8 @@ Framework::Framework()
     }
 
     // Init Scene
-#if 0
-    scene = std::make_unique<SceneSandbox>();
+#if 1
+    scene = std::make_unique<SceneIntro>();
 #else
     scene = std::make_unique<SceneBoss>();
 #endif
