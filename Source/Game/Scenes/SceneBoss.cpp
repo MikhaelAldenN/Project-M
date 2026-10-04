@@ -394,7 +394,6 @@ void SceneBoss::Update(float elapsedTime)
         if (wkPhase) {
             // Visibility logic
             if (!wkPhase->IsDead()) {
-                m_autoSyncMainWindow = false;
                 if (mw && mw->GetSDLWindow()) SDL_HideWindow(mw->GetSDLWindow());
             }
             else {
@@ -413,23 +412,7 @@ void SceneBoss::Update(float elapsedTime)
     Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
     if (mainWindow)
     {
-        if (m_autoSyncMainWindow)
-        {
-#ifdef NAVI_DEBUG_GUI
-            int winX, winY;
-            SDL_GetWindowPosition(mainWindow->GetSDLWindow(), &winX, &winY);
-            SDL_SetWindowSize(mainWindow->GetSDLWindow(),
-                static_cast<int>(m_debugPanelSize.x),
-                static_cast<int>(m_debugPanelSize.y));
-            m_windowSystem->UpdateWindowBounds(0,
-                static_cast<int>(m_debugPanelSize.x),
-                static_cast<int>(m_debugPanelSize.y));
-#endif
-        }
-        else
-        {
-            m_windowSystem->UpdateWindowBounds(0, mainWindow->GetWidth(), mainWindow->GetHeight());
-        }
+        m_windowSystem->UpdateWindowBounds(0, mainWindow->GetWidth(), mainWindow->GetHeight());
     }
 
     // =========================================================
@@ -971,20 +954,6 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
             if (ImGui::CollapsingHeader("Window Tracking Config"))
             {
-                if (ImGui::Checkbox("[Player] Toggle Transparent", &m_playerWindowTransparent)) {
-                    if (m_playerWindowTransparent) {
-                        m_windowSystem->RemoveTrackedWindow("player");
-                        AddLog("Player Window: Removed (Rendering to SFX Layer)");
-                    }
-                    else {
-                        InitializeSubWindows();
-                        AddLog("Player Window: Restored");
-                    }
-                    WindowManager::Instance().EnforceWindowPriorities();
-                }
-
-                ImGui::Checkbox("[ImGui] Sync size to main window", &m_autoSyncMainWindow);
-                ImGui::Separator();
                 ImGui::Text("Active Windows: %zu", m_windowSystem->GetWindows().size());
 
                 if (ImGui::Button("Spawn Dummy Window", ImVec2(-1.0f, 30.0f))) SpawnDebugWindow();
