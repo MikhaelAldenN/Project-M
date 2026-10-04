@@ -979,8 +979,8 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                     float speed = m_navi->GetCoreBreathSpeed();
                     float intensity = m_navi->GetCoreBreathIntensity();
                     bool changed = false;
-                    changed |= ImGui::SliderFloat("Breath Speed", &speed, 0.1f, 20.0f);
-                    changed |= ImGui::SliderFloat("Breath Intensity", &intensity, 0.0f, 200.0f);
+                    changed |= DebugProperty::SliderFloat("Breath speed", speed, 0.1f, 20.0f);
+                    changed |= DebugProperty::SliderFloat("Breath intensity", intensity, 0.0f, 200.0f);
                     if (changed) m_navi->SetCoreBreathParams(speed, intensity);
                 }
 

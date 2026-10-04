@@ -82,3 +82,34 @@ private:
 
     std::shared_ptr<DebugUIDetail::Registry> m_registry{ std::make_shared<DebugUIDetail::Registry>() };
 };
+
+// Property rows for panel contents: label on the left, control on the right
+// filling the remaining width. `label` is also the row's ImGui ID, so it must be
+// unique within the enclosing ID scope (wrap each category in PushID / PopID).
+// `isModified` draws an amber dot left of the label (value differs from its loaded baseline).
+// Every function returns true on the frame the value was edited.
+namespace DebugProperty
+{
+    bool SliderFloat(const char* label, float& value, float min, float max,
+        const char* format = "%.3f", bool isModified = false);
+    bool SliderInt(const char* label, int& value, int min, int max, bool isModified = false);
+    bool DragFloat(const char* label, float& value, float speed, float min, float max,
+        const char* format = "%.3f", bool isModified = false);
+
+    // Two independent values on one row (for example X and Z).
+    bool DragFloat2(const char* label, float& x, float& y, float speed, float min, float max,
+        const char* format = "%.3f", bool isModified = false);
+
+    // A low / high pair on one row; the control keeps low <= high.
+    bool DragFloatRange(const char* label, float& low, float& high, float speed, float min, float max,
+        const char* format = "%.3f", bool isModified = false);
+
+    bool Checkbox(const char* label, bool& value, bool isModified = false);
+    bool InputInt(const char* label, int& value, bool isModified = false);
+
+    // `rgba` points at 4 consecutive floats (for example &color.x of an XMFLOAT4).
+    bool ColorEdit4(const char* label, float* rgba, bool isModified = false);
+
+    // Read-only row: printf-style text in the disabled color.
+    void Text(const char* label, const char* format, ...);
+}

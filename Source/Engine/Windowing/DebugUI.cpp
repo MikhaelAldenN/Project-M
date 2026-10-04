@@ -1,7 +1,9 @@
 #include "DebugUI.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
+#include <cstdarg>
 #include <utility>
 #include <imgui.h>
 
@@ -171,4 +173,129 @@ void DebugUI::Draw()
             registry.panels.end());
         registry.hasDeadPanels = false;
     }
+}
+
+// ---------------------------------------------------------------------------
+// DebugProperty
+// ---------------------------------------------------------------------------
+namespace
+{
+    // Layout values are relative to the window and font so rows still fit a narrow docked slot.
+    constexpr float k_controlColumnFraction{ 0.40f }; // where controls start, as a share of content width
+    constexpr float k_markerWidthInEm{ 0.75f };       // gutter left of the label, reserved on every row
+    constexpr float k_markerRadiusInEm{ 0.18f };
+    const ImVec4 k_modifiedColor{ 1.0f, 0.75f, 0.0f, 1.0f }; // amber
+
+    // Draws the marker gutter and the label, then leaves the cursor at the control column
+    // with the next item set to fill the remaining width.
+    void BeginRow(const char* label, bool isModified)
+    {
+        const float fontSize{ ImGui::GetFontSize() };
+        const float frameHeight{ ImGui::GetFrameHeight() };
+        const float markerWidth{ fontSize * k_markerWidthInEm };
+        const float rowStartX{ ImGui::GetCursorPosX() };
+        // Why add scroll back: SameLine() takes an offset from the unscrolled window edge.
+        const float controlX{ ImGui::GetWindowContentRegionMin().x + ImGui::GetScrollX()
+            + ImGui::GetWindowContentRegionWidth() * k_controlColumnFraction };
+
+        ImGui::AlignTextToFramePadding();
+
+        if (isModified)
+        {
+            const ImVec2 rowPos{ ImGui::GetCursorScreenPos() };
+            const ImVec2 center{ rowPos.x + markerWidth * 0.5f, rowPos.y + frameHeight * 0.5f };
+            ImGui::GetWindowDrawList()->AddCircleFilled(
+                center, fontSize * k_markerRadiusInEm, ImGui::GetColorU32(k_modifiedColor));
+        }
+        ImGui::SetCursorPosX(rowStartX + markerWidth);
+
+        // Why clip: a label longer than its column must not run underneath the control.
+        const ImVec2 labelPos{ ImGui::GetCursorScreenPos() };
+        const float labelMaxX{ ImGui::GetWindowPos().x - ImGui::GetScrollX() + controlX
+            - ImGui::GetStyle().ItemSpacing.x };
+        ImGui::PushClipRect(labelPos, ImVec2{ labelMaxX, labelPos.y + frameHeight }, true);
+        ImGui::TextUnformatted(label);
+        ImGui::PopClipRect();
+
+        ImGui::SameLine(controlX);
+        ImGui::SetNextItemWidth(-1.0f);
+    }
+
+    // Shared frame of every editable row. `drawControl` submits one widget and returns "edited".
+    template <typename DrawControl>
+    bool Row(const char* label, bool isModified, DrawControl drawControl)
+    {
+        ImGui::PushID(label);
+        BeginRow(label, isModified);
+        const bool isEdited{ drawControl() };
+        ImGui::PopID();
+        return isEdited;
+    }
+}
+
+bool DebugProperty::SliderFloat(const char* label, float& value, float min, float max,
+    const char* format, bool isModified)
+{
+    return Row(label, isModified, [&]() { return ImGui::SliderFloat("##value", &value, min, max, format); });
+}
+
+bool DebugProperty::SliderInt(const char* label, int& value, int min, int max, bool isModified)
+{
+    return Row(label, isModified, [&]() { return ImGui::SliderInt("##value", &value, min, max); });
+}
+
+bool DebugProperty::DragFloat(const char* label, float& value, float speed, float min, float max,
+    const char* format, bool isModified)
+{
+    return Row(label, isModified, [&]() { return ImGui::DragFloat("##value", &value, speed, min, max, format); });
+}
+
+bool DebugProperty::DragFloat2(const char* label, float& x, float& y, float speed, float min, float max,
+    const char* format, bool isModified)
+{
+    return Row(label, isModified, [&]() {
+        // Why a local copy: the two values need not be adjacent members of the caller's struct.
+        std::array<float, 2> values{ x, y };
+        const bool isEdited{ ImGui::DragFloat2("##value", values.data(), speed, min, max, format) };
+        if (isEdited)
+        {
+            x = values[0];
+            y = values[1];
+        }
+        return isEdited;
+        });
+}
+
+bool DebugProperty::DragFloatRange(const char* label, float& low, float& high, float speed, float min, float max,
+    const char* format, bool isModified)
+{
+    return Row(label, isModified, [&]() {
+        return ImGui::DragFloatRange2("##value", &low, &high, speed, min, max, format);
+        });
+}
+
+bool DebugProperty::Checkbox(const char* label, bool& value, bool isModified)
+{
+    return Row(label, isModified, [&]() { return ImGui::Checkbox("##value", &value); });
+}
+
+bool DebugProperty::InputInt(const char* label, int& value, bool isModified)
+{
+    return Row(label, isModified, [&]() { return ImGui::InputInt("##value", &value); });
+}
+
+bool DebugProperty::ColorEdit4(const char* label, float* rgba, bool isModified)
+{
+    assert(rgba && "DebugProperty::ColorEdit4: rgba is null");
+    return Row(label, isModified, [&]() { return ImGui::ColorEdit4("##value", rgba); });
+}
+
+void DebugProperty::Text(const char* label, const char* format, ...)
+{
+    BeginRow(label, false);
+
+    va_list args;
+    va_start(args, format);
+    ImGui::TextDisabledV(format, args);
+    va_end(args);
 }
