@@ -109,7 +109,7 @@ SceneBoss::SceneBoss()
         m_playerWindowTransparent = false;
     }
 
-    WindowManager::Instance().SetTopmost(m_topmostEnabled);
+    WindowManager::Instance().MarkPriorityDirty();
     InitializeSubWindows();
 
     // --- Death Fade Effects ---
@@ -160,7 +160,6 @@ void SceneBoss::Shutdown()
         SDL_RaiseWindow(mainWindow->GetSDLWindow());
         WindowManager::Instance().MarkPriorityDirty();
     }
-    WindowManager::Instance().SetTopmost(false);
 
     // RESTORE ENGINE STATES
     CameraController::Instance().ClearCamera();
@@ -972,10 +971,6 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
             if (ImGui::CollapsingHeader("Window Tracking Config"))
             {
-                if (ImGui::Checkbox("Topmost", &m_topmostEnabled)) {
-                    WindowManager::Instance().SetTopmost(m_topmostEnabled);
-                }
-
                 if (m_navi) {
                     if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
                         bool fxClickthrough = wkPhase->IsClickThrough();

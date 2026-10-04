@@ -51,9 +51,6 @@ public:
         return nullptr;
     }
 
-    void SetTopmost(bool enabled) { m_topmostEnabled = enabled; MarkPriorityDirty(); }
-    bool IsTopmost() const { return m_topmostEnabled; }
-
     // False when another window (the debug host) draws ImGui instead of the main window.
     void SetImGuiOnMainWindow(bool enabled) { m_imguiOnMainWindow = enabled; }
 
@@ -63,7 +60,6 @@ private:
     WindowManager(const WindowManager&) = delete;
     void operator=(const WindowManager&) = delete;
 
-    bool m_topmostEnabled = false;
 private:
     std::vector<std::unique_ptr<Beyond::Window>> windows;
 

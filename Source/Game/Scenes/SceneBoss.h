@@ -128,7 +128,6 @@ private:
     float     m_timeScale = 1.0f;
     int       m_spawnCount = 0;
     bool      m_autoSyncMainWindow = false;
-    bool      m_topmostEnabled = false;
     bool      m_playerWindowTransparent = false;
 
     ImVec2    m_debugPanelSize = { 450.0f, 750.0f };
