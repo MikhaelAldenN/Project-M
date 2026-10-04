@@ -10,11 +10,8 @@ namespace
     using DebugUIDetail::Panel;
     using DebugUIDetail::Registry;
 
-    constexpr float kColumnWidth{ 220.0f };
-
-    // Root fills the client area, cannot be moved, and stays behind any
-    // floating window so legacy ImGui windows remain reachable.
     constexpr ImGuiWindowFlags kRootFlags{
+        ImGuiWindowFlags_MenuBar |
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings |
         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoDocking };
@@ -38,17 +35,14 @@ namespace
             registry.panels.end());
     }
 
-    void DrawColumnPanels(const Registry& registry)
+    void DrawMenuBarPanels(const Registry& registry)
     {
         for (const Panel& panel : registry.panels)
         {
-            if (!panel.isAlive || panel.slot != DebugPanelSlot::column) continue;
+            if (!panel.isAlive || panel.slot != DebugPanelSlot::menuBar) continue;
 
-            ImGui::PushID(static_cast<int>(panel.id)); // two panels may share a title
-            ImGui::TextUnformatted(panel.title.c_str());
-            ImGui::Separator();
+            ImGui::PushID(static_cast<int>(panel.id)); // two panels may use the same menu label
             panel.draw();
-            ImGui::Spacing();
             ImGui::PopID();
         }
     }
@@ -149,13 +143,14 @@ void DebugUI::Draw()
     {
         registry.isDrawing = true;
 
-        ImGui::BeginChild("##Column", ImVec2{ kColumnWidth, 0.0f }, true);
-        DrawColumnPanels(registry);
-        ImGui::EndChild();
-
-        ImGui::SameLine();
+        if (ImGui::BeginMenuBar())
+        {
+            DrawMenuBarPanels(registry);
+            ImGui::EndMenuBar();
+        }
 
         ImGui::BeginChild("##Tabs", ImVec2{ 0.0f, 0.0f }, false);
+
         if (ImGui::BeginTabBar("##DebugTabs"))
         {
             DrawTabPanels(registry);

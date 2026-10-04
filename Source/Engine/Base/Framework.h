@@ -78,7 +78,7 @@ private:
 
 #if defined(_DEBUG)
     // Registers the two placeholder panels that prove the DebugUI flow.
-    void RegisterSampleDebugPanels();
+    void RegisterDebugMenuBar(); 
 #endif
 
     static Framework* pInstance;
@@ -102,9 +102,8 @@ private:
     // Declared last: destroyed after ~Framework's body, so after ImGui is finalized.
     std::unique_ptr<DebugHostWindow> m_debugHost;
 
-    // Placeholder panels; replace with real ones in step 2.
-    DebugPanelHandle m_sampleColumnPanel;
-    DebugPanelHandle m_sampleTabPanel;
+    // Declared last: unregistered before anything its callback could read is destroyed.
+    DebugPanelHandle m_menuBarPanel;
 
 #endif
 

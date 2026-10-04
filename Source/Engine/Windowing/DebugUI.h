@@ -9,8 +9,8 @@
 // Where a registered panel is placed inside the debug window.
 enum class DebugPanelSlot : std::uint8_t
 {
-    column, // left column, always visible
-    tab,    // one tab in the right-hand tab bar
+    menuBar, // the one-line menu bar; callback may only submit BeginMenu, MenuItem and text
+    tab,     // one tab in the tab bar below the menu bar
 };
 
 // Internal storage shared between DebugUI and its handles. Do not use directly.
@@ -19,7 +19,7 @@ namespace DebugUIDetail
     struct Panel
     {
         std::uint32_t id{ 0 };
-        DebugPanelSlot slot{ DebugPanelSlot::column };
+        DebugPanelSlot slot{ DebugPanelSlot::menuBar };
         std::string title{};
         std::function<void()> draw{};
         bool isAlive{ true }; // false = unregistered while a frame was being drawn
@@ -58,7 +58,8 @@ private:
     std::uint32_t m_id{ 0 }; // 0 = not registered
 };
 
-// Layout frame of the debug window: a fixed left column plus a tab bar.
+// Layout frame of the debug window: a one-line menu bar above a full-width tab bar.
+// The title of a menuBar panel is not drawn.
 // Systems register panels that draw only their contents; they never open
 // an ImGui window themselves. Main thread only.
 class DebugUI

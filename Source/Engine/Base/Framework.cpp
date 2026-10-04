@@ -88,7 +88,7 @@ Framework::Framework()
         WindowManager::Instance().SetImGuiOnMainWindow(false);
         // Why: showing a new window takes focus; give it back to the game.
         SDL_RaiseWindow(mainWin->GetSDLWindow());
-        RegisterSampleDebugPanels();
+        RegisterDebugMenuBar();
     }
     else
     {
@@ -388,29 +388,17 @@ bool Framework::HandleDebugHostEvent([[maybe_unused]] const SDL_Event& event)
 }
 
 #if defined(_DEBUG)
-void Framework::RegisterSampleDebugPanels()
+void Framework::RegisterDebugMenuBar()
 {
-    // Column sample: a stateless panel.
-    m_sampleColumnPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::column, "Frame", []()
+    m_menuBarPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::menuBar, "Framework", []()
         {
+            // Why a fixed sample: the text keeps one position while its digits change.
+            constexpr const char* widestText{ "000.00 ms  0000.0 FPS" };
+            const float textWidth{ ImGui::CalcTextSize(widestText).x };
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() - textWidth - ImGui::GetStyle().WindowPadding.x);
+
             const float fps{ ImGui::GetIO().Framerate }; // ImGui's rolling average
-            ImGui::Text("%.2f ms", fps > 0.0f ? 1000.0f / fps : 0.0f);
-            ImGui::Text("%.1f FPS", fps);
-        });
-
-    // Tab sample: a panel that reads its owner's state. Capturing `this` is safe
-    // because the handle is a member and is destroyed together with this object.
-    m_sampleTabPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Framework", [this]()
-        {
-            const Beyond::Window* mainWin{ GetMainWindow() };
-            if (!mainWin)
-            {
-                ImGui::TextUnformatted("Main window: none");
-                return;
-            }
-
-            ImGui::Text("Main window: %d x %d", mainWin->GetWidth(), mainWin->GetHeight());
-            ImGui::Text("Scene: %s", scene ? "loaded" : "none");
+            ImGui::Text("%6.2f ms  %6.1f FPS", fps > 0.0f ? 1000.0f / fps : 0.0f, fps);
         });
 }
 #endif
