@@ -56,6 +56,10 @@ public:
     // Loads again from the path given to the last Load() call.
     bool Reload() { return Load(m_filepath); }
 
+    // Values as of the last successful Load() (struct defaults before any load).
+    // The debug panel compares against these to mark edited rows and to revert a set.
+    const AttackParamSet& GetLoadedParams() const { return m_loaded; }
+
     // ========================================================
     // GETTER: PHASE 01
     // ========================================================
@@ -98,5 +102,6 @@ private:
     void ParseSpearParams(const json& j, UndyneSpearParams& outParams);
 
     AttackParamSet m_params{};   // live values, edited by the debug panel
+    AttackParamSet m_loaded{};   // written only by Load(); baseline for "edited" markers and revert
     std::string    m_filepath{}; // path of the last Load(), used by Reload()
 };
