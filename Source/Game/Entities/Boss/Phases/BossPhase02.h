@@ -62,8 +62,6 @@ public:
     float GetPixelToUnit() const { return m_pixelToUnit; }
     float GetWingGlobalScale() const { return m_wingGlobalScale; }
 
-    void SetClickThrough(bool clickThrough) { m_isClickThrough = clickThrough; }
-    bool IsClickThrough() const { return m_isClickThrough; }
     Camera* GetFXCamera() const { return m_fxCamera.get(); }
 
     std::vector<Bullet*> GetProjectiles();
@@ -110,8 +108,6 @@ private:
     // Equals the canvas on a 16:9 monitor, larger on one axis otherwise.
     float m_screenW = 1920.0f;
     float m_screenH = 1080.0f;
-
-    bool m_isClickThrough = false;
 
     enum class WingState { Expanding, Idle };
     WingState m_wingState = WingState::Expanding;

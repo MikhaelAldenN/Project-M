@@ -971,16 +971,6 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
             if (ImGui::CollapsingHeader("Window Tracking Config"))
             {
-                if (m_navi) {
-                    if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
-                        bool fxClickthrough = wkPhase->IsClickThrough();
-                        if (ImGui::Checkbox("[ALL] Toggle Clickthrough", &fxClickthrough)) {
-                            wkPhase->SetClickThrough(fxClickthrough);
-                            AddLog(fxClickthrough ? "FX Window: Click-through Enabled" : "FX Window: Click-through Disabled");
-                        }
-                    }
-                }
-
                 if (ImGui::Checkbox("[Player] Toggle Transparent", &m_playerWindowTransparent)) {
                     if (m_playerWindowTransparent) {
                         m_windowSystem->RemoveTrackedWindow("player");
