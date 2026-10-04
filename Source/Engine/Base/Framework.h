@@ -94,6 +94,10 @@ private:
     std::unique_ptr<GameCanvas> m_gameCanvas;
 
 #if defined(_DEBUG)
+
+    // Debug-window focus state of the previous frame, to change SDL hints only on a switch.
+    bool m_wasDebugFocused{ false };
+
     // Created after Graphics::Initialize(), hence a pointer and not a direct member.
     // Declared last: destroyed after ~Framework's body, so after ImGui is finalized.
     std::unique_ptr<DebugHostWindow> m_debugHost;

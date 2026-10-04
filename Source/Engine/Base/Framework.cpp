@@ -263,9 +263,22 @@ void Framework::Update(float elapsedTime)
 
 #if defined(_DEBUG)
     // Keyboard and mouse buttons stop driving the game while the debug window has focus.
-    Input::Instance().SetKeyboardMouseSuppressed(m_debugHost && m_debugHost->HasFocus());
-#endif
+    const bool isDebugFocused{ m_debugHost && m_debugHost->HasFocus() };
+    Input::Instance().SetKeyboardMouseSuppressed(isDebugFocused);
 
+    // Why: SDL activates a window whenever it is raised or shown, and the boss scene
+    // does both constantly (the click blocker is raised every frame). That pulled
+    // focus off the debug window, which re-enabled game input and broke ImGui drags.
+    // While the debug window is focused, game windows keep their stacking order but
+    // do not take focus.
+    if (isDebugFocused != m_wasDebugFocused)
+    {
+        const char* const activation{ isDebugFocused ? "0" : "1" };
+        SDL_SetHint(SDL_HINT_WINDOW_ACTIVATE_WHEN_RAISED, activation);
+        SDL_SetHint(SDL_HINT_WINDOW_ACTIVATE_WHEN_SHOWN, activation);
+        m_wasDebugFocused = isDebugFocused;
+    }
+#endif
     Input::Instance().Update();
     AudioManager::Instance().Update(elapsedTime);
 
