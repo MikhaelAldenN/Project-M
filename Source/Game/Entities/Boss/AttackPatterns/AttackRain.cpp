@@ -176,19 +176,18 @@ void AttackRain::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss
     float halfW = actualW * 0.5f;
     float halfD = actualD * 0.5f;
 
-    float p2u = boss->GetWindowSystem()->GetPixelToUnitRatio();
-    int   screenW = GetSystemMetrics(SM_CXSCREEN);
-    int   screenH = GetSystemMetrics(SM_CYSCREEN);
-    XMFLOAT3 camPos = camera->GetPosition();
-
-    float width2D = actualW * p2u;
-    float height2D = actualD * p2u;
-
     auto drawRect = [&](XMFLOAT3 center, float customAlpha) {
-        float sx = (center.x - camPos.x) * p2u + (screenW * 0.5f);
-        float sy = -(center.z - camPos.z) * p2u + (screenH * 0.5f);
-        m_zonePrimitive->Rect(sx, sy, width2D, height2D,
-            width2D * 0.5f, height2D * 0.5f,
+        // Two opposite corners of the zone on the ground (y = 0), projected through
+        // the camera of the window being drawn. +Z is up on screen, so the far edge
+        // is the top of the rect.
+        const XMFLOAT2 topLeft{ WorldToViewportPixels(context, *camera,
+            { center.x - halfW, 0.0f, center.z + halfD }) };
+        const XMFLOAT2 bottomRight{ WorldToViewportPixels(context, *camera,
+            { center.x + halfW, 0.0f, center.z - halfD }) };
+
+        m_zonePrimitive->Rect(topLeft.x, topLeft.y,
+            bottomRight.x - topLeft.x, bottomRight.y - topLeft.y,
+            0.0f, 0.0f,
             0.0f, 1.0f, 0.0f, 0.0f, customAlpha);
         };
 

@@ -66,3 +66,12 @@ private:
     std::vector<Vertex> batchVertices;
     const size_t MAX_VERTICES = 2048; // Buffer size
 };
+
+class Camera;
+
+// Projects a world-space point through `camera` into pixel coordinates of the viewport
+// currently bound on `context`. That is the pixel space Primitive draws in, so the
+// result can be passed straight to Primitive::Rect / Line. Pass the camera of the
+// window being rendered; the result is then correct for any window size or position.
+DirectX::XMFLOAT2 WorldToViewportPixels(ID3D11DeviceContext* context, const Camera& camera,
+    const DirectX::XMFLOAT3& worldPosition);

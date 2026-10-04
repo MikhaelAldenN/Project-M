@@ -1,4 +1,5 @@
 #include "Primitive.h"
+#include "Camera.h"
 #include <string>  // <--- TAMBAHKAN INI UNTUK std::wstring
 #include <cmath>
 #include <cassert>
@@ -195,4 +196,26 @@ void Primitive::Render(ID3D11DeviceContext* context)
 
     context->Draw((UINT)batchVertices.size(), 0);
     batchVertices.clear();
+}
+
+DirectX::XMFLOAT2 WorldToViewportPixels(ID3D11DeviceContext* context, const Camera& camera,
+    const DirectX::XMFLOAT3& worldPosition)
+{
+    UINT viewportCount{ 1 };
+    D3D11_VIEWPORT viewport{};
+    context->RSGetViewports(&viewportCount, &viewport);
+
+    const DirectX::XMMATRIX view{ DirectX::XMLoadFloat4x4(&camera.GetView()) };
+    const DirectX::XMMATRIX projection{ DirectX::XMLoadFloat4x4(&camera.GetProjection()) };
+
+    // Why origin (0, 0): Primitive::Render maps pixels relative to the viewport's
+    // own top-left corner, not the render target's.
+    const DirectX::XMVECTOR projected{ DirectX::XMVector3Project(
+        DirectX::XMLoadFloat3(&worldPosition),
+        0.0f, 0.0f, viewport.Width, viewport.Height, 0.0f, 1.0f,
+        projection, view, DirectX::XMMatrixIdentity()) };
+
+    DirectX::XMFLOAT2 pixels{};
+    DirectX::XMStoreFloat2(&pixels, projected);
+    return pixels;
 }
