@@ -10,6 +10,7 @@
 #include "BeyondWindow.h"
 #include "Engine/Common/Constants.h"
 #include "Engine/Common/FitRect.h"
+#include <cmath>
 
 // =========================================================
 // DATA STRUCTURES
@@ -103,7 +104,11 @@ public:
 
     // Desktop pixels per world unit. Derived from the arena rect, so it changes
     // whenever that rect changes: do not cache it across frames.
-    float GetPixelToUnitRatio() const { return m_pixelToUnitRatio; }
+    float GetPixelToUnitRatio() const { return Beyond::Config::PIXEL_TO_UNIT_RATIO; }
+
+    // Desktop pixels per canvas pixel for the current arena rect (1.0 when the game
+    // image is 1920x1080 on the desktop). Only needed where code talks to the OS.
+    float GetDesktopScale() const { return m_desktopScale; }
 
     // Accessors for Rendering (misal untuk menggambar overlay shatter)
     const std::vector<std::unique_ptr<TrackedWindow>>& GetWindows() const { return m_trackedWindows; }
@@ -120,6 +125,12 @@ private:
     void UpdateSingleWindow(float dt, TrackedWindow& tracked);
     void UpdateOffCenterProjection(Camera* targetCam, int winX, int winY, int winW, int winH, float camHeight);
 
+    int ToDesktopPixels(float canvasPixels) const
+    {
+        const int scaled{ static_cast<int>(roundf(canvasPixels * m_desktopScale)) };
+        return scaled < 10 ? 10 : scaled;
+    }
+
 private:
     std::vector<std::unique_ptr<TrackedWindow>> m_trackedWindows;
     std::unordered_map<std::string, TrackedWindow*> m_windowLookup;
@@ -135,6 +146,6 @@ private:
 
     // Settings
     float m_followSpeed = 100.0f;
-    float m_pixelToUnitRatio = 40.0f;
+    float m_desktopScale = 1.0f;
     float m_fov = 60.0f;
 };
