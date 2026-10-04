@@ -138,8 +138,6 @@ private:
     // =========================================================
     float     m_targetZoom = 0.0f;
     float     m_currentZoom = 0.0f;
-    float     m_combatRadius = 25.0f; // Radius deteksi
-    float     m_maxZoomIn = -8.0f;    // Seberapa jauh kamera turun (Y)
 
     // Terminal log (capped at 50 lines)
     std::vector<std::string> m_debugLogs;

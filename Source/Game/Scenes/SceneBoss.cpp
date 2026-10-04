@@ -978,24 +978,15 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                     ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "[Player]");
                     ImGui::Text("Loc: X:%.2f, Y:%.2f, Z:%.2f", m_player->GetPosition().x, m_player->GetPosition().y, m_player->GetPosition().z);
                 }
-
-                ImGui::Separator();
-                ImGui::SliderFloat("Combat Radius", &m_combatRadius, 5.0f, 50.0f);
-                ImGui::SliderFloat("Max Zoom Amount", &m_maxZoomIn, -15.0f, 0.0f);
             }
             ImGui::EndTabItem();
-        }
+            }
 
             // ---------------------------------------------------------
             // TAB 2: PHASE & VISUALS
             // ---------------------------------------------------------
             if (m_navi && ImGui::BeginTabItem("Phase & Visuals"))
             {
-                if (ImGui::Button("TEST VFX")) {
-                    auto handle = EffectManager::Instance().Play("Data/Effect/LASER.efk", { 0.0f, 0.0f, 0.0f }, 1.0f);
-                    float rotX = DirectX::XMConvertToRadians(90.0f);
-                    EffectManager::Instance().SetRotation(handle, { rotX, 0.0f, 0.0f });
-                }
 
             if (ImGui::CollapsingHeader("Core Face Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
                 float speed = m_navi->GetCoreBreathSpeed();
