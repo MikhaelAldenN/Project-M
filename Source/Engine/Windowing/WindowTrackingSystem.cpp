@@ -245,7 +245,10 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
     }
 
     // 3. UPDATE POSITION LOGIC
-    if (!isBeingDragged && tracked.role == WindowRole::TRACKED_ENTITY)
+    // Every sub-window is placed against the current arena rect, so it follows when
+    // that rect moves (window dragged in Act 2, or the switch to the monitor rect on
+    // entering Windowkill). Only the main window is left where the user put it.
+    if (!isBeingDragged && tracked.role != WindowRole::MAIN_VIEWPORT)
     {
         DirectX::XMFLOAT3 targetWorldPos = tracked.getTargetPositionFunc();
         targetWorldPos.x += tracked.trackingOffset.x;
@@ -270,7 +273,11 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
         // =========================================================
         float trauma = CameraController::Instance().GetTrauma();
 
-        if (trauma > 0.01f) {
+        // Why entities only: viewport windows (FX overlay, click blocker) span the whole
+        // play field, and their image already shakes through the camera.
+        const bool shakesWithCamera{ tracked.role == WindowRole::TRACKED_ENTITY };
+
+        if (shakesWithCamera && trauma > 0.01f) {
             float shakeIntensity = trauma * trauma; // Pangkat 2 untuk natural falloff
             float maxShakePixels = 35.0f; // Jarak loncatan maksimal jendela di monitor!
 
