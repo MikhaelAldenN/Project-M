@@ -16,11 +16,8 @@ void AttackBouncing::Start(Boss* boss) {
     m_spawnTimer = m_params.spawnDelay; // Force immediate first spawn
 
     // Cache screen limits based on pixel-to-unit ratio
-    if (boss && boss->GetWindowSystem()) {
-        float p2u = boss->GetWindowSystem()->GetPixelToUnitRatio();
-        m_screenLimitX = (GetSystemMetrics(SM_CXSCREEN) / 2.0f) / p2u;
-        m_screenLimitZ = (GetSystemMetrics(SM_CYSCREEN) / 2.0f) / p2u;
-    }
+    m_screenLimitX = Beyond::Config::ARENA_WIDTH_UNITS * 0.5f;
+    m_screenLimitZ = Beyond::Config::ARENA_HEIGHT_UNITS * 0.5f;
 }
 
 void AttackBouncing::Update(float dt, Boss* boss) {

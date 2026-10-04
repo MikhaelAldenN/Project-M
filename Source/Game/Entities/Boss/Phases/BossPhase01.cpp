@@ -361,15 +361,10 @@ void BossPhase01::UpdateBossMovement(float dt, Boss* boss) {
 }
 
 void BossPhase01::UpdateBulletPool(float dt, Boss* boss) {
-    auto* ws = boss->GetWindowSystem();
-    float limitX = 30.0f;
-    float limitZ = 20.0f;
-
-    if (ws) {
-        float p2u = ws->GetPixelToUnitRatio();
-        limitX = ((GetSystemMetrics(SM_CXSCREEN) * 0.5f) / p2u) + 30.0f;
-        limitZ = ((GetSystemMetrics(SM_CYSCREEN) * 0.5f) / p2u) + 30.0f;
-    }
+    // Bullets are recycled once they are this far outside the arena edge.
+    constexpr float k_despawnMargin{ 30.0f };
+    const float limitX{ (Beyond::Config::ARENA_WIDTH_UNITS * 0.5f) + k_despawnMargin };
+    const float limitZ{ (Beyond::Config::ARENA_HEIGHT_UNITS * 0.5f) + k_despawnMargin };
 
     for (auto& bullet : m_bulletPool) {
         if (!bullet->IsActive()) continue;

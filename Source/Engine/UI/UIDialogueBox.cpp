@@ -242,8 +242,13 @@ void UIDialogueBox::Render(ID3D11DeviceContext* dc)
     dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
     dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestOnly), 0);
 
-    float screenW = static_cast<float>(GetSystemMetrics(SM_CXSCREEN));
-    float screenH = static_cast<float>(GetSystemMetrics(SM_CYSCREEN));
+    // Why the viewport: the box is drawn into the game canvas or into a sub-window,
+    // never straight onto the monitor.
+    D3D11_VIEWPORT viewport{};
+    UINT viewportCount{ 1 };
+    dc->RSGetViewports(&viewportCount, &viewport);
+    float screenW = viewport.Width;
+    float screenH = viewport.Height;
 
     float panelW = 847.0f;
     float panelH = 198.0f;

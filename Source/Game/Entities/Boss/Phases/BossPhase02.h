@@ -112,6 +112,8 @@ private:
     std::vector<WingNode> m_leftWingData;
     std::vector<WingNode> m_rightWingData;
 
+    // Size of the full-desktop overlay windows (FX, click blocker) in canvas pixels.
+    // Equals the canvas on a 16:9 monitor, larger on one axis otherwise.
     float m_screenW = 1920.0f;
     float m_screenH = 1080.0f;
 

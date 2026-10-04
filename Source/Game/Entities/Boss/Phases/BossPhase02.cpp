@@ -38,8 +38,23 @@ void BossPhase02::Enter(Boss* boss) {
     auto windowSystem = boss->GetWindowSystem();
     m_pixelToUnit = windowSystem->GetPixelToUnitRatio();
 
-    m_screenW = (float)GetSystemMetrics(SM_CXSCREEN);
-    m_screenH = (float)GetSystemMetrics(SM_CYSCREEN);
+    // The overlays must cover the whole monitor, not just its 16:9 arena rect.
+    // The tracker scales canvas pixels by (arena rect height / canvas height), so the
+    // monitor size is converted into canvas pixels with the inverse of that factor.
+    SDL_Rect display{};
+    if (SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &display))
+    {
+        const Beyond::PixelRect arena{ Beyond::FitRect(
+            Beyond::PixelRect{ display.x, display.y, display.w, display.h },
+            Beyond::Config::CANVAS_WIDTH, Beyond::Config::CANVAS_HEIGHT) };
+        if (arena.height > 0)
+        {
+            const float canvasPerDesktop{ static_cast<float>(Beyond::Config::CANVAS_HEIGHT)
+                / static_cast<float>(arena.height) };
+            m_screenW = static_cast<float>(display.w) * canvasPerDesktop;
+            m_screenH = static_cast<float>(display.h) * canvasPerDesktop;
+        }
+    }
 
     m_hudRenderer = std::make_unique<HUDRenderer>(device);
 
