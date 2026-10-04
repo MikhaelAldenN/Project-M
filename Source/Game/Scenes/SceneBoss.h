@@ -63,7 +63,8 @@ private:
     void InitializeSubWindows();
 
     // --- Debug & System Helpers ---
-    void DrawDebugPanel();
+    void DrawDebugPanel(); // old all-in-one panel, removed once the five new panels are done
+    void DrawBossPanel();
     void SpawnDebugWindow();
     void SpawnTransparentWindow(float bgAlpha, const std::string& typeSuffix);
     void AddLog(const std::string& message);
@@ -189,5 +190,6 @@ private:
     // Keeps the "WINDOWKILL MASTER CONTROL" tab registered while this scene lives.
     // Declared last: destroyed first, before any member the callback reads.
     DebugPanelHandle m_debugPanel{};
+    DebugPanelHandle m_bossPanel{};
 #endif
 };

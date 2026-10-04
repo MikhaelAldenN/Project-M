@@ -126,6 +126,7 @@ SceneBoss::SceneBoss()
     PerformanceLogger::Instance().LogInfo("[INIT] SceneBoss constructor complete.");
 
 #if defined(_DEBUG)
+    m_bossPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Boss", [this]() { DrawBossPanel(); });
     // Capturing `this` is safe: the handle is a member and dies with this scene.
     m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Boss", [this]() { DrawDebugPanel(); }); 
 #endif
@@ -907,7 +908,13 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
         m_debugPanelSize = ImGui::GetWindowSize();
 
-        DrawDebugPanel();
+        // Release has no DebugUI host, so this window provides the tab frame itself.
+        if (ImGui::BeginTabBar("##Panels"))
+        {
+            if (ImGui::BeginTabItem("Boss")) { DrawBossPanel(); ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem("Old")) { DrawDebugPanel(); ImGui::EndTabItem(); }
+            ImGui::EndTabBar();
+        }
 
         ImGui::End();
     }
@@ -1570,7 +1577,173 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
             }
         }
     
-    
+        void SceneBoss::DrawBossPanel()
+        {
+            // Why: once the scene change is pending, phase and window state are being torn down.
+            if (m_isPendingSceneChange) return;
+
+            if (!m_navi)
+            {
+                ImGui::TextDisabled("Boss not created.");
+                return;
+            }
+
+            auto* bulletHell{ dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase()) };
+            auto* windowkill{ dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase()) };
+            if (!bulletHell && !windowkill)
+            {
+                ImGui::TextDisabled("No active phase.");
+                return;
+            }
+
+            // ---- Head: state ----
+            bool isAIEnabled{ bulletHell ? bulletHell->IsAIEnabled() : windowkill->IsAIEnabled() };
+            if (ImGui::Checkbox("AI enabled", &isAIEnabled))
+            {
+                if (bulletHell)
+                {
+                    bulletHell->SetAIEnabled(isAIEnabled);
+                    if (isAIEnabled)
+                    {
+                        // Why here: there is no other fight-start trigger yet, so enabling the AI starts the BGM.
+                        AudioManager::Instance().PlayMusic("Data/Sound/BGM_Boss_Phase_01.wav",
+                            0.05f * AttackParamManager::Instance().GetUltimateParams().sfxVolume, true);
+                    }
+                }
+                else
+                {
+                    windowkill->SetAIEnabled(isAIEnabled);
+                }
+                AddLog(isAIEnabled ? "Boss AI enabled." : "Boss AI disabled.");
+            }
+            ImGui::SameLine();
+            ImGui::TextDisabled("Phase: %s", bulletHell ? "Bullet hell" : "Windowkill");
+
+            const int maxHP{ bulletHell ? bulletHell->GetMaxHP() : windowkill->GetMaxHP() };
+            int hp{ bulletHell ? bulletHell->GetHP() : windowkill->GetHP() };
+            const float hpFraction{ (maxHP > 0) ? static_cast<float>(hp) / static_cast<float>(maxHP) : 0.0f };
+            const std::string hpText{ "HP " + std::to_string(hp) + " / " + std::to_string(maxHP) };
+            ImGui::ProgressBar(hpFraction, ImVec2{ -1.0f, 0.0f }, hpText.c_str());
+
+            if (windowkill && windowkill->IsPlayerCaged())
+            {
+                ImGui::TextDisabled("AI gated until the cage breaks");
+            }
+
+            // ---- Head: actions ----
+            // Why 0 is allowed: it runs the real "HP depleted" path (next phase / death sequence).
+            // In Windowkill that is one-way; use Scene > Reload afterwards.
+            if (DebugProperty::SliderInt("Set HP", hp, 0, maxHP))
+            {
+                hp = std::clamp(hp, 0, maxHP); // Ctrl+click input can exceed the slider range
+                if (bulletHell) bulletHell->SetHP(hp);
+                else windowkill->SetHP(hp);
+            }
+
+            if (bulletHell)
+            {
+                if (ImGui::Button("Go to Windowkill"))
+                {
+                    m_navi->ChangePhase(std::make_unique<BossPhase02>(m_player.get()));
+                    m_playerWindowTransparent = true;
+                    AddLog("Phase changed to Windowkill.");
+                    return; // the phase pointers above are dangling now
+                }
+            }
+            else
+            {
+                if (ImGui::Button("Replay wing spawn")) windowkill->ReplayAnimation();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Restart at Bullet hell"))
+            {
+                const bool wasWindowkill{ windowkill != nullptr };
+                m_navi->ChangePhase(std::make_unique<BossPhase01>(m_player.get()));
+                if (wasWindowkill)
+                {
+                    m_playerWindowTransparent = false;
+                    if (m_player) m_player->RestoreShootDelay();
+                }
+                AddLog("Boss restarted at Bullet hell.");
+                return; // the phase pointers above are dangling now
+            }
+
+            // Stays here until the global time toolbar exists.
+            DebugProperty::SliderFloat("Time scale", m_timeScale, 0.1f, 3.0f, "%.1fx");
+            if (ImGui::Button("Reset time scale")) m_timeScale = 1.0f;
+
+            // ---- Categories ----
+            ImGui::PushID("Core");
+            if (ImGui::CollapsingHeader("Core", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                float speed{ m_navi->GetCoreBreathSpeed() };
+                float intensity{ m_navi->GetCoreBreathIntensity() };
+                bool isEdited{ false };
+                isEdited |= DebugProperty::SliderFloat("Breath speed", speed, 0.1f, 20.0f);
+                isEdited |= DebugProperty::SliderFloat("Breath intensity", intensity, 0.0f, 200.0f);
+                if (isEdited) m_navi->SetCoreBreathParams(speed, intensity);
+            }
+            ImGui::PopID();
+
+            ImGui::PushID("Face");
+            if (ImGui::CollapsingHeader("Face"))
+            {
+                FaceParams& face{ m_navi->GetFaceParams() };
+                DebugProperty::Checkbox("Glitch enabled", face.enableGlitch);
+                DebugProperty::SliderFloat("Face size", face.faceTotalSize, 1.0f, 15.0f, "%.1f units");
+                DebugProperty::DragFloatRange("Interval range", face.minInterval, face.maxInterval, 0.01f, 0.01f, 2.0f, "%.2f s");
+                DebugProperty::SliderFloat("2x2 chunk chance", face.chance2x2, 0.0f, 100.0f, "%.1f %%");
+                DebugProperty::SliderFloat("Flicker chance", face.flickerChance, 0.0f, 15.0f, "%.2f %%");
+                DebugProperty::SliderFloat("Color glitch chance", face.colorGlitchChance, 0.0f, 100.0f, "%.1f %%");
+            }
+            ImGui::PopID();
+
+            if (windowkill)
+            {
+                ImGui::PushID("Wings");
+                if (ImGui::CollapsingHeader("Wings"))
+                {
+                    float flapSpeed{ windowkill->GetWingFlapSpeed() };
+                    float flapIntensity{ windowkill->GetWingFlapIntensity() };
+                    bool isFlapEdited{ false };
+                    isFlapEdited |= DebugProperty::SliderFloat("Flap speed", flapSpeed, 0.1f, 10.0f);
+                    isFlapEdited |= DebugProperty::SliderFloat("Flap intensity", flapIntensity, 0.0f, 2.0f);
+                    if (isFlapEdited) windowkill->SetWingFlapParams(flapSpeed, flapIntensity);
+
+                    float offsetX{ windowkill->GetWingOffsetX() };
+                    float offsetZ{ windowkill->GetWingOffsetZ() };
+                    if (DebugProperty::DragFloat2("Offset", offsetX, offsetZ, 0.1f, -20.0f, 20.0f, "%.1f units"))
+                    {
+                        windowkill->SetWingOffsets(offsetX, offsetZ);
+                    }
+
+                    float scale{ windowkill->GetWingGlobalScale() };
+                    if (DebugProperty::SliderFloat("Scale", scale, 0.1f, 5.0f))
+                    {
+                        // Why GetPixelToUnit: the ratio is a fixed 40 and not tunable here.
+                        windowkill->SetScalingParams(windowkill->GetPixelToUnit(), scale);
+                    }
+
+                    int seed{ static_cast<int>(windowkill->GetWingSeed()) };
+                    if (DebugProperty::InputInt("Seed", seed)) windowkill->SetWingSeed(static_cast<unsigned int>(seed));
+                    if (ImGui::Button("Randomize seed"))
+                    {
+                        std::random_device randomDevice;
+                        windowkill->SetWingSeed(randomDevice());
+                    }
+
+                    float popDuration{ windowkill->GetPopDuration() };
+                    float spawnDuration{ windowkill->GetSpawnDuration() };
+                    float spawnChaos{ windowkill->GetSpawnChaos() };
+                    bool isSpawnEdited{ false };
+                    isSpawnEdited |= DebugProperty::SliderFloat("Pop duration", popDuration, 0.01f, 1.0f, "%.2f s");
+                    isSpawnEdited |= DebugProperty::SliderFloat("Spawn duration", spawnDuration, 0.1f, 5.0f, "%.2f s");
+                    isSpawnEdited |= DebugProperty::SliderFloat("Spawn chaos", spawnChaos, 0.0f, 2.0f);
+                    if (isSpawnEdited) windowkill->SetSpawnParams(popDuration, spawnDuration, spawnChaos);
+                }
+                ImGui::PopID();
+            }
+        }
 
 // =========================================================
 // DEBUG / SYSTEM HELPERS
