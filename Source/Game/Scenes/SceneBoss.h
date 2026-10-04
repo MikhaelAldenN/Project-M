@@ -65,6 +65,7 @@ private:
     // --- Debug & System Helpers ---
     void DrawDebugPanel(); // old all-in-one panel, removed once the five new panels are done
     void DrawBossPanel();
+    void DrawAttacksPanel();
     void SpawnDebugWindow();
     void SpawnTransparentWindow(float bgAlpha, const std::string& typeSuffix);
     void AddLog(const std::string& message);
@@ -126,6 +127,7 @@ private:
     // GUI / DEBUG STATE
     // =========================================================
     bool      m_showGrid = false;
+    int       m_selectedWindowkillSet{ 0 }; // row selected in the Attacks panel list
     float     m_timeScale = 1.0f;
     int       m_spawnCount = 0;
     bool      m_playerWindowTransparent = false;
@@ -191,5 +193,7 @@ private:
     // Declared last: destroyed first, before any member the callback reads.
     DebugPanelHandle m_debugPanel{};
     DebugPanelHandle m_bossPanel{};
+    DebugPanelHandle m_attacksPanel{};
+
 #endif
 };

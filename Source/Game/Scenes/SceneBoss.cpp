@@ -6,6 +6,7 @@
 #include "InputHelper.h"
 #include "PerformanceLogger.h"
 #include <algorithm>
+#include <array>
 #ifdef NAVI_DEBUG_GUI
 #include <imgui.h>
 #endif
@@ -127,6 +128,7 @@ SceneBoss::SceneBoss()
 
 #if defined(_DEBUG)
     m_bossPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Boss", [this]() { DrawBossPanel(); });
+    m_attacksPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Attacks", [this]() { DrawAttacksPanel(); });
     // Capturing `this` is safe: the handle is a member and dies with this scene.
     m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Boss", [this]() { DrawDebugPanel(); }); 
 #endif
@@ -912,6 +914,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
         if (ImGui::BeginTabBar("##Panels"))
         {
             if (ImGui::BeginTabItem("Boss")) { DrawBossPanel(); ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem("Attacks")) { DrawAttacksPanel(); ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem("Old")) { DrawDebugPanel(); ImGui::EndTabItem(); }
             ImGui::EndTabBar();
         }
@@ -1744,6 +1747,190 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                 ImGui::PopID();
             }
         }
+
+        namespace
+        {
+            // Order of the Attacks panel list while the Windowkill phase is active.
+            enum class WindowkillSet { blasters, bouncing, boomerangs, spears, count };
+
+            constexpr std::array<const char*, 4> k_windowkillSetNames{ "Blasters", "Bouncing", "Boomerangs", "Spears" };
+            static_assert(k_windowkillSetNames.size() == static_cast<std::size_t>(WindowkillSet::count),
+                "one name per WindowkillSet enumerator");
+
+            // Row functions: `p` is the live set, `loaded` the same set as of the last file load.
+            // A row gets the amber marker while its value differs from `loaded`.
+            // Window sizes are in canvas pixels (40 per world unit).
+
+            void DrawBlasterRows(BlasterParams& p, const BlasterParams& loaded)
+            {
+                DebugProperty::SliderFloat("Window size", p.cannonWindowSize, 100.0f, 800.0f, "%.0f px", p.cannonWindowSize != loaded.cannonWindowSize);
+                DebugProperty::SliderFloat("Visual scale", p.cannonVisualScale, 0.1f, 10.0f, "%.2f", p.cannonVisualScale != loaded.cannonVisualScale);
+                DebugProperty::SliderFloat("Beam width", p.beamVisualWidth, 1.0f, 20.0f, "%.1f units", p.beamVisualWidth != loaded.beamVisualWidth);
+                DebugProperty::SliderFloat("Beam max length", p.beamMaxLength, 50.0f, 500.0f, "%.1f units", p.beamMaxLength != loaded.beamMaxLength);
+                DebugProperty::SliderFloat("Beam grow speed", p.beamGrowSpeed, 1.0f, 100.0f, "%.1f", p.beamGrowSpeed != loaded.beamGrowSpeed);
+                DebugProperty::SliderFloat("Beam slide speed", p.beamSlideSpeed, 1.0f, 50.0f, "%.1f", p.beamSlideSpeed != loaded.beamSlideSpeed);
+                DebugProperty::SliderInt("Damage per tick", p.beamDamage, 1, 100, p.beamDamage != loaded.beamDamage);
+                DebugProperty::SliderInt("Spawn count", p.spawnCount, 1, 15, p.spawnCount != loaded.spawnCount);
+                DebugProperty::SliderFloat("Spawn delay", p.spawnDelay, 0.0f, 1.0f, "%.2f s", p.spawnDelay != loaded.spawnDelay);
+                DebugProperty::SliderFloat("Spawn spread", p.spawnSpreadX, 10.0f, 100.0f, "%.1f units", p.spawnSpreadX != loaded.spawnSpreadX);
+                DebugProperty::SliderFloat("Charge delay", p.chargeDelay, 0.1f, 3.0f, "%.2f s", p.chargeDelay != loaded.chargeDelay);
+                DebugProperty::SliderFloat("Fire duration", p.fireDuration, 0.1f, 3.0f, "%.2f s", p.fireDuration != loaded.fireDuration);
+                DebugProperty::DragFloat("Drop-in duration", p.dropInDuration, 0.05f, 0.1f, 2.0f, "%.2f s", p.dropInDuration != loaded.dropInDuration);
+            }
+
+            void DrawBouncingRows(BouncingBulletParams& p, const BouncingBulletParams& loaded)
+            {
+                DebugProperty::SliderInt("Spawn count", p.spawnCount, 1, 10, p.spawnCount != loaded.spawnCount);
+                DebugProperty::SliderFloat("Spawn delay", p.spawnDelay, 0.0f, 1.0f, "%.2f s", p.spawnDelay != loaded.spawnDelay);
+                DebugProperty::SliderFloat("Speed", p.speed, 5.0f, 100.0f, "%.1f", p.speed != loaded.speed);
+                DebugProperty::SliderInt("Max bounces", p.maxBounces, 1, 30, p.maxBounces != loaded.maxBounces);
+                DebugProperty::SliderInt("Damage", p.damage, 1, 50, p.damage != loaded.damage);
+                DebugProperty::DragFloat2("Window size", p.windowWidth, p.windowHeight, 1.0f, 100.0f, 1000.0f, "%.0f px",
+                    p.windowWidth != loaded.windowWidth || p.windowHeight != loaded.windowHeight);
+                DebugProperty::SliderFloat("Visual scale", p.visualScale, 0.1f, 5.0f, "%.2f", p.visualScale != loaded.visualScale);
+                DebugProperty::SliderFloat("Hitbox radius", p.hitboxRadius, 0.1f, 10.0f, "%.1f units", p.hitboxRadius != loaded.hitboxRadius);
+            }
+
+            void DrawBoomerangRows(BoomerangParams& p, const BoomerangParams& loaded)
+            {
+                DebugProperty::SliderInt("Spawn count", p.spawnCount, 1, 20, p.spawnCount != loaded.spawnCount);
+                DebugProperty::SliderFloat("Spawn delay", p.spawnDelay, 0.0f, 2.0f, "%.2f s", p.spawnDelay != loaded.spawnDelay);
+                DebugProperty::Checkbox("Spawn bottom half only", p.spawnBottomHalfOnly, p.spawnBottomHalfOnly != loaded.spawnBottomHalfOnly);
+                DebugProperty::SliderFloat("Speed", p.speed, 10.0f, 100.0f, "%.1f", p.speed != loaded.speed);
+                DebugProperty::SliderFloat("Max travel distance", p.maxTravelDistance, 10.0f, 120.0f, "%.1f units", p.maxTravelDistance != loaded.maxTravelDistance);
+                DebugProperty::SliderFloat("Turn speed", p.turnSpeed, 1.0f, 20.0f, "%.1f", p.turnSpeed != loaded.turnSpeed);
+                DebugProperty::SliderInt("Damage", p.damage, 1, 200, p.damage != loaded.damage);
+                DebugProperty::SliderFloat("Window size", p.windowSize, 100.0f, 500.0f, "%.0f px", p.windowSize != loaded.windowSize);
+                DebugProperty::SliderFloat("Visual scale", p.visualScale, 0.1f, 20.0f, "%.2f", p.visualScale != loaded.visualScale);
+                DebugProperty::SliderFloat("Hitbox radius", p.hitboxRadius, 0.1f, 10.0f, "%.1f units", p.hitboxRadius != loaded.hitboxRadius);
+            }
+
+            void DrawSpearRows(UndyneSpearParams& p, const UndyneSpearParams& loaded)
+            {
+                DebugProperty::SliderInt("Count", p.count, 1, 20, p.count != loaded.count);
+                DebugProperty::DragFloat("Spawn delay", p.spawnDelay, 0.05f, 0.05f, 2.0f, "%.2f s", p.spawnDelay != loaded.spawnDelay);
+                DebugProperty::DragFloat("Hover duration", p.hoverDuration, 0.05f, 0.1f, 3.0f, "%.2f s", p.hoverDuration != loaded.hoverDuration);
+                DebugProperty::DragFloat("Max speed", p.maxSpeed, 1.0f, 10.0f, 300.0f, "%.1f", p.maxSpeed != loaded.maxSpeed);
+                DebugProperty::DragFloat("Arc radius", p.arcRadius, 0.5f, 5.0f, 100.0f, "%.1f units", p.arcRadius != loaded.arcRadius);
+                DebugProperty::DragFloat2("Arc center", p.arcCenterX, p.arcCenterZ, 0.5f, -50.0f, 50.0f, "%.1f units",
+                    p.arcCenterX != loaded.arcCenterX || p.arcCenterZ != loaded.arcCenterZ);
+                DebugProperty::DragFloatRange("Arc angle range", p.arcMinAngle, p.arcMaxAngle, 1.0f, 0.0f, 360.0f, "%.0f deg",
+                    p.arcMinAngle != loaded.arcMinAngle || p.arcMaxAngle != loaded.arcMaxAngle);
+                DebugProperty::SliderInt("Damage", p.damage, 1, 500, p.damage != loaded.damage);
+            }
+        }
+
+        // Attacks panel: list of the active phase's parameter sets on top, the selected set below
+        // with its Fire and Revert buttons. Edits are not saved; the file is edited by hand and reloaded.
+        // Must not call ImGui::Begin / End.
+        void SceneBoss::DrawAttacksPanel()
+        {
+            // Why: once the scene change is pending, phase and window state are being torn down.
+            if (m_isPendingSceneChange) return;
+
+            if (!m_navi)
+            {
+                ImGui::TextDisabled("Boss not created.");
+                return;
+            }
+
+            AttackParamManager& manager{ AttackParamManager::Instance() };
+
+            // Attacks already running keep their own copy; only new ones use the reloaded values.
+            if (ImGui::Button("Reload AttackParams.json"))
+            {
+                const bool isLoaded{ manager.Reload() };
+                AddLog(isLoaded ? "AttackParams.json reloaded."
+                    : "AttackParams.json reload failed, params unchanged.");
+            }
+
+            auto* windowkill{ dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase()) };
+            if (!windowkill)
+            {
+                ImGui::TextDisabled("Bullet hell sets are not in this panel yet.");
+                return;
+            }
+
+            const AttackParamSet& loaded{ manager.GetLoadedParams() };
+
+            // ---- Master: set list ----
+            const float listHeight{ ImGui::GetTextLineHeightWithSpacing() * static_cast<float>(k_windowkillSetNames.size())
+                + ImGui::GetStyle().WindowPadding.y * 2.0f };
+            ImGui::BeginChild("##SetList", ImVec2{ 0.0f, listHeight }, true);
+            for (int i{ 0 }; i < static_cast<int>(k_windowkillSetNames.size()); ++i)
+            {
+                if (ImGui::Selectable(k_windowkillSetNames[static_cast<std::size_t>(i)], m_selectedWindowkillSet == i))
+                {
+                    m_selectedWindowkillSet = i;
+                }
+            }
+            ImGui::EndChild();
+
+            // ---- Detail: selected set ----
+            const char* setName{ k_windowkillSetNames[static_cast<std::size_t>(m_selectedWindowkillSet)] };
+            ImGui::PushID(setName); // sets share row labels such as "Damage"
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(setName);
+            ImGui::SameLine();
+
+            switch (static_cast<WindowkillSet>(m_selectedWindowkillSet))
+            {
+            case WindowkillSet::blasters:
+            {
+                BlasterParams& params{ manager.GetBlasterParams() };
+                if (ImGui::Button("Fire random"))
+                {
+                    windowkill->AddAttack(std::make_unique<AttackBlasters>(params, false));
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Fire targeted"))
+                {
+                    const float playerX{ m_player ? m_player->GetPosition().x : 0.0f };
+                    windowkill->AddAttack(std::make_unique<AttackBlasters>(params, true, playerX));
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Revert")) params = loaded.blaster;
+                ImGui::Separator();
+                DrawBlasterRows(params, loaded.blaster);
+                break;
+            }
+            case WindowkillSet::bouncing:
+            {
+                BouncingBulletParams& params{ manager.GetBouncingParams() };
+                if (ImGui::Button("Fire")) windowkill->AddAttack(std::make_unique<AttackBouncing>(params));
+                ImGui::SameLine();
+                if (ImGui::Button("Revert")) params = loaded.bouncing;
+                ImGui::Separator();
+                DrawBouncingRows(params, loaded.bouncing);
+                break;
+            }
+            case WindowkillSet::boomerangs:
+            {
+                BoomerangParams& params{ manager.GetBoomerangParams() };
+                if (ImGui::Button("Fire")) windowkill->AddAttack(std::make_unique<AttackBoomerangs>(params));
+                ImGui::SameLine();
+                if (ImGui::Button("Revert")) params = loaded.boomerang;
+                ImGui::Separator();
+                DrawBoomerangRows(params, loaded.boomerang);
+                break;
+            }
+            case WindowkillSet::spears:
+            {
+                UndyneSpearParams& params{ manager.GetUndyneParams() };
+                if (ImGui::Button("Fire")) windowkill->AddAttack(std::make_unique<AttackSpears>(params, m_player.get()));
+                ImGui::SameLine();
+                if (ImGui::Button("Revert")) params = loaded.spear;
+                ImGui::Separator();
+                DrawSpearRows(params, loaded.spear);
+                break;
+            }
+            case WindowkillSet::count:
+                break;
+            }
+
+            ImGui::PopID();
+        }
+
 
 // =========================================================
 // DEBUG / SYSTEM HELPERS
