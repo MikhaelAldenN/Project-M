@@ -87,12 +87,6 @@ public:
     bool HasActiveAttacks() const { return !m_activeAttacks.empty(); }
     Player* GetAITarget() const { return m_aiTarget; }
 
-    // [FIX] 各Attack.h に定義された Params 構造体を返す Getter
-    BouncingBulletParams& GetBouncingParams() { return m_bouncingParams; }
-    BoomerangParams& GetBoomerangParams() { return m_boomerangParams; }
-    BlasterParams& GetBlasterParams() { return m_blasterParams; }
-    UndyneSpearParams& GetUndyneParams() { return m_undyneParams; }
-
     bool IsPlayerCaged() const { return m_isPlayerCaged; }
     DirectX::XMFLOAT3 GetCagePos() const { return m_cagePos; }
     float GetCageSize() const { return m_cageSizeWorld; }
@@ -140,14 +134,6 @@ private:
 
     float m_pixelToUnit = 40.0f;
     float m_wingGlobalScale = 2.5f;
-
-    // ==========================================
-    // 攻撃パラメータの実体（UIから調整可能）
-    // ==========================================
-    BouncingBulletParams m_bouncingParams;
-    BoomerangParams m_boomerangParams;
-    BlasterParams m_blasterParams;
-    UndyneSpearParams m_undyneParams;
 
     Player* m_aiTarget = nullptr;
     bool    m_aiEnabled = false;

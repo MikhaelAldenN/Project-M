@@ -3,45 +3,50 @@
 #include <iostream>
 
 bool AttackParamManager::Load(const std::string& filepath) {
+    // Remembered even when the load fails, so Reload() can retry after the file is fixed.
+    m_filepath = filepath;
+
     std::ifstream file(filepath);
     if (!file.is_open()) {
         std::cerr << "[AttackParamManager] Failed to open: " << filepath << "\n";
         return false;
     }
 
-    json j;
+    // Parse into a fresh default set: keys missing from the file fall back to struct
+    // defaults instead of stale runtime edits, and a failure never half-updates m_params.
+    AttackParamSet fresh{};
     try {
-        j = json::parse(file, nullptr, true, true);
+        json j = json::parse(file, nullptr, true, true);
+
+        if (j.contains("Phase01")) {
+            const auto& p1 = j["Phase01"];
+            if (p1.contains("RadialNormal"))     ParseRadialParams(p1["RadialNormal"], fresh.radialNormal);
+            if (p1.contains("RadialContinuous")) ParseRadialParams(p1["RadialContinuous"], fresh.radialContinuous);
+            if (p1.contains("FanNormal"))        ParseFanParams(p1["FanNormal"], fresh.fanNormal);
+            if (p1.contains("FanContinuous"))    ParseFanParams(p1["FanContinuous"], fresh.fanContinuous);
+            if (p1.contains("Phalanx"))          ParsePhalanxParams(p1["Phalanx"], fresh.phalanx);
+            if (p1.contains("Rain"))             ParseRainParams(p1["Rain"], fresh.rain);
+            if (p1.contains("RainTargeted"))     ParseRainParams(p1["RainTargeted"], fresh.rainTargeted);
+            if (p1.contains("Ultimate"))         ParseUltimateParams(p1["Ultimate"], fresh.ultimate);
+            if (p1.contains("Wave"))             ParseWaveParams(p1["Wave"], fresh.wave);
+            if (p1.contains("Meteor"))           ParseMeteorParams(p1["Meteor"], fresh.meteor);
+            if (p1.contains("Direct"))           ParseDirectParams(p1["Direct"], fresh.direct);
+        }
+
+        if (j.contains("Phase02")) {
+            const auto& p2 = j["Phase02"];
+            if (p2.contains("Bouncing"))         ParseBouncingParams(p2["Bouncing"], fresh.bouncing);
+            if (p2.contains("Boomerang"))        ParseBoomerangParams(p2["Boomerang"], fresh.boomerang);
+            if (p2.contains("Blaster"))          ParseBlasterParams(p2["Blaster"], fresh.blaster);
+            if (p2.contains("Spear"))            ParseSpearParams(p2["Spear"], fresh.spear);
+        }
     }
-    catch (json::parse_error& e) {
-        std::cerr << "[AttackParamManager] JSON Parse Error: " << e.what() << "\n";
+    catch (const json::exception& e) { // syntax errors and wrong value types
+        std::cerr << "[AttackParamManager] JSON error in " << filepath << ": " << e.what() << "\n";
         return false;
     }
 
-    // --- PARSE PHASE 01 ---
-    if (j.contains("Phase01")) {
-        const auto& p1 = j["Phase01"];
-        if (p1.contains("RadialNormal"))     ParseRadialParams(p1["RadialNormal"], m_radialNormal);
-        if (p1.contains("RadialContinuous")) ParseRadialParams(p1["RadialContinuous"], m_radialContinuous);
-        if (p1.contains("FanNormal"))        ParseFanParams(p1["FanNormal"], m_fanNormal);
-        if (p1.contains("FanContinuous"))    ParseFanParams(p1["FanContinuous"], m_fanContinuous);
-        if (p1.contains("Phalanx"))          ParsePhalanxParams(p1["Phalanx"], m_phalanx);
-        if (p1.contains("Rain"))             ParseRainParams(p1["Rain"], m_rain);
-        if (p1.contains("RainTargeted"))     ParseRainParams(p1["RainTargeted"], m_rainTargeted); // <-- TAMBAH INI
-        if (p1.contains("Ultimate"))         ParseUltimateParams(p1["Ultimate"], m_ultimate);
-        if (p1.contains("Wave"))             ParseWaveParams(p1["Wave"], m_wave);
-		if (p1.contains("Meteor"))           ParseMeteorParams(p1["Meteor"], m_meteor);
-        if (p1.contains("Direct"))           ParseDirectParams(p1["Direct"], m_direct);
-    }
-
-    // --- PARSE PHASE 02 ---
-    if (j.contains("Phase02")) {
-        const auto& p2 = j["Phase02"];
-        if (p2.contains("Bouncing"))         ParseBouncingParams(p2["Bouncing"], m_bouncing);
-        if (p2.contains("Boomerang"))        ParseBoomerangParams(p2["Boomerang"], m_boomerang);
-        if (p2.contains("Blaster"))          ParseBlasterParams(p2["Blaster"], m_blaster);
-        if (p2.contains("Spear"))            ParseSpearParams(p2["Spear"], m_spear);
-    }
+    m_params = fresh;
 
     std::cout << "[AttackParamManager] Parameters successfully loaded from " << filepath << "\n";
     return true;

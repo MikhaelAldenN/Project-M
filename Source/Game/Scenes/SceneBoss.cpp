@@ -1454,10 +1454,10 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                         ImGui::PushID("WindowkillDamage");
 
                         // [FIX] Mengambil parameter dari struct baru
-                        auto& bp = wkPhase->GetBlasterParams();
-                        auto& bounce = wkPhase->GetBouncingParams();
-                        auto& boom = wkPhase->GetBoomerangParams();
-                        auto& spear = wkPhase->GetUndyneParams();
+                        auto& bp = AttackParamManager::Instance().GetBlasterParams();
+                        auto& bounce = AttackParamManager::Instance().GetBouncingParams();
+                        auto& boom = AttackParamManager::Instance().GetBoomerangParams();
+                        auto& spear = AttackParamManager::Instance().GetUndyneParams();
 
                         ImGui::SliderInt("Orbital Laser Damage", &bp.beamDamage, 1, 200);
                         ImGui::SliderInt("Targeted Laser Damage", &bp.beamDamage, 1, 200); // [FIX] Menggunakan bp karena digabung
@@ -1500,19 +1500,19 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
                     // [FIX MUTLAK] MENGGUNAKAN ADDATTACK DARI FSM
                     if (ImGui::Button("FIRE ORBITAL LASER (RANDOM)", ImVec2(-1.0f, 40.0f))) {
-                        wkPhase->AddAttack(std::make_unique<AttackBlasters>(wkPhase->GetBlasterParams(), false));
+                        wkPhase->AddAttack(std::make_unique<AttackBlasters>(AttackParamManager::Instance().GetBlasterParams(), false));
                     }
 
                     if (ImGui::Button("FIRE ORBITAL LASER (TARGETED)", ImVec2(-1.0f, 40.0f))) {
                         float playerX = m_player ? m_player->GetPosition().x : 0.0f;
-                        wkPhase->AddAttack(std::make_unique<AttackBlasters>(wkPhase->GetBlasterParams(), true, playerX));
+                        wkPhase->AddAttack(std::make_unique<AttackBlasters>(AttackParamManager::Instance().GetBlasterParams(), true, playerX));
                         AddLog("Targeted Orbital Blaster Triggered!");
                     }
                     ImGui::PopStyleColor(2);
 
                     if (ImGui::CollapsingHeader("Orbital Laser Configuration"))
                     {
-                        auto& bp = wkPhase->GetBlasterParams();
+                        auto& bp = AttackParamManager::Instance().GetBlasterParams();
                         ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "[ Cannon Head ]");
                         ImGui::SliderFloat("OS Window Size", &bp.cannonWindowSize, 100.0f, 800.0f);
                         ImGui::SliderFloat("Visual Scale 3D", &bp.cannonVisualScale, 0.1f, 10.0f);
@@ -1537,7 +1537,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                     }
 
                     if (ImGui::CollapsingHeader("Targeted Blaster Config", ImGuiTreeNodeFlags_DefaultOpen)) {
-                        auto& tParams = wkPhase->GetBlasterParams(); // [FIX] Disambungkan ke BlasterParams krn struct-nya sama
+                        auto& tParams = AttackParamManager::Instance().GetBlasterParams(); // [FIX] Disambungkan ke BlasterParams krn struct-nya sama
                         ImGui::SliderInt("Targeted Count", &tParams.spawnCount, 1, 20);
                         ImGui::DragFloat("Targeted Spawn Delay", &tParams.spawnDelay, 0.05f, 0.05f, 2.0f, "%.2f sec");
                         ImGui::DragFloat("Targeted Drop In", &tParams.dropInDuration, 0.05f, 0.1f, 2.0f, "%.2f sec");
@@ -1556,13 +1556,13 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
                     // [FIX MUTLAK] MENGGUNAKAN ADDATTACK DARI FSM
                     if (ImGui::Button("FIRE BOUNCING WINDOWS", ImVec2(-1.0f, 40.0f))) {
-                        wkPhase->AddAttack(std::make_unique<AttackBouncing>(wkPhase->GetBouncingParams()));
+                        wkPhase->AddAttack(std::make_unique<AttackBouncing>(AttackParamManager::Instance().GetBouncingParams()));
                     }
                     ImGui::PopStyleColor(2);
 
                 if (ImGui::CollapsingHeader("Bouncing Windows Configuration"))
                 {
-                    auto& bnp = wkPhase->GetBouncingParams();
+                    auto& bnp = AttackParamManager::Instance().GetBouncingParams();
                     ImGui::TextColored(ImVec4(1.0f, 0.5f, 1.0f, 1.0f), "[ Spawn & Behavior ]");
                     ImGui::SliderInt("Spawn Count", &bnp.spawnCount, 1, 10);
                     ImGui::SliderFloat("Spawn Delay", &bnp.spawnDelay, 0.0f, 1.0f, "%.2f sec");
@@ -1585,13 +1585,13 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
                     // [FIX MUTLAK] MENGGUNAKAN ADDATTACK DARI FSM
                     if (ImGui::Button("FIRE BOOMERANG WINDOW", ImVec2(-1.0f, 40.0f))) {
-                        wkPhase->AddAttack(std::make_unique<AttackBoomerangs>(wkPhase->GetBoomerangParams()));
+                        wkPhase->AddAttack(std::make_unique<AttackBoomerangs>(AttackParamManager::Instance().GetBoomerangParams()));
                     }
                     ImGui::PopStyleColor(2);
 
                 if (ImGui::CollapsingHeader("Boomerang Configuration"))
                 {
-                    auto& bmp = wkPhase->GetBoomerangParams();
+                    auto& bmp = AttackParamManager::Instance().GetBoomerangParams();
                     ImGui::TextColored(ImVec4(1.0f, 0.5f, 1.0f, 1.0f), "[ Spawn Pattern ]");
                     ImGui::SliderInt("Spawn Count", &bmp.spawnCount, 1, 20);
                     ImGui::SliderFloat("Spawn Delay", &bmp.spawnDelay, 0.0f, 2.0f, "%.2f sec");
@@ -1612,12 +1612,12 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
                     // [FIX MUTLAK] MENGGUNAKAN ADDATTACK DARI FSM
                     if (ImGui::Button("Trigger Undyne Spear", ImVec2(180.0f, 30.0f))) {
-                        wkPhase->AddAttack(std::make_unique<AttackSpears>(wkPhase->GetUndyneParams(), m_player.get()));
+                        wkPhase->AddAttack(std::make_unique<AttackSpears>(AttackParamManager::Instance().GetUndyneParams(), m_player.get()));
                         AddLog("Undyne Spear Attack Triggered!");
                     }
 
                     if (ImGui::CollapsingHeader("Undyne Spear Config", ImGuiTreeNodeFlags_DefaultOpen)) {
-                        auto& params = wkPhase->GetUndyneParams();
+                        auto& params = AttackParamManager::Instance().GetUndyneParams();
                         ImGui::SliderInt("Spear Count", &params.count, 1, 20);
                         ImGui::DragFloat("Spawn Delay", &params.spawnDelay, 0.05f, 0.05f, 2.0f, "%.2f sec");
                         ImGui::DragFloat("Aiming Time", &params.hoverDuration, 0.05f, 0.1f, 3.0f, "%.2f sec");
