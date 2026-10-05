@@ -32,6 +32,7 @@
 // SCENE BOSS - WINDOWKILL MODE
 // =========================================================
 
+class BossPhase01;
 class CollisionManager;
 class EnemyManager;
 class ItemManager;
@@ -66,6 +67,7 @@ private:
     void DrawDebugPanel(); // old all-in-one panel, removed once the five new panels are done
     void DrawBossPanel();
     void DrawAttacksPanel();
+    void DrawBulletHellAttacks(BossPhase01& phase);
     void SpawnDebugWindow();
     void SpawnTransparentWindow(float bgAlpha, const std::string& typeSuffix);
     void AddLog(const std::string& message);
@@ -128,6 +130,7 @@ private:
     // =========================================================
     bool      m_showGrid = false;
     int       m_selectedWindowkillSet{ 0 }; // row selected in the Attacks panel list
+    int       m_selectedBulletHellSet{ 0 };
     float     m_timeScale = 1.0f;
     int       m_spawnCount = 0;
     bool      m_playerWindowTransparent = false;

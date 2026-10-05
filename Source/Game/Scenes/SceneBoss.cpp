@@ -1820,6 +1820,137 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
             }
         }
 
+        namespace
+        {
+            // Order of the Attacks panel list while the Bullet hell phase is active.
+            enum class BulletHellSet
+            {
+                direct, radial, radialContinuous, fan, fanContinuous, phalanx,
+                wave, ultimate, meteor, rainSweep, rainTargeted, count
+            };
+
+            constexpr std::array<const char*, 11> k_bulletHellSetNames{
+                "Direct", "Radial", "Radial continuous", "Fan", "Fan continuous", "Phalanx",
+                "Wave", "Ultimate", "Meteor", "Rain sweep", "Rain targeted" };
+            static_assert(k_bulletHellSetNames.size() == static_cast<std::size_t>(BulletHellSet::count),
+                "one name per BulletHellSet enumerator");
+
+            bool IsSameColor(const DirectX::XMFLOAT4& a, const DirectX::XMFLOAT4& b)
+            {
+                return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
+            }
+
+            // Bordered list of set names, sized to show every row. Updates `selected` on click.
+            template <std::size_t N>
+            void DrawSetList(const std::array<const char*, N>& names, int& selected)
+            {
+                const float listHeight{ ImGui::GetTextLineHeightWithSpacing() * static_cast<float>(N)
+                    + ImGui::GetStyle().WindowPadding.y * 2.0f };
+                ImGui::BeginChild("##SetList", ImVec2{ 0.0f, listHeight }, true);
+                for (int i{ 0 }; i < static_cast<int>(N); ++i)
+                {
+                    if (ImGui::Selectable(names[static_cast<std::size_t>(i)], selected == i)) selected = i;
+                }
+                ImGui::EndChild();
+            }
+
+            // Tail shared by every set: Revert on the Fire line, then the set's rows.
+            template <typename Params, typename DrawRows>
+            void DrawRevertAndRows(Params& params, const Params& loaded, DrawRows drawRows)
+            {
+                ImGui::SameLine();
+                if (ImGui::Button("Revert")) params = loaded;
+                ImGui::Separator();
+                drawRows(params, loaded);
+            }
+
+            void DrawDirectRows(DirectParams& p, const DirectParams& loaded)
+            {
+                DebugProperty::SliderInt("Count", p.count, 1, 50, p.count != loaded.count);
+                DebugProperty::SliderFloat("Spawn delay", p.spawnDelay, 0.05f, 1.0f, "%.2f s", p.spawnDelay != loaded.spawnDelay);
+                DebugProperty::SliderFloat("Speed", p.speed, 10.0f, 100.0f, "%.1f", p.speed != loaded.speed);
+            }
+
+            // Used for both Radial and Radial continuous.
+            void DrawRadialRows(RadialParams& p, const RadialParams& loaded)
+            {
+                DebugProperty::ColorEdit4("Color", &p.color.x, !IsSameColor(p.color, loaded.color));
+                DebugProperty::SliderFloat("Speed", p.speed, 1.0f, 100.0f, "%.1f", p.speed != loaded.speed);
+                DebugProperty::SliderInt("Count", p.count, 4, 128, p.count != loaded.count);
+                DebugProperty::SliderFloat("Burst delay", p.burstDelay, 0.01f, 1.0f, "%.2f s", p.burstDelay != loaded.burstDelay);
+                DebugProperty::SliderInt("Burst count", p.burstCount, 1, 20, p.burstCount != loaded.burstCount);
+                DebugProperty::SliderInt("Damage", p.damage, 1, 100, p.damage != loaded.damage);
+            }
+
+            // Used for both Fan and Fan continuous.
+            void DrawFanRows(FanParams& p, const FanParams& loaded)
+            {
+                DebugProperty::SliderFloat("Speed", p.speed, 1.0f, 100.0f, "%.1f", p.speed != loaded.speed);
+                DebugProperty::SliderInt("Rows", p.rows, 1, 10, p.rows != loaded.rows);
+                DebugProperty::SliderInt("Waves", p.waves, 1, 10, p.waves != loaded.waves);
+                DebugProperty::SliderFloat("Spread angle", p.spreadAngle, 0.05f, 0.5f, "%.3f rad", p.spreadAngle != loaded.spreadAngle);
+                DebugProperty::SliderInt("Damage", p.damage, 1, 100, p.damage != loaded.damage);
+            }
+
+            void DrawPhalanxRows(PhalanxParams& p, const PhalanxParams& loaded)
+            {
+                DebugProperty::SliderInt("Count", p.count, 3, 10, p.count != loaded.count);
+                DebugProperty::SliderFloat("Speed", p.speed, 10.0f, 80.0f, "%.1f", p.speed != loaded.speed);
+                DebugProperty::SliderInt("Damage", p.damage, 1, 150, p.damage != loaded.damage);
+            }
+
+            void DrawWaveRows(WaveParams& p, const WaveParams& loaded)
+            {
+                DebugProperty::SliderInt("Waves", p.waves, 1, 20, p.waves != loaded.waves);
+                DebugProperty::SliderFloat("Wave delay", p.waveDelay, 0.1f, 3.0f, "%.2f s", p.waveDelay != loaded.waveDelay);
+                DebugProperty::SliderFloat("Speed", p.speed, 5.0f, 60.0f, "%.1f", p.speed != loaded.speed);
+                DebugProperty::SliderFloat("Track spacing", p.trackSpacing, 1.0f, 10.0f, "%.1f units", p.trackSpacing != loaded.trackSpacing);
+                DebugProperty::SliderFloat("Start Z", p.startZ, -30.0f, 0.0f, "%.1f units", p.startZ != loaded.startZ);
+            }
+
+            void DrawUltimateRows(UltimateParams& p, const UltimateParams& loaded)
+            {
+                DebugProperty::ColorEdit4("Ball color", &p.ballColor.x, !IsSameColor(p.ballColor, loaded.ballColor));
+                DebugProperty::SliderFloat("Laser duration", p.laserDuration, 0.5f, 4.0f, "%.2f s", p.laserDuration != loaded.laserDuration);
+                DebugProperty::SliderFloat("Shoot speed", p.shootSpeed, 10.0f, 120.0f, "%.1f", p.shootSpeed != loaded.shootSpeed);
+            }
+
+            void DrawMeteorRows(MeteorParams& p, const MeteorParams& loaded)
+            {
+                DebugProperty::SliderInt("Count", p.count, 1, 20, p.count != loaded.count);
+                DebugProperty::SliderFloat("Spawn delay", p.spawnDelay, 0.05f, 2.0f, "%.2f s", p.spawnDelay != loaded.spawnDelay);
+                DebugProperty::SliderFloat("Speed", p.speed, 10.0f, 80.0f, "%.1f", p.speed != loaded.speed);
+                DebugProperty::SliderFloat("Speed variance", p.speedVariance, 0.0f, 40.0f, "%.1f", p.speedVariance != loaded.speedVariance);
+                DebugProperty::SliderFloat("Visual scale", p.visualScale, 0.5f, 10.0f, "%.2f", p.visualScale != loaded.visualScale);
+                DebugProperty::SliderFloat("Spread offset", p.spreadOffset, 0.0f, 10.0f, "%.1f units", p.spreadOffset != loaded.spreadOffset);
+                DebugProperty::DragFloat2("Start", p.startX, p.startZ, 0.5f, -50.0f, 50.0f, "%.1f units",
+                    p.startX != loaded.startX || p.startZ != loaded.startZ);
+                DebugProperty::DragFloat2("Target", p.targetX, p.targetZ, 0.5f, -50.0f, 50.0f, "%.1f units",
+                    p.targetX != loaded.targetX || p.targetZ != loaded.targetZ);
+            }
+
+            void DrawRainSweepRows(RainParams& p, const RainParams& loaded)
+            {
+                DebugProperty::DragFloatRange("Speed range", p.minSpeed, p.maxSpeed, 1.0f, 10.0f, 150.0f, "%.1f",
+                    p.minSpeed != loaded.minSpeed || p.maxSpeed != loaded.maxSpeed);
+                DebugProperty::SliderFloat("Active duration", p.activeDuration, 0.5f, 10.0f, "%.2f s", p.activeDuration != loaded.activeDuration);
+                DebugProperty::SliderFloat("Damage", p.damage, 0.0f, 50.0f, "%.2f", p.damage != loaded.damage);
+            }
+
+            void DrawRainTargetedRows(RainParams& p, const RainParams& loaded)
+            {
+                DebugProperty::DragFloatRange("Speed range", p.minSpeed, p.maxSpeed, 1.0f, 10.0f, 150.0f, "%.1f",
+                    p.minSpeed != loaded.minSpeed || p.maxSpeed != loaded.maxSpeed);
+                DebugProperty::SliderFloat("Warning duration", p.warningDuration, 0.1f, 3.0f, "%.2f s", p.warningDuration != loaded.warningDuration);
+                DebugProperty::SliderFloat("Active duration", p.activeDuration, 0.1f, 5.0f, "%.2f s", p.activeDuration != loaded.activeDuration);
+                DebugProperty::SliderFloat("Zone width", p.width, 2.0f, 50.0f, "%.1f units", p.width != loaded.width);
+                DebugProperty::SliderFloat("Zone depth", p.depth, 10.0f, 80.0f, "%.1f units", p.depth != loaded.depth);
+                DebugProperty::SliderInt("Trigger count", p.triggerCount, 1, 10, p.triggerCount != loaded.triggerCount);
+                DebugProperty::SliderFloat("Trigger delay", p.triggerDelay, 0.1f, 3.0f, "%.2f s", p.triggerDelay != loaded.triggerDelay);
+                DebugProperty::SliderFloat("Damage", p.damage, 0.0f, 50.0f, "%.2f", p.damage != loaded.damage);
+            }
+        }
+
         // Attacks panel: list of the active phase's parameter sets on top, the selected set below
         // with its Fire and Revert buttons. Edits are not saved; the file is edited by hand and reloaded.
         // Must not call ImGui::Begin / End.
@@ -1844,27 +1975,23 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                     : "AttackParams.json reload failed, params unchanged.");
             }
 
+            if (auto * bulletHell{ dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase()) })
+            {
+                DrawBulletHellAttacks(*bulletHell);
+                return;
+            }
+
             auto* windowkill{ dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase()) };
             if (!windowkill)
             {
-                ImGui::TextDisabled("Bullet hell sets are not in this panel yet.");
+                ImGui::TextDisabled("No active phase.");
                 return;
             }
 
             const AttackParamSet& loaded{ manager.GetLoadedParams() };
 
             // ---- Master: set list ----
-            const float listHeight{ ImGui::GetTextLineHeightWithSpacing() * static_cast<float>(k_windowkillSetNames.size())
-                + ImGui::GetStyle().WindowPadding.y * 2.0f };
-            ImGui::BeginChild("##SetList", ImVec2{ 0.0f, listHeight }, true);
-            for (int i{ 0 }; i < static_cast<int>(k_windowkillSetNames.size()); ++i)
-            {
-                if (ImGui::Selectable(k_windowkillSetNames[static_cast<std::size_t>(i)], m_selectedWindowkillSet == i))
-                {
-                    m_selectedWindowkillSet = i;
-                }
-            }
-            ImGui::EndChild();
+            DrawSetList(k_windowkillSetNames, m_selectedWindowkillSet);
 
             // ---- Detail: selected set ----
             const char* setName{ k_windowkillSetNames[static_cast<std::size_t>(m_selectedWindowkillSet)] };
@@ -1925,6 +2052,121 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                 break;
             }
             case WindowkillSet::count:
+                break;
+            }
+
+            ImGui::PopID();
+        }
+
+        // Bullet hell half of the Attacks panel. Fire buttons do what the old manual triggers did;
+// they are not guaranteed to match how BossAI_Phase01 launches the same attack.
+        void SceneBoss::DrawBulletHellAttacks(BossPhase01& phase)
+        {
+            AttackParamManager& manager{ AttackParamManager::Instance() };
+            const AttackParamSet& loaded{ manager.GetLoadedParams() };
+
+            // ---- Master: set list ----
+            DrawSetList(k_bulletHellSetNames, m_selectedBulletHellSet);
+
+            // ---- Detail: selected set ----
+            const char* setName{ k_bulletHellSetNames[static_cast<std::size_t>(m_selectedBulletHellSet)] };
+            ImGui::PushID(setName); // sets share row labels such as "Speed"
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(setName);
+            ImGui::SameLine();
+
+            // Angle from boss to player at the moment of the click, for the two Fan sets.
+            const auto getAngleToPlayer{ [this]() {
+                const DirectX::XMFLOAT3 playerPos{ m_player->GetPosition() };
+                const DirectX::XMFLOAT3 bossPos{ m_navi->GetPosition() };
+                return std::atan2(playerPos.x - bossPos.x, playerPos.z - bossPos.z);
+            } };
+
+            switch (static_cast<BulletHellSet>(m_selectedBulletHellSet))
+            {
+            case BulletHellSet::direct:
+            {
+                DirectParams& params{ manager.GetDirectParams() };
+                if (ImGui::Button("Fire") && m_player) phase.AddPooledAttack(std::make_unique<AttackDirect>(params, m_player.get()));
+                DrawRevertAndRows(params, loaded.direct, DrawDirectRows);
+                break;
+            }
+            case BulletHellSet::radial:
+            {
+                RadialParams& params{ manager.GetRadialNormalParams() };
+                if (ImGui::Button("Fire")) phase.AddPooledAttack(std::make_unique<AttackRadial>(params));
+                DrawRevertAndRows(params, loaded.radialNormal, DrawRadialRows);
+                break;
+            }
+            case BulletHellSet::radialContinuous:
+            {
+                RadialParams& params{ manager.GetRadialContinuousParams() };
+                if (ImGui::Button("Fire")) phase.AddPooledAttack(std::make_unique<AttackRadial>(params));
+                DrawRevertAndRows(params, loaded.radialContinuous, DrawRadialRows);
+                break;
+            }
+            case BulletHellSet::fan:
+            {
+                FanParams& params{ manager.GetFanNormalParams() };
+                if (ImGui::Button("Fire") && m_player) phase.AddPooledAttack(std::make_unique<AttackFan>(params, getAngleToPlayer()));
+                DrawRevertAndRows(params, loaded.fanNormal, DrawFanRows);
+                break;
+            }
+            case BulletHellSet::fanContinuous:
+            {
+                FanParams& params{ manager.GetFanContinuousParams() };
+                if (ImGui::Button("Fire") && m_player)
+                {
+                    phase.AddPooledAttack(std::make_unique<AttackFan>(params, getAngleToPlayer(), m_player.get()));
+                }
+                DrawRevertAndRows(params, loaded.fanContinuous, DrawFanRows);
+                break;
+            }
+            case BulletHellSet::phalanx:
+            {
+                PhalanxParams& params{ manager.GetPhalanxParams() };
+                if (ImGui::Button("Fire") && m_player) phase.AddPooledAttack(std::make_unique<AttackPhalanx>(params, m_player.get()));
+                DrawRevertAndRows(params, loaded.phalanx, DrawPhalanxRows);
+                break;
+            }
+            case BulletHellSet::wave:
+            {
+                WaveParams& params{ manager.GetWaveParams() };
+                if (ImGui::Button("Fire")) phase.AddPooledAttack(std::make_unique<AttackWave>(params));
+                DrawRevertAndRows(params, loaded.wave, DrawWaveRows);
+                break;
+            }
+            case BulletHellSet::ultimate:
+            {
+                UltimateParams& params{ manager.GetUltimateParams() };
+                if (ImGui::Button("Fire") && m_player) phase.AddPooledAttack(std::make_unique<AttackUltimate>(params, m_player.get()));
+                DrawRevertAndRows(params, loaded.ultimate, DrawUltimateRows);
+                break;
+            }
+            case BulletHellSet::meteor:
+            {
+                MeteorParams& params{ manager.GetMeteorParams() };
+                if (ImGui::Button("Fire")) phase.AddPooledAttack(std::make_unique<AttackMeteor>(params));
+                DrawRevertAndRows(params, loaded.meteor, DrawMeteorRows);
+                break;
+            }
+            case BulletHellSet::rainSweep:
+            {
+                RainParams& params{ manager.GetRainParams() };
+                if (ImGui::Button("Fire left")) phase.TriggerRain(params, RainMode::VerticalSweep, false);
+                ImGui::SameLine();
+                if (ImGui::Button("Fire right")) phase.TriggerRain(params, RainMode::VerticalSweep, true);
+                DrawRevertAndRows(params, loaded.rain, DrawRainSweepRows);
+                break;
+            }
+            case BulletHellSet::rainTargeted:
+            {
+                RainParams& params{ manager.GetRainTargetedParams() };
+                if (ImGui::Button("Fire")) phase.TriggerRain(params, RainMode::Targeted, true);
+                DrawRevertAndRows(params, loaded.rainTargeted, DrawRainTargetedRows);
+                break;
+            }
+            case BulletHellSet::count:
                 break;
             }
 
