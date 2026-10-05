@@ -100,6 +100,10 @@ namespace DebugProperty
     bool DragFloat2(const char* label, float& x, float& y, float speed, float min, float max,
         const char* format = "%.3f", bool isModified = false);
 
+    // `xyz` points at 3 consecutive floats (for example &v.x of an XMFLOAT3). No range limit.
+    bool DragFloat3(const char* label, float* xyz, float speed,
+        const char* format = "%.3f", bool isModified = false);
+
     // A low / high pair on one row; the control keeps low <= high.
     bool DragFloatRange(const char* label, float& low, float& high, float speed, float min, float max,
         const char* format = "%.3f", bool isModified = false);

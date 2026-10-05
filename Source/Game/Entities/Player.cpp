@@ -9,8 +9,11 @@
 #include "PlayerConstants.h"
 #include "PlayerStates.h"
 #include "StateMachine.h"
+#include <array>
 #include <cmath>
+#include <cstdio>
 #include <imgui.h>
+#include "DebugUI.h"
 #include "InputHelper.h"
 #include "EffectManager.h"
 #include "System/AudioManager.h"
@@ -1022,75 +1025,104 @@ void Player::RestorePowerCap()
 
 void Player::DrawDebugGUI()
 {
-    if (ImGui::CollapsingHeader("Movement & Physics", ImGuiTreeNodeFlags_DefaultOpen))
+    // ---- Head: state ----
+    const float hpFraction{ (m_maxHp > 0.0f) ? (m_hp / m_maxHp) : 0.0f };
+    std::array<char, 48> hpText{};
+    std::snprintf(hpText.data(), hpText.size(), "HP %.1f / %.1f", m_hp, m_maxHp);
+    ImGui::ProgressBar(hpFraction, ImVec2{ -1.0f, 0.0f }, hpText.data());
+
+    const DirectX::XMFLOAT3 playerPos{ GetPosition() };
+    DebugProperty::Text("Position", "%.2f, %.2f, %.2f", playerPos.x, playerPos.y, playerPos.z);
+    DebugProperty::Text("Input", "%s", isInputEnabled ? "on" : "off");
+
+    // ---- Head: actions ----
+    float hp{ m_hp };
+    if (DebugProperty::DragFloat("Set HP", hp, 1.0f, 0.0f, m_maxHp, "%.0f")) m_hp = hp;
+
+    if (ImGui::Button("Heal")) m_hp = m_maxHp;
+    ImGui::SameLine();
+    // Why no reposition: start position belongs to the scene; use Scene > Reload for that.
+    if (ImGui::Button("Reset state"))
     {
-        ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "Status: %s", isInputEnabled ? "Input ON" : "Input OFF");
-        ImGui::Checkbox("Invert Controls", &invertControls);
-        ImGui::DragFloat("Walk Speed", &moveSpeed, 0.1f, 0.0f, 100.0f, "%.1f");
-        ImGui::DragFloat("Acceleration", &acceleration, 0.1f, 0.1f, 100.0f, "%.1f");
-        ImGui::DragFloat("Deceleration", &deceleration, 0.1f, 0.1f, 100.0f, "%.1f");
+        m_hp = m_maxHp;
+        scale = { 1.0f, 1.0f, 1.0f }; // the death sequence hides the player by zeroing scale
+        isInputEnabled = true;
+        m_aimLocked = false;
+        if (stateMachine) stateMachine->Initialize(std::make_unique<PlayerIdle>(), this);
     }
 
-    if (ImGui::CollapsingHeader("Dash Settings", ImGuiTreeNodeFlags_DefaultOpen))
+    // ---- Categories ----
+    ImGui::PushID("Movement");
+    if (ImGui::CollapsingHeader("Movement", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::DragFloat("Dash Speed", &dashSpeed, 0.5f, 10.0f, 200.0f, "%.1f");
-        ImGui::DragFloat("Dash Duration", &dashDuration, 0.01f, 0.01f, 1.0f, "%.2f sec");
-        ImGui::DragFloat("Dash Cooldown", &dashCooldown, 0.01f, 0.0f, 5.0f, "%.2f sec");
+        DebugProperty::DragFloat("Walk speed", moveSpeed, 0.1f, 0.0f, 100.0f, "%.1f");
+        DebugProperty::DragFloat("Acceleration", acceleration, 0.1f, 0.1f, 100.0f, "%.1f");
+        DebugProperty::DragFloat("Deceleration", deceleration, 0.1f, 0.1f, 100.0f, "%.1f");
+        DebugProperty::Checkbox("Invert controls", invertControls);
     }
+    ImGui::PopID();
 
-    if (ImGui::CollapsingHeader("Combat & Projectiles", ImGuiTreeNodeFlags_DefaultOpen))
+    ImGui::PushID("Dash");
+    if (ImGui::CollapsingHeader("Dash", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "[ General Combat ]");
-        float hp = m_hp;
-        if (ImGui::DragFloat("Player HP", &hp, 1.0f, 0.0f, m_maxHp)) m_hp = hp;
-        float maxHp = m_maxHp;
-        if (ImGui::DragFloat("Player Max HP", &maxHp, 1.0f, 1.0f, 9999.0f)) SetMaxHP(maxHp);
+        DebugProperty::DragFloat("Speed", dashSpeed, 0.5f, 10.0f, 200.0f, "%.1f");
+        DebugProperty::DragFloat("Duration", dashDuration, 0.01f, 0.01f, 1.0f, "%.2f s");
+        DebugProperty::DragFloat("Cooldown", dashCooldown, 0.01f, 0.0f, 5.0f, "%.2f s");
+    }
+    ImGui::PopID();
 
-        // --- 無敵時間 (I-Frames) のコントロール ---
-        ImGui::Checkbox("Enable I-Frames (Invincibility on hit)", &m_enableIFrames);
-        if (m_enableIFrames) {
-            ImGui::Indent();
-            ImGui::DragFloat("I-Frame Duration", &m_iFrameDuration, 0.1f, 0.1f, 5.0f, "%.1f sec");
-            ImGui::Unindent();
-        }
-        ImGui::Separator();
+    ImGui::PushID("Health");
+    if (ImGui::CollapsingHeader("Health"))
+    {
+        float maxHp{ m_maxHp };
+        // SetMaxHP also refills HP to the new maximum.
+        if (DebugProperty::DragFloat("Max HP", maxHp, 1.0f, 1.0f, 9999.0f, "%.0f")) SetMaxHP(maxHp);
+        DebugProperty::Checkbox("I-frames enabled", m_enableIFrames);
+        DebugProperty::DragFloat("I-frame duration", m_iFrameDuration, 0.1f, 0.1f, 5.0f, "%.2f s");
+    }
+    ImGui::PopID();
 
-        // --- Toggle Uncap (Overdrive) ---
-        bool powerUncapped = IsPowerUncapped();
-        if (ImGui::Checkbox("Uncap Power (Overdrive)", &powerUncapped)) {
-            if (powerUncapped) ReleasePowerCap();
+    ImGui::PushID("Overdrive");
+    if (ImGui::CollapsingHeader("Overdrive"))
+    {
+        bool isUncapped{ IsPowerUncapped() };
+        if (DebugProperty::Checkbox("Uncapped", isUncapped))
+        {
+            if (isUncapped) ReleasePowerCap();
             else RestorePowerCap();
         }
 
-        // --- Parameter Uncap Muncul Jika Aktif ---
-        if (powerUncapped) {
-            ImGui::Indent();
-            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), ">> Uncap Tuning <<");
-
-            // Jika slider digeser saat Uncap aktif, langsung terapkan nilainya secara real-time
-            if (ImGui::DragFloat("Uncap Walk Speed", &m_uncapMoveSpeed, 0.1f, 10.0f, 100.0f, "%.1f")) moveSpeed = m_uncapMoveSpeed;
-            if (ImGui::DragFloat("Uncap Dash Speed", &m_uncapDashSpeed, 0.5f, 10.0f, 200.0f, "%.1f")) dashSpeed = m_uncapDashSpeed;
-            ImGui::DragFloat("Uncap HP Regen / Sec", &m_uncapHealthRegenPerSecond, 0.1f, 0.0f, 100.0f, "%.1f");
-            ImGui::DragFloat("Uncap Regen Max HP", &m_uncapMaxRegenHP, 1.0f, 1.0f, 9999.0f);
-            if (ImGui::ColorEdit4("Uncap Glow Color", (float*)&m_uncapColor)) color = m_uncapColor;
-
-            ImGui::Unindent();
-        }
-
-        ImGui::Separator();
-        ImGui::Separator();
-        ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "[ Crossbow Bullet ]");
-        ImGui::DragFloat("Bullet Speed", &m_bulletSpeed, 0.5f, 1.0f, 150.0f, "%.1f");
-        ImGui::SliderInt("Bullet Damage", &m_bulletDamage, 1, 500); // [BARU] Slider Damage Player
-        ImGui::ColorEdit4("Bullet Tint Color", (float*)&m_playerbulletColor);
-
-        if (ImGui::TreeNode("Bullet Model Transform (Offset)"))
+        // Why the extra condition: these are the uncapped values; they only replace the
+        // live speed and color while Overdrive is active.
+        if (DebugProperty::DragFloat("Walk speed", m_uncapMoveSpeed, 0.1f, 10.0f, 100.0f, "%.1f") && isUncapped)
         {
-            ImGui::DragFloat3("Position", (float*)&m_playerbulletOffsetPos, 0.01f);
-            ImGui::DragFloat3("Rotation", (float*)&m_playerbulletOffsetRot, 0.5f);
-            ImGui::DragFloat3("Scale", (float*)&m_playerbulletOffsetScale, 0.1f);
-            if (ImGui::Button("Reset Offsets", ImVec2(-1.0f, 25.0f))) ResetPlayerBulletOffsets();
+            moveSpeed = m_uncapMoveSpeed;
+        }
+        if (DebugProperty::DragFloat("Dash speed", m_uncapDashSpeed, 0.5f, 10.0f, 200.0f, "%.1f") && isUncapped)
+        {
+            dashSpeed = m_uncapDashSpeed;
+        }
+        DebugProperty::DragFloat("HP regen per second", m_uncapHealthRegenPerSecond, 0.1f, 0.0f, 100.0f, "%.1f");
+        DebugProperty::DragFloat("Regen max HP", m_uncapMaxRegenHP, 1.0f, 1.0f, 9999.0f, "%.0f");
+        if (DebugProperty::ColorEdit4("Glow color", &m_uncapColor.x) && isUncapped) color = m_uncapColor;
+    }
+    ImGui::PopID();
+
+    ImGui::PushID("Bullet");
+    if (ImGui::CollapsingHeader("Bullet"))
+    {
+        DebugProperty::DragFloat("Speed", m_bulletSpeed, 0.5f, 1.0f, 150.0f, "%.1f");
+        DebugProperty::SliderInt("Damage", m_bulletDamage, 1, 500);
+        DebugProperty::ColorEdit4("Tint color", &m_playerbulletColor.x);
+
+        if (ImGui::TreeNode("Advanced"))
+        {
+            DebugProperty::DragFloat3("Offset position", &m_playerbulletOffsetPos.x, 0.01f);
+            DebugProperty::DragFloat3("Offset rotation", &m_playerbulletOffsetRot.x, 0.5f);
+            DebugProperty::DragFloat3("Offset scale", &m_playerbulletOffsetScale.x, 0.1f);
+            if (ImGui::Button("Reset offsets")) ResetPlayerBulletOffsets();
             ImGui::TreePop();
         }
     }
+    ImGui::PopID();
 }

@@ -68,6 +68,8 @@ private:
     void DrawBossPanel();
     void DrawAttacksPanel();
     void DrawBulletHellAttacks(BossPhase01& phase);
+    void DrawWindowsPanel();
+    void CloseTestWindows();
     void SpawnDebugWindow();
     void SpawnTransparentWindow(float bgAlpha, const std::string& typeSuffix);
     void AddLog(const std::string& message);
@@ -197,6 +199,7 @@ private:
     DebugPanelHandle m_debugPanel{};
     DebugPanelHandle m_bossPanel{};
     DebugPanelHandle m_attacksPanel{};
-
+    DebugPanelHandle m_playerPanel{};
+    DebugPanelHandle m_windowsPanel{};
 #endif
 };

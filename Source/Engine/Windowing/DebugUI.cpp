@@ -266,6 +266,12 @@ bool DebugProperty::DragFloat2(const char* label, float& x, float& y, float spee
         });
 }
 
+bool DebugProperty::DragFloat3(const char* label, float* xyz, float speed, const char* format, bool isModified)
+{
+    assert(xyz && "DebugProperty::DragFloat3: xyz is null");
+    return Row(label, isModified, [&]() { return ImGui::DragFloat3("##value", xyz, speed, 0.0f, 0.0f, format); });
+}
+
 bool DebugProperty::DragFloatRange(const char* label, float& low, float& high, float speed, float min, float max,
     const char* format, bool isModified)
 {
