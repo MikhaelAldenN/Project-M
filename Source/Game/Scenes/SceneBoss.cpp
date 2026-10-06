@@ -7,6 +7,7 @@
 #include "PerformanceLogger.h"
 #include <algorithm>
 #include <array>
+#include <ctime>
 #ifdef NAVI_DEBUG_GUI
 #include <imgui.h>
 #endif
@@ -134,6 +135,7 @@ SceneBoss::SceneBoss()
         else ImGui::TextDisabled("Player not created.");
         });
     m_windowsPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Windows", [this]() { DrawWindowsPanel(); });
+    m_logPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Log", [this]() { DrawLogPanel(); });
     // Capturing `this` is safe: the handle is a member and dies with this scene.
     m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Boss", [this]() { DrawDebugPanel(); }); 
 #endif
@@ -922,6 +924,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
             if (ImGui::BeginTabItem("Attacks")) { DrawAttacksPanel(); ImGui::EndTabItem(); }
             if (m_player && ImGui::BeginTabItem("Player")) { m_player->DrawDebugGUI(); ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem("Windows")) { DrawWindowsPanel(); ImGui::EndTabItem(); }
+            if (ImGui::BeginTabItem("Log")) { DrawLogPanel(); ImGui::EndTabItem(); }
             if (ImGui::BeginTabItem("Old")) { DrawDebugPanel(); ImGui::EndTabItem(); }
             ImGui::EndTabBar();
         }
@@ -2281,13 +2284,34 @@ void SceneBoss::CloseTestWindows()
     AddLog("Closed " + std::to_string(testWindowNames.size()) + " test window(s).");
 }
 
+void SceneBoss::DrawLogPanel()
+{
+    if (ImGui::Button("Clear")) m_debugLogs.clear();
+
+    ImGui::BeginChild("##LogRegion", ImVec2{ 0.0f, 0.0f }, true);
+    for (const std::string& line : m_debugLogs)
+    {
+        ImGui::TextUnformatted(line.c_str());
+    }
+    // Why the check: follow new lines only while already at the bottom, so scrolling up to read stays put.
+    if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) ImGui::SetScrollHereY(1.0f);
+    ImGui::EndChild();
+}
+
 // =========================================================
 // DEBUG / SYSTEM HELPERS
 // =========================================================
 
 void SceneBoss::AddLog(const std::string& message)
 {
-    m_debugLogs.push_back(message);
+    // Wall-clock stamp in the same format as PerformanceLogger, so both logs can be matched.
+    const std::time_t now{ std::time(nullptr) };
+    std::tm localTime{};
+    localtime_s(&localTime, &now);
+    std::array<char, 16> stamp{};
+    std::strftime(stamp.data(), stamp.size(), "[%H:%M:%S] ", &localTime);
+
+    m_debugLogs.push_back(stamp.data() + message);
     if (m_debugLogs.size() > 50)
         m_debugLogs.erase(m_debugLogs.begin());
 }
