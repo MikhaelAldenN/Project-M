@@ -136,6 +136,7 @@ SceneBoss::SceneBoss()
         });
     m_windowsPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Windows", [this]() { DrawWindowsPanel(); });
     m_logPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Log", [this]() { DrawLogPanel(); });
+    m_viewMenu = DebugUI::Instance().RegisterPanel(DebugPanelSlot::menuBar, "Boss view", [this]() { DrawViewMenu(); });
     // Capturing `this` is safe: the handle is a member and dies with this scene.
     m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Boss", [this]() { DrawDebugPanel(); }); 
 #endif
@@ -913,9 +914,15 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
         ImGui::SetNextWindowSize(m_debugPanelSize, ImGuiCond_FirstUseEver);
 
         ImGui::Begin("WINDOWKILL MASTER CONTROL", nullptr,
-            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar);
 
         m_debugPanelSize = ImGui::GetWindowSize();
+
+        if (ImGui::BeginMenuBar())
+        {
+            DrawViewMenu();
+            ImGui::EndMenuBar();
+        }
 
         // Release has no DebugUI host, so this window provides the tab frame itself.
         if (ImGui::BeginTabBar("##Panels"))
@@ -2296,6 +2303,18 @@ void SceneBoss::DrawLogPanel()
     // Why the check: follow new lines only while already at the bottom, so scrolling up to read stays put.
     if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) ImGui::SetScrollHereY(1.0f);
     ImGui::EndChild();
+}
+
+// Menu bar entry: debug overlays drawn into the game image.
+// Menu bar callbacks may only submit BeginMenu, MenuItem and text.
+void SceneBoss::DrawViewMenu()
+{
+    if (ImGui::BeginMenu("View"))
+    {
+        ImGui::MenuItem("Show grid", nullptr, &m_showGrid);
+        ImGui::MenuItem("Show hitboxes", nullptr, &m_showHitboxes);
+        ImGui::EndMenu();
+    }
 }
 
 // =========================================================

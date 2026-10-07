@@ -428,10 +428,15 @@ void Framework::RegisterDebugMenuBar()
             // Why a fixed sample: the text keeps one position while its digits change.
             constexpr const char* widestText{ "000.00 ms  0000.0 FPS" };
             const float textWidth{ ImGui::CalcTextSize(widestText).x };
+            const float nextMenuX{ ImGui::GetCursorPosX() };
             ImGui::SetCursorPosX(ImGui::GetWindowWidth() - textWidth - ImGui::GetStyle().WindowPadding.x);
 
             const float fps{ ImGui::GetIO().Framerate }; // ImGui's rolling average
             ImGui::Text("%6.2f ms  %6.1f FPS", fps > 0.0f ? 1000.0f / fps : 0.0f, fps);
+
+            // Why: menus registered by other owners must continue after "Scene",
+            // not to the right of the right-aligned text.
+            ImGui::SetCursorPosX(nextMenuX);
         });
 }
 

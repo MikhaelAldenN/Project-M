@@ -71,6 +71,7 @@ private:
     void DrawWindowsPanel();
     void DrawLogPanel();
     void CloseTestWindows();
+    void DrawViewMenu();
     void SpawnDebugWindow();
     void SpawnTransparentWindow(float bgAlpha, const std::string& typeSuffix);
     void AddLog(const std::string& message);
@@ -203,5 +204,6 @@ private:
     DebugPanelHandle m_playerPanel{};
     DebugPanelHandle m_windowsPanel{};
     DebugPanelHandle m_logPanel{};
+    DebugPanelHandle m_viewMenu{};
 #endif
 };
