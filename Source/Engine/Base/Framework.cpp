@@ -241,7 +241,7 @@ void Framework::Render(float elapsedTime)
         // Last ImGui submission of the frame, after every scene has issued its own.
         // Why before BeginRender: panel callbacks may create or destroy game windows,
         // and that must not be able to replace the debug window's bound render target.
-        DebugUI::Instance().Draw();
+        DebugUI::Instance().Draw(GetDebugLayoutScope());
 
         m_debugHost->BeginRender();
 
@@ -449,6 +449,21 @@ Framework::DebugScene Framework::IdentifyDebugScene() const
     if (dynamic_cast<const SceneSandbox*>(current)) return DebugScene::sandbox;
     if (dynamic_cast<const SceneBoss*>(current)) return DebugScene::boss;
     return DebugScene::none;
+}
+
+const char* Framework::GetDebugLayoutScope() const
+{
+    // Why fixed strings: they are part of the keys saved in imgui.ini.
+    switch (IdentifyDebugScene())
+    {
+    case DebugScene::intro:   return "intro";
+    case DebugScene::title:   return "title";
+    case DebugScene::game:    return "game";
+    case DebugScene::sandbox: return "sandbox";
+    case DebugScene::boss:    return "boss";
+    case DebugScene::none:    break;
+    }
+    return "none";
 }
 
 void Framework::ProcessDebugSceneRequest()

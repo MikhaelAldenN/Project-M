@@ -94,6 +94,9 @@ private:
     // Which DebugScene the current scene is; none if there is no scene.
     [[nodiscard]] DebugScene IdentifyDebugScene() const;
 
+    // Name of the current scene for DebugUI::Draw; the dock layout is kept per name.
+    [[nodiscard]] const char* GetDebugLayoutScope() const;
+
     // Destroys the current scene, then creates the requested one. Does nothing
     // if no request is pending. Must run outside any DebugUI callback.
     void ProcessDebugSceneRequest();

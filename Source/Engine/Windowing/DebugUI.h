@@ -10,7 +10,8 @@
 enum class DebugPanelSlot : std::uint8_t
 {
     menuBar, // the one-line menu bar; callback may only submit BeginMenu, MenuItem and text
-    tab,     // one tab in the tab bar below the menu bar
+    tab,     // one dockable window inside the debug window, below the menu bar
+    // (unchanged)
 };
 
 // Internal storage shared between DebugUI and its handles. Do not use directly.
@@ -72,7 +73,10 @@ public:
     [[nodiscard]] DebugPanelHandle RegisterPanel(DebugPanelSlot slot, std::string title, std::function<void()> draw);
 
     // Draws the whole frame. Call once per frame, between ImGui NewFrame and Render.
-    void Draw();
+    // `layoutScope` names the current context (the active scene). Dock layout is kept
+    // per scope, so a panel that exists in several scenes has one position in each.
+    // Must not be null.
+    void Draw(const char* layoutScope);
 
 private:
     DebugUI() = default;

@@ -49,21 +49,31 @@ namespace
         }
     }
 
-    void DrawTabPanels(const Registry& registry)
+    // Each tab-slot panel is one dockable ImGui window; the owner draws contents only.
+    void DrawPanelWindows(const Registry& registry, const char* layoutScope)
     {
+        std::string windowName{}; // reused across panels; debug-only code, not a gameplay loop
         for (const Panel& panel : registry.panels)
         {
             if (!panel.isAlive || panel.slot != DebugPanelSlot::tab) continue;
 
-            ImGui::PushID(static_cast<int>(panel.id));
-            if (ImGui::BeginTabItem(panel.title.c_str()))
+            // "Title###Title@scope": the text after ### is the window's identity, so the
+            // same title gets a separate dock position in every scope.
+            windowName = panel.title;
+            windowName += "###";
+            windowName += panel.title;
+            windowName += '@';
+            windowName += layoutScope;
+
+            // Begin returns false while the window is a hidden dock tab; End is still required.
+            if (ImGui::Begin(windowName.c_str()))
             {
                 panel.draw();
-                ImGui::EndTabItem();
             }
-            ImGui::PopID();
+            ImGui::End();
         }
     }
+    // (unchanged)
 }
 
 // ---------------------------------------------------------------------------
@@ -128,8 +138,9 @@ DebugPanelHandle DebugUI::RegisterPanel(DebugPanelSlot slot, std::string title, 
     return DebugPanelHandle{ m_registry, id };
 }
 
-void DebugUI::Draw()
+void DebugUI::Draw(const char* layoutScope)
 {
+    assert(layoutScope && "DebugUI::Draw: layoutScope is null");
     Registry& registry{ *m_registry };
 
     const ImGuiViewport* viewport{ ImGui::GetMainViewport() };
@@ -151,18 +162,20 @@ void DebugUI::Draw()
             ImGui::EndMenuBar();
         }
 
-        ImGui::BeginChild("##Tabs", ImVec2{ 0.0f, 0.0f }, false);
 
-        if (ImGui::BeginTabBar("##DebugTabs"))
-        {
-            DrawTabPanels(registry);
-            ImGui::EndTabBar();
-        }
-        ImGui::EndChild();
-
-        registry.isDrawing = false;
+        ImGui::PushID(layoutScope);
+        const ImGuiID dockSpaceId{ ImGui::GetID("##DockSpace") };
+        ImGui::PopID();
+        ImGui::DockSpace(dockSpaceId, ImVec2{ 0.0f, 0.0f }, ImGuiDockNodeFlags_None);
     }
     ImGui::End();
+
+    if (isOpen)
+    {
+        // Why after End: panel windows are top-level windows, not children of the root.
+        DrawPanelWindows(registry, layoutScope);
+        registry.isDrawing = false;
+    }
 
     // Panels unregistered during this frame are erased now that no callback is running.
     if (registry.hasDeadPanels)
