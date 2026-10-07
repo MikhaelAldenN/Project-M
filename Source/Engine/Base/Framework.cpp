@@ -82,7 +82,18 @@ Framework::Framework()
     HWND imguiHwnd{ hwnd };
 
 #if defined(_DEBUG)
-    m_debugHost = std::make_unique<DebugHostWindow>();
+    DebugHostWindowConfig debugHostConfig{};
+    if (m_windowLayout.debugWindow.isSet)
+    {
+        const Beyond::PixelRect& savedRect{ m_windowLayout.debugWindow.rect };
+        debugHostConfig.x = savedRect.x;
+        debugHostConfig.y = savedRect.y;
+        debugHostConfig.width = savedRect.width;
+        debugHostConfig.height = savedRect.height;
+        debugHostConfig.hasPosition = true;
+    }
+
+    m_debugHost = std::make_unique<DebugHostWindow>(debugHostConfig);
     if (m_debugHost->IsValid())
     {
         imguiHwnd = m_debugHost->GetHwnd();
@@ -220,6 +231,14 @@ void Framework::SaveWindowLayout()
         const WindowLayoutStore::SavedRect current{
             WindowLayoutStore::ReadWindowRect(mainWin ? mainWin->GetSDLWindow() : nullptr) };
         if (current.isSet) m_windowLayout.mainWindow = current;
+    }
+
+    // A minimized debug window reads as unset, which keeps the rect of the last session.
+    if (m_debugHost)
+    {
+        const WindowLayoutStore::SavedRect current{
+            WindowLayoutStore::ReadWindowRect(m_debugHost->GetSDLWindow()) };
+        if (current.isSet) m_windowLayout.debugWindow = current;
     }
 
     WindowLayoutStore::Save(m_windowLayout);

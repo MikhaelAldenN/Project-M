@@ -32,6 +32,12 @@ DebugHostWindow::DebugHostWindow(const DebugHostWindowConfig& config)
         OutputDebugStringA("[DebugHostWindow] Always-on-top request failed.\n");
     }
 
+    // Why before ShowWindow: the window appears where it was, without a visible jump.
+    if (config.hasPosition)
+    {
+        SDL_SetWindowPosition(m_window.GetSDLWindow(), config.x, config.y);
+    }
+
     SDL_ShowWindow(m_window.GetSDLWindow());
 }
 
@@ -87,6 +93,11 @@ HWND DebugHostWindow::GetHwnd() const
         SDL_GetWindowProperties(m_window.GetSDLWindow()),
         SDL_PROP_WINDOW_WIN32_HWND_POINTER,
         nullptr));
+}
+
+SDL_Window* DebugHostWindow::GetSDLWindow() const
+{
+    return m_isValid ? m_window.GetSDLWindow() : nullptr;
 }
 
 bool DebugHostWindow::HasFocus() const
