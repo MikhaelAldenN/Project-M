@@ -78,6 +78,32 @@ namespace
 		colors[ImGuiCol_DockingPreview] = ImVec4{ accent.x, accent.y, accent.z, 0.50f };
 		colors[ImGuiCol_DragDropTarget] = accentBright;
 		colors[ImGuiCol_NavHighlight] = accent;
+
+		// Sizes, in raw pixels (not DPI-scaled). Tighter than the ImGui defaults.
+		ImGuiStyle& style{ ImGui::GetStyle() };
+
+		// Square panels with a thin outline
+		style.WindowPadding = ImVec2{ 6.0f, 6.0f };
+		style.WindowRounding = 0.0f;
+		style.WindowBorderSize = 1.0f;
+		style.ChildRounding = 0.0f;
+		style.PopupRounding = 2.0f;
+
+		// Fields: small rounded corners and a 1 px outline so dark fields keep an edge
+		style.FramePadding = ImVec2{ 4.0f, 2.0f };
+		style.FrameRounding = 3.0f;
+		style.FrameBorderSize = 1.0f;
+		style.GrabMinSize = 8.0f;
+		style.GrabRounding = 2.0f;
+
+		// Denser rows
+		style.ItemSpacing = ImVec2{ 6.0f, 3.0f };
+		style.ItemInnerSpacing = ImVec2{ 4.0f, 3.0f };
+		style.IndentSpacing = 16.0f;
+
+		style.ScrollbarSize = 12.0f;
+		style.ScrollbarRounding = 3.0f;
+		style.TabRounding = 2.0f;
 	}
 }
 
