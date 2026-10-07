@@ -64,7 +64,6 @@ private:
     void InitializeSubWindows();
 
     // --- Debug & System Helpers ---
-    void DrawDebugPanel(); // old all-in-one panel, removed once the five new panels are done
     void DrawBossPanel();
     void DrawAttacksPanel();
     void DrawBulletHellAttacks(BossPhase01& phase);
