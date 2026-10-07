@@ -1113,6 +1113,7 @@ void Player::DrawDebugGUI()
     {
         DebugProperty::DragFloat("Speed", m_bulletSpeed, 0.5f, 1.0f, 150.0f, "%.1f");
         DebugProperty::SliderInt("Damage", m_bulletDamage, 1, 500);
+        DebugProperty::SliderFloat("Stick fire threshold", m_stickShootThreshold, 0.3f, 1.0f, "%.2f");
         DebugProperty::ColorEdit4("Tint color", &m_playerbulletColor.x);
 
         if (ImGui::TreeNode("Advanced"))

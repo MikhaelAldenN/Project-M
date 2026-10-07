@@ -113,6 +113,9 @@ public:
         return m_shootDelay;
     }
 
+    // Right-stick tilt (0..1) above which the stick fires as well as aims.
+    [[nodiscard]] float GetStickShootThreshold() const { return m_stickShootThreshold; }
+
     std::shared_ptr<Model> GetPlayerBulletModel() const { return m_playerbulletModel; }
     DirectX::XMFLOAT3* GetPlayerBulletOffsetPos() { return &m_playerbulletOffsetPos; }
     DirectX::XMFLOAT3* GetPlayerBulletOffsetRot() { return &m_playerbulletOffsetRot; }
@@ -246,6 +249,7 @@ private:
     float m_bulletSpeed = PlayerConst::BulletSpeed;
 
     float m_shootDelay = PlayerConst::ShootDuration;
+    float m_stickShootThreshold{ 0.5f }; // USULAN DESAIN: starting value, tuned from the Player panel
 
     // [BARU] Tambahkan ini untuk menyimpan damage peluru player
     int m_bulletDamage = 5;
