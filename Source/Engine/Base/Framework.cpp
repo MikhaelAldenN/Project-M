@@ -122,7 +122,7 @@ Framework::Framework()
         // Why: showing a new window takes focus; give it back to the game.
         SDL_RaiseWindow(mainWin->GetSDLWindow());
         RegisterDebugMenuBar();
-        RegisterDebugToolbar();
+        RegisterDebugTimePanel();
     }
     else
     {
@@ -616,12 +616,11 @@ void Framework::RegisterDebugMenuBar()
         });
 }
 
-void Framework::RegisterDebugToolbar()
+void Framework::RegisterDebugTimePanel()
 {
     // Capturing `this` is safe: the handle is a member and is destroyed with this object.
-    m_toolbarPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::toolbar, "Simulation", [this]()
+    m_timePanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Time", [this]()
         {
-            constexpr float sliderWidth{ 120.0f };
             constexpr float minTimeScale{ 0.1f };
             constexpr float maxTimeScale{ 3.0f };
 
@@ -629,7 +628,7 @@ void Framework::RegisterDebugToolbar()
             const float toggleWidth{
                 ImGui::CalcTextSize("Resume").x + ImGui::GetStyle().FramePadding.x * 2.0f };
 
-            // The accent marks the one toolbar state that is not the default.
+            // The accent marks the one state that is not the default.
             const bool wasPaused{ m_isSimPaused };
             if (wasPaused)
             {
@@ -642,7 +641,6 @@ void Framework::RegisterDebugToolbar()
                 m_isSimPaused = !m_isSimPaused;
             }
             if (wasPaused) ImGui::PopStyleColor(2);
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("F5");
 
             // Held down, the button repeats: frame after frame, like holding F6.
             ImGui::SameLine();
@@ -653,20 +651,19 @@ void Framework::RegisterDebugToolbar()
                 m_isSimStepRequested = true;
             }
             ImGui::PopButtonRepeat();
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("F6 (hold to keep stepping)");
 
             ImGui::SameLine();
             ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("Speed");
+            ImGui::TextDisabled("%s", m_isSimPaused ? "Paused" : "Running");
 
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(sliderWidth);
-            ImGui::SliderFloat("##SimTimeScale", &m_simTimeScale, minTimeScale, maxTimeScale,
-                "%.1fx", ImGuiSliderFlags_AlwaysClamp);
+            DebugProperty::SliderFloat("Speed", m_simTimeScale, minTimeScale, maxTimeScale, "%.1fx");
+            // Why: Ctrl+click lets a slider accept a typed value outside its range.
+            if (m_simTimeScale < minTimeScale) m_simTimeScale = minTimeScale;
+            if (m_simTimeScale > maxTimeScale) m_simTimeScale = maxTimeScale;
 
-            ImGui::SameLine();
-            if (ImGui::Button("1x")) m_simTimeScale = 1.0f;
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("F7");
+            if (ImGui::Button("Reset speed")) m_simTimeScale = 1.0f;
+
+            ImGui::TextDisabled("F5 pause   F6 step   F7 reset speed");
         });
 }
 

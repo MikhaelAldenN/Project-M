@@ -222,8 +222,6 @@ void DebugUI::Draw(const char* layoutScope)
             ImGui::EndMenuBar();
         }
 
-        // Takes no space when nothing is registered; the dockspace fills what is left.
-        DrawSlotPanels(registry, DebugPanelSlot::toolbar);
 
         // One dockspace per scope, so every scene keeps its own split tree.
         // Why before the panel windows: a window can only dock into a dockspace
