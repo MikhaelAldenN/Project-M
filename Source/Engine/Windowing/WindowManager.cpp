@@ -12,6 +12,15 @@
 
 namespace
 {
+    // Colour of the main window around the letterboxed game image.
+    // Debug: the editor theme's panel gray (ImGuiRenderer.cpp), so the edge of the
+    // game image is visible. Release: black, the bars must not draw attention.
+#if defined(_DEBUG)
+    constexpr float k_letterboxGray{ 0.14f };
+#else
+    constexpr float k_letterboxGray{ 0.0f };
+#endif
+
     // 0 = present immediately. Frame pacing is owned by the limiter in Main.cpp;
     // a second wait on vblank here made frames miss their slot.
     constexpr int k_presentSyncInterval{ 0 };
@@ -81,7 +90,11 @@ void WindowManager::RenderAll(float dt, Scene* scene, const GameCanvas* canvas)
 
         // Ambil Alpha dan mulai render
         float bgAlpha = win->GetBackgroundAlpha();
-        win->BeginRender(0.0f, 0.0f, 0.0f, bgAlpha);
+
+        // Why only with the canvas: there the clear colour shows only as the letterbox.
+        // Without it the scene draws straight onto this target and expects black.
+        const float clearGray{ usesCanvas ? k_letterboxGray : 0.0f };
+        win->BeginRender(clearGray, clearGray, clearGray, bgAlpha);
 
         // Jika ini Main Window (Index 0)
         if (isMainWindow)
