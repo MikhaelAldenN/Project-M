@@ -144,6 +144,10 @@ int main(int argc, char* argv[])
             SDL_Event event;
             while (SDL_PollEvent(&event))
             {
+                // Why first: these keys must work from the debug window too, and that
+                // window swallows its own key events in the next line.
+                if (framework && framework->HandleDebugHotkey(event)) continue;
+
                 // Debug host window events never reach game logic.
                 if (framework && framework->HandleDebugHostEvent(event)) continue;
 

@@ -45,6 +45,15 @@ namespace
     // the per-scene code this replaces (screenH + 1); the original reason is not
     // documented, so it is kept until proven unnecessary.
     constexpr int k_borderlessExtraHeight{ 1 };
+
+#if defined(_DEBUG)
+    // Length of one stepped frame. Fixed, so a step always advances the same amount.
+    constexpr float k_simStepSeconds{ 1.0f / 60.0f };
+
+    // Upper bound of a scaled frame, the same limit Main.cpp applies to real time,
+    // so a high time scale cannot tunnel bullets through the player.
+    constexpr float k_maxSceneDeltaTime{ 0.05f };
+#endif
 }
 
 Framework::Framework()
@@ -340,7 +349,9 @@ void Framework::Render(float elapsedTime)
     const bool isSceneBoss{ dynamic_cast<SceneBoss*>(scene.get()) != nullptr };
     const GameCanvas* canvas{ isSceneBoss ? nullptr : m_gameCanvas.get() };
 
-    WindowManager::Instance().RenderAll(elapsedTime, scene.get(), GetActiveCanvas());
+    // Why not elapsedTime: render-side animation (post-process time) must stop
+    // and scale together with the scene.
+    WindowManager::Instance().RenderAll(m_sceneDeltaTime, scene.get(), GetActiveCanvas());
 
 #if defined(_DEBUG)
 
@@ -398,7 +409,24 @@ void Framework::Update(float elapsedTime)
 
     ImGuiRenderer::NewFrame(); // Now safe
 
-    if (scene) scene->Update(elapsedTime);
+    bool shouldUpdateScene{ true };
+    m_sceneDeltaTime = elapsedTime;
+
+#if defined(_DEBUG)
+    if (m_isSimPaused)
+    {
+        shouldUpdateScene = m_isSimStepRequested;
+        m_sceneDeltaTime = m_isSimStepRequested ? k_simStepSeconds : 0.0f;
+    }
+    else
+    {
+        const float scaled{ elapsedTime * m_simTimeScale };
+        m_sceneDeltaTime = scaled < k_maxSceneDeltaTime ? scaled : k_maxSceneDeltaTime;
+    }
+    m_isSimStepRequested = false;
+#endif
+
+    if (scene && shouldUpdateScene) scene->Update(m_sceneDeltaTime);
 
     if (auto* boss = dynamic_cast<SceneBoss*>(scene.get())) {
         if (boss->IsPendingSceneChange()) {
@@ -497,6 +525,31 @@ bool Framework::HandleDebugHostEvent([[maybe_unused]] const SDL_Event& event)
 {
 #if defined(_DEBUG)
     if (m_debugHost) return m_debugHost->HandleEvent(event);
+#endif
+    return false;
+}
+
+bool Framework::HandleDebugHotkey([[maybe_unused]] const SDL_Event& event)
+{
+#if defined(_DEBUG)
+    if (event.type != SDL_EVENT_KEY_DOWN) return false;
+
+    switch (event.key.key)
+    {
+    case SDLK_F5:
+        if (!event.key.repeat) m_isSimPaused = !m_isSimPaused;
+        return true;
+    case SDLK_F6:
+        // Key repeat is allowed on purpose: holding F6 advances frame after frame.
+        m_isSimPaused = true;
+        m_isSimStepRequested = true;
+        return true;
+    case SDLK_F7:
+        m_simTimeScale = 1.0f;
+        return true;
+    default:
+        break;
+    }
 #endif
     return false;
 }

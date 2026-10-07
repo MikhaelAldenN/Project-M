@@ -74,6 +74,11 @@ public:
     // True if the event belonged to the debug host window (always false outside Debug builds).
     [[nodiscard]] bool HandleDebugHostEvent(const SDL_Event& event);
 
+    // Debug keys that work from either window: F5 pause / resume, F6 advance one
+    // frame, F7 back to normal speed. True if the event was one of them
+    // (always false outside Debug builds).
+    [[nodiscard]] bool HandleDebugHotkey(const SDL_Event& event);
+
 private:
     void CalculateFrameStats(float dt);
 
@@ -118,6 +123,10 @@ private:
 
     WindowMode m_mainWindowMode{ WindowMode::windowed };
 
+    // Seconds the scene advanced in the last Update; Render passes the same value on.
+    // Equals real frame time in Release. In Debug it is scaled, and 0 while paused.
+    float m_sceneDeltaTime{ 0.0f };
+
     // Off-screen 1920x1080 target that scenes draw into (see GameCanvas.h).
     // Null if its GPU resources could not be created.
     std::unique_ptr<GameCanvas> m_gameCanvas;
@@ -133,6 +142,12 @@ private:
 
     // Set by the Window menu, consumed at the start of the next Update.
     bool m_isWindowLayoutResetRequested{ false };
+
+    // Simulation clock. A paused scene is not updated at all; a step request lets
+    // exactly one fixed-length update through.
+    bool m_isSimPaused{ false };
+    bool m_isSimStepRequested{ false };
+    float m_simTimeScale{ 1.0f };
 
     // Created after Graphics::Initialize(), hence a pointer and not a direct member.
     // Declared last: destroyed after ~Framework's body, so after ImGui is finalized.
