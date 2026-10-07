@@ -104,6 +104,10 @@ private:
 
     // Writes the current window rects to disk. Must run while the windows still exist.
     void SaveWindowLayout();
+
+    // Moves both windows back to the default layout. Does nothing if no reset
+    // was requested. Must run outside any DebugUI callback.
+    void ProcessWindowLayoutResetRequest();
 #endif
 
     static Framework* pInstance;
@@ -126,6 +130,9 @@ private:
     // Window rects loaded at startup. mainWindow always holds the last windowed
     // rect, never the borderless one.
     WindowLayoutStore::Layout m_windowLayout{};
+
+    // Set by the Window menu, consumed at the start of the next Update.
+    bool m_isWindowLayoutResetRequested{ false };
 
     // Created after Graphics::Initialize(), hence a pointer and not a direct member.
     // Declared last: destroyed after ~Framework's body, so after ImGui is finalized.

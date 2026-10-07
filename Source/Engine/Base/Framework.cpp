@@ -255,6 +255,49 @@ void Framework::SaveWindowLayout()
 
     WindowLayoutStore::Save(m_windowLayout);
 }
+
+namespace
+{
+    // Why: a maximized window ignores size and position requests.
+    void LeaveMaximized(SDL_Window* window)
+    {
+        if ((SDL_GetWindowFlags(window) & SDL_WINDOW_MAXIMIZED) != 0)
+        {
+            SDL_RestoreWindow(window);
+        }
+    }
+}
+
+void Framework::ProcessWindowLayoutResetRequest()
+{
+    if (!m_isWindowLayoutResetRequested) return;
+    m_isWindowLayoutResetRequested = false;
+
+    // Forget the remembered rects, so windowed mode falls back to the defaults.
+    m_windowLayout.mainWindow = {};
+    m_windowLayout.debugWindow = {};
+
+    // In borderless mode the main window is left alone; F11 then returns to the default rect.
+    if (m_mainWindowMode == WindowMode::windowed)
+    {
+        const Beyond::Window* mainWin{ GetMainWindow() };
+        SDL_Window* mainSdlWin{ mainWin ? mainWin->GetSDLWindow() : nullptr };
+        if (mainSdlWin)
+        {
+            LeaveMaximized(mainSdlWin);
+            SetMainWindowMode(WindowMode::windowed);
+        }
+    }
+
+    // Left where it is when the default would land off-screen (smaller display).
+    SDL_Window* debugSdlWin{ m_debugHost ? m_debugHost->GetSDLWindow() : nullptr };
+    if (debugSdlWin && WindowLayoutStore::IsOnScreen(k_defaultDebugRect))
+    {
+        LeaveMaximized(debugSdlWin);
+        SDL_SetWindowSize(debugSdlWin, k_defaultDebugRect.width, k_defaultDebugRect.height);
+        SDL_SetWindowPosition(debugSdlWin, k_defaultDebugRect.x, k_defaultDebugRect.y);
+    }
+}
 #endif
 
 const GameCanvas* Framework::GetActiveCanvas() const
@@ -322,6 +365,7 @@ void Framework::Update(float elapsedTime)
 {
 #if defined(_DEBUG)
     ProcessDebugSceneRequest();
+    ProcessWindowLayoutResetRequest();
 #endif
 
     if (nextScene)
@@ -490,6 +534,18 @@ void Framework::RegisterDebugMenuBar()
                 }
                 ImGui::EndMenu();
             }
+
+            if (ImGui::BeginMenu("Window"))
+            {
+                // Why only store the request: moving and resizing OS windows belongs
+                // outside panel callbacks, like the scene change above.
+                if (ImGui::MenuItem("Reset"))
+                {
+                    m_isWindowLayoutResetRequested = true;
+                }
+                ImGui::EndMenu();
+            }
+
 
             // Why a fixed sample: the text keeps one position while its digits change.
             constexpr const char* widestText{ "000.00 ms  0000.0 FPS" };
