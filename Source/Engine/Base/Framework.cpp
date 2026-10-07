@@ -60,6 +60,7 @@ Framework::Framework()
     // Why before ShowWindow: the window appears in its final shape, without a
     // visible jump from the creation size.
 #if defined(_DEBUG)
+    m_windowLayout = WindowLayoutStore::Load();
     SetMainWindowMode(WindowMode::windowed);
 #else
     SetMainWindowMode(WindowMode::borderless);
@@ -124,6 +125,10 @@ Framework::Framework()
 
 Framework::~Framework()
 {
+#if defined(_DEBUG)
+    // Why first: the scene's shutdown and ClearAll() below change or destroy the windows.
+    SaveWindowLayout();
+#endif
     scene.reset();
 
     // Why: restore SDL's WndProc while the hooked window still exists, so its
@@ -166,6 +171,14 @@ void Framework::SetMainWindowMode(WindowMode mode)
             OutputDebugStringA("\n");
             return;
         }
+#if defined(_DEBUG)
+        // Why here: once borderless, the windowed rect can no longer be read back.
+        if (m_mainWindowMode == WindowMode::windowed)
+        {
+            const WindowLayoutStore::SavedRect current{ WindowLayoutStore::ReadWindowRect(sdlWin) };
+            if (current.isSet) m_windowLayout.mainWindow = current;
+        }
+#endif
         SDL_SetWindowResizable(sdlWin, false);
         SDL_SetWindowBordered(sdlWin, false);
         SDL_SetWindowPosition(sdlWin, display.x, display.y);
@@ -173,12 +186,18 @@ void Framework::SetMainWindowMode(WindowMode mode)
         break;
     }
     case WindowMode::windowed:
+    {
+        Beyond::PixelRect rect{ k_windowedX, k_windowedY, k_windowedWidth, k_windowedHeight };
+#if defined(_DEBUG)
+        if (m_windowLayout.mainWindow.isSet) rect = m_windowLayout.mainWindow.rect;
+#endif
         SDL_SetWindowBordered(sdlWin, true);
         SDL_SetWindowResizable(sdlWin, true);
         SDL_SetWindowMinimumSize(sdlWin, k_minWindowWidth, k_minWindowHeight);
-        SDL_SetWindowSize(sdlWin, k_windowedWidth, k_windowedHeight);
-        SDL_SetWindowPosition(sdlWin, k_windowedX, k_windowedY);
+        SDL_SetWindowSize(sdlWin, rect.width, rect.height);
+        SDL_SetWindowPosition(sdlWin, rect.x, rect.y);
         break;
+    }
     }
 
     m_mainWindowMode = mode;
@@ -190,6 +209,22 @@ void Framework::ToggleMainWindowMode()
         ? WindowMode::borderless
         : WindowMode::windowed);
 }
+
+#if defined(_DEBUG)
+void Framework::SaveWindowLayout()
+{
+    // In borderless mode the entry already holds the rect captured when leaving windowed mode.
+    if (m_mainWindowMode == WindowMode::windowed)
+    {
+        const Beyond::Window* mainWin{ GetMainWindow() };
+        const WindowLayoutStore::SavedRect current{
+            WindowLayoutStore::ReadWindowRect(mainWin ? mainWin->GetSDLWindow() : nullptr) };
+        if (current.isSet) m_windowLayout.mainWindow = current;
+    }
+
+    WindowLayoutStore::Save(m_windowLayout);
+}
+#endif
 
 const GameCanvas* Framework::GetActiveCanvas() const
 {

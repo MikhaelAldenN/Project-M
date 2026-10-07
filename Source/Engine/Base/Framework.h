@@ -21,6 +21,7 @@
 #include <SDL3/SDL.h>
 #include "AttackParamManager.h"
 #include "DebugHostWindow.h"
+#include "WindowLayoutStore.h"
 #include "DebugUI.h"
 #include "Engine/Common/FitRect.h"
 
@@ -100,6 +101,9 @@ private:
     // Destroys the current scene, then creates the requested one. Does nothing
     // if no request is pending. Must run outside any DebugUI callback.
     void ProcessDebugSceneRequest();
+
+    // Writes the current window rects to disk. Must run while the windows still exist.
+    void SaveWindowLayout();
 #endif
 
     static Framework* pInstance;
@@ -118,6 +122,10 @@ private:
 
     // Debug-window focus state of the previous frame, to change SDL hints only on a switch.
     bool m_wasDebugFocused{ false };
+
+    // Window rects loaded at startup. mainWindow always holds the last windowed
+    // rect, never the borderless one.
+    WindowLayoutStore::Layout m_windowLayout{};
 
     // Created after Graphics::Initialize(), hence a pointer and not a direct member.
     // Declared last: destroyed after ~Framework's body, so after ImGui is finalized.
