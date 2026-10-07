@@ -134,7 +134,6 @@ private:
     bool      m_showGrid = false;
     int       m_selectedWindowkillSet{ 0 }; // row selected in the Attacks panel list
     int       m_selectedBulletHellSet{ 0 };
-    float     m_timeScale = 1.0f;
     int       m_spawnCount = 0;
     bool      m_playerWindowTransparent = false;
 

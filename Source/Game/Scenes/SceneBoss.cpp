@@ -287,7 +287,7 @@ void SceneBoss::Update(float elapsedTime)
     PerformanceLogger::Instance().StartTimer(PerfBucket::Logic);
     TimeManager::Instance().Update(elapsedTime);
 
-    float activeTimeScale = m_timeScale * TimeManager::Instance().GetHitStopMultiplier();
+    float activeTimeScale = TimeManager::Instance().GetHitStopMultiplier();
     const float scaledDt = elapsedTime * activeTimeScale;
 
     // =========================================================
@@ -1028,10 +1028,6 @@ void SceneBoss::DrawBossPanel()
         return; // the phase pointers above are dangling now
     }
 
-    // Stays here until the global time toolbar exists.
-    DebugProperty::SliderFloat("Time scale", m_timeScale, 0.1f, 3.0f, "%.1fx");
-    if (ImGui::Button("Reset time scale")) m_timeScale = 1.0f;
-
     // ---- Categories ----
     ImGui::PushID("Core");
     if (ImGui::CollapsingHeader("Core", ImGuiTreeNodeFlags_DefaultOpen))
@@ -1711,7 +1707,6 @@ void SceneBoss::AddLog(const std::string& message)
         }
 
         // Clean up the Windowkill environment
-        m_timeScale = 1.0f;
         WindowShatterManager::Instance().Clear();
 
         // Smart Camera Reset (Instantly snaps during the black screen)
