@@ -98,6 +98,7 @@ private:
     // Keeps the "Sandbox" tab registered while this scene lives.
     // Declared last: destroyed first, before any member the callback reads.
     DebugPanelHandle m_debugPanel{};
+    DebugPanelHandle m_playerPanel{};
 #endif
 
 };

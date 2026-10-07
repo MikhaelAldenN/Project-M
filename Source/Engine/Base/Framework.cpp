@@ -152,7 +152,7 @@ Framework::Framework()
 #if 0
     scene = std::make_unique<SceneIntro>();
 #else
-    scene = std::make_unique<SceneBoss>();
+    scene = std::make_unique<SceneSandbox>();
 #endif
 }
 

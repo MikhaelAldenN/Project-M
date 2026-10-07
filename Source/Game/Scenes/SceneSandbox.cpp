@@ -99,8 +99,11 @@ SceneSandbox::SceneSandbox()
     m_player->SetCollisionManager(m_collisionManager.get());
 
 #if defined(_DEBUG)
-    // Capturing `this` is safe: the handle is a member and dies with this scene.
+    // Capturing `this` is safe: the handles are members and die with this scene.
     m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Sandbox", [this]() { DrawDebugPanel(); });
+    m_playerPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Player", [this]() {
+        if (m_player) m_player->DrawDebugGUI();
+        });
 #endif
 }
 
