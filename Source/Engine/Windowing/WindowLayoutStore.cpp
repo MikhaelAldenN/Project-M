@@ -63,6 +63,11 @@ namespace
 
 namespace WindowLayoutStore
 {
+    bool IsOnScreen(const Beyond::PixelRect& rect)
+    {
+        return IsUsable(rect);
+    }
+
     Layout Load()
     {
         std::ifstream file{ k_filePath };

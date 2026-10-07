@@ -1,14 +1,14 @@
 {
     "debug_window": {
-        "height": 900,
-        "width": 560,
-        "x": 1283,
-        "y": 76
+        "height": 1000,
+        "width": 400,
+        "x": 1515,
+        "y": 31
     },
     "main_window": {
         "height": 1000,
-        "width": 1527,
-        "x": 6,
+        "width": 1510,
+        "x": 0,
         "y": 31
     }
 }

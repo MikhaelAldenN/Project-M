@@ -29,11 +29,15 @@ Framework* Framework::pInstance = nullptr;
 
 namespace
 {
-    // Windowed mode: starting size and position, and the smallest size the user can drag to.
-    constexpr int k_windowedWidth{ 1600 };
-    constexpr int k_windowedHeight{ 900 };
-    constexpr int k_windowedX{ 5 };
-    constexpr int k_windowedY{ 35 };
+    // Default windowed layout: the game window on the left, the debug window beside it.
+    // Client-area rects in desktop pixels, laid out for a 1920x1080 display at 100%
+    // scale; y = 31 leaves room for the title bar.
+    constexpr Beyond::PixelRect k_defaultMainRect{ 0, 31, 1510, 1000 };
+#if defined(_DEBUG)
+    constexpr Beyond::PixelRect k_defaultDebugRect{ 1515, 31, 400, 1000 };
+#endif
+
+    // The smallest size the user can drag the main window to.
     constexpr int k_minWindowWidth{ 640 };
     constexpr int k_minWindowHeight{ 360 };
 
@@ -82,14 +86,22 @@ Framework::Framework()
     HWND imguiHwnd{ hwnd };
 
 #if defined(_DEBUG)
-    DebugHostWindowConfig debugHostConfig{};
-    if (m_windowLayout.debugWindow.isSet)
+    // The saved rect if there is one, otherwise the default when it fits this display.
+    // With neither, the config's own size is used and the OS picks the position.
+    WindowLayoutStore::SavedRect debugRect{ m_windowLayout.debugWindow };
+    if (!debugRect.isSet && WindowLayoutStore::IsOnScreen(k_defaultDebugRect))
     {
-        const Beyond::PixelRect& savedRect{ m_windowLayout.debugWindow.rect };
-        debugHostConfig.x = savedRect.x;
-        debugHostConfig.y = savedRect.y;
-        debugHostConfig.width = savedRect.width;
-        debugHostConfig.height = savedRect.height;
+        debugRect.rect = k_defaultDebugRect;
+        debugRect.isSet = true;
+    }
+
+    DebugHostWindowConfig debugHostConfig{};
+    if (debugRect.isSet)
+    {
+        debugHostConfig.x = debugRect.rect.x;
+        debugHostConfig.y = debugRect.rect.y;
+        debugHostConfig.width = debugRect.rect.width;
+        debugHostConfig.height = debugRect.rect.height;
         debugHostConfig.hasPosition = true;
     }
 
@@ -198,7 +210,7 @@ void Framework::SetMainWindowMode(WindowMode mode)
     }
     case WindowMode::windowed:
     {
-        Beyond::PixelRect rect{ k_windowedX, k_windowedY, k_windowedWidth, k_windowedHeight };
+        Beyond::PixelRect rect{ k_defaultMainRect };
 #if defined(_DEBUG)
         if (m_windowLayout.mainWindow.isSet) rect = m_windowLayout.mainWindow.rect;
 #endif

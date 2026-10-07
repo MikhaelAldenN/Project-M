@@ -31,6 +31,10 @@ namespace WindowLayoutStore
     // Writes the entries that are set. Failure is logged and otherwise ignored.
     void Save(const Layout& layout);
 
+    // True if the rect is large enough and reachable on the current monitors.
+    // The same test Load() applies to saved rects.
+    [[nodiscard]] bool IsOnScreen(const Beyond::PixelRect& rect);
+
     // Current client-area position and size of `window`. Unset if the window is null,
     // minimized, or cannot be queried.
     [[nodiscard]] SavedRect ReadWindowRect(SDL_Window* window);
