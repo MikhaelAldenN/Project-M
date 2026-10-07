@@ -29,6 +29,7 @@ namespace DebugUIDetail
     struct Registry
     {
         std::vector<Panel> panels{};
+        std::vector<std::string> closedWindowIds{};
         std::uint32_t nextId{ 1 };
         bool isDrawing{ false };
         bool hasDeadPanels{ false };
@@ -59,9 +60,10 @@ private:
     std::uint32_t m_id{ 0 }; // 0 = not registered
 };
 
-// Layout frame of the debug window: a one-line menu bar above a full-width tab bar.
+// Layout frame of the debug window: a one-line menu bar above a dockspace.
+// Tab-slot panels are windows docked inside it, opened and closed from the Panels menu.
 // The title of a menuBar panel is not drawn.
-// Systems register panels that draw only their contents; they never open
+// // Systems register panels that draw only their contents; they never open
 // an ImGui window themselves. Main thread only.
 class DebugUI
 {

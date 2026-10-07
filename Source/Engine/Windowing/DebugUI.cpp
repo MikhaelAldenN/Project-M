@@ -49,31 +49,89 @@ namespace
         }
     }
 
-    // Each tab-slot panel is one dockable ImGui window; the owner draws contents only.
-    void DrawPanelWindows(const Registry& registry, const char* layoutScope)
+    // Identity of a panel window, and the key of its closed state. The same title
+    // gets a separate identity in every scope.
+    std::string MakeWindowId(const Panel& panel, const char* layoutScope)
     {
-        std::string windowName{}; // reused across panels; debug-only code, not a gameplay loop
+        std::string windowId{ panel.title };
+        windowId += '@';
+        windowId += layoutScope;
+        return windowId;
+    }
+
+    bool IsPanelOpen(const Registry& registry, const std::string& windowId)
+    {
+        return std::find(registry.closedWindowIds.begin(), registry.closedWindowIds.end(), windowId)
+            == registry.closedWindowIds.end();
+    }
+
+    void SetPanelOpen(Registry& registry, const std::string& windowId, bool isOpen)
+    {
+        const auto found{ std::find(registry.closedWindowIds.begin(), registry.closedWindowIds.end(), windowId) };
+        if (isOpen)
+        {
+            if (found != registry.closedWindowIds.end()) registry.closedWindowIds.erase(found);
+        }
+        else if (found == registry.closedWindowIds.end())
+        {
+            registry.closedWindowIds.push_back(windowId);
+        }
+    }
+
+    // One checkable entry per tab-slot panel of the current scope.
+    void DrawPanelsMenu(Registry& registry, const char* layoutScope)
+    {
+        if (!ImGui::BeginMenu("Panels")) return;
+
+        bool hasPanel{ false };
+        for (const Panel& panel : registry.panels)
+        {
+            if (!panel.isAlive || panel.slot != DebugPanelSlot::tab) continue;
+            hasPanel = true;
+
+            const std::string windowId{ MakeWindowId(panel, layoutScope) };
+            bool isOpen{ IsPanelOpen(registry, windowId) };
+
+            ImGui::PushID(static_cast<int>(panel.id)); // two panels may share a title
+            if (ImGui::MenuItem(panel.title.c_str(), nullptr, &isOpen))
+            {
+                SetPanelOpen(registry, windowId, isOpen);
+            }
+            ImGui::PopID();
+        }
+        if (!hasPanel) ImGui::TextDisabled("No panels in this scene");
+
+        ImGui::EndMenu();
+    }
+
+    // Each open tab-slot panel is one dockable ImGui window; the owner draws contents only.
+    void DrawPanelWindows(Registry& registry, const char* layoutScope, ImGuiID dockSpaceId)
+    {
         for (const Panel& panel : registry.panels)
         {
             if (!panel.isAlive || panel.slot != DebugPanelSlot::tab) continue;
 
-            // "Title###Title@scope": the text after ### is the window's identity, so the
-            // same title gets a separate dock position in every scope.
-            windowName = panel.title;
-            windowName += "###";
-            windowName += panel.title;
-            windowName += '@';
-            windowName += layoutScope;
+            const std::string windowId{ MakeWindowId(panel, layoutScope) };
+            if (!IsPanelOpen(registry, windowId)) continue;
 
+            // "Title###id": only the text after ### is the window's identity.
+            const std::string windowName{ panel.title + "###" + windowId };
+
+            // Why FirstUseEver: only a window with no saved layout is put into the
+            // dockspace; a position the user chose is never overridden.
+            ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
+
+            bool isOpen{ true };
             // Begin returns false while the window is a hidden dock tab; End is still required.
-            if (ImGui::Begin(windowName.c_str()))
+            if (ImGui::Begin(windowName.c_str(), &isOpen))
             {
                 panel.draw();
             }
             ImGui::End();
+
+            if (!isOpen) SetPanelOpen(registry, windowId, false); // closed with the X button
         }
     }
-    // (unchanged)
 }
 
 // ---------------------------------------------------------------------------
@@ -152,6 +210,7 @@ void DebugUI::Draw(const char* layoutScope)
     const bool isOpen{ ImGui::Begin("##DebugUIRoot", nullptr, kRootFlags) };
     ImGui::PopStyleVar(2);
 
+    ImGuiID dockSpaceId{ 0 };
     if (isOpen)
     {
         registry.isDrawing = true;
@@ -159,12 +218,15 @@ void DebugUI::Draw(const char* layoutScope)
         if (ImGui::BeginMenuBar())
         {
             DrawMenuBarPanels(registry);
+            DrawPanelsMenu(registry, layoutScope);
             ImGui::EndMenuBar();
         }
 
-
+        // One dockspace per scope, so every scene keeps its own split tree.
+        // Why before the panel windows: a window can only dock into a dockspace
+        // that was already submitted this frame.
         ImGui::PushID(layoutScope);
-        const ImGuiID dockSpaceId{ ImGui::GetID("##DockSpace") };
+        dockSpaceId = ImGui::GetID("##DockSpace");
         ImGui::PopID();
         ImGui::DockSpace(dockSpaceId, ImVec2{ 0.0f, 0.0f }, ImGuiDockNodeFlags_None);
     }
@@ -173,7 +235,7 @@ void DebugUI::Draw(const char* layoutScope)
     if (isOpen)
     {
         // Why after End: panel windows are top-level windows, not children of the root.
-        DrawPanelWindows(registry, layoutScope);
+        DrawPanelWindows(registry, layoutScope, dockSpaceId);
         registry.isDrawing = false;
     }
 
