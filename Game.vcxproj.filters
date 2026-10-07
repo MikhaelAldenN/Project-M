@@ -363,6 +363,9 @@
     <ClCompile Include="Source\Engine\Graphics\GameCanvas.cpp">
       <Filter>Source\Engine\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Windowing\WindowLayoutStore.cpp">
+      <Filter>Source\Engine\Windowing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\BasicShader.h">
@@ -746,6 +749,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\GameCanvas.h">
       <Filter>Source\Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Windowing\WindowLayoutStore.h">
+      <Filter>Source\Engine\Windowing</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
