@@ -122,6 +122,7 @@ Framework::Framework()
         // Why: showing a new window takes focus; give it back to the game.
         SDL_RaiseWindow(mainWin->GetSDLWindow());
         RegisterDebugMenuBar();
+        RegisterDebugToolbar();
     }
     else
     {
@@ -612,6 +613,60 @@ void Framework::RegisterDebugMenuBar()
             // Why: menus registered by other owners must continue after "Scene",
             // not to the right of the right-aligned text.
             ImGui::SetCursorPosX(nextMenuX);
+        });
+}
+
+void Framework::RegisterDebugToolbar()
+{
+    // Capturing `this` is safe: the handle is a member and is destroyed with this object.
+    m_toolbarPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::toolbar, "Simulation", [this]()
+        {
+            constexpr float sliderWidth{ 120.0f };
+            constexpr float minTimeScale{ 0.1f };
+            constexpr float maxTimeScale{ 3.0f };
+
+            // Why a fixed width: the label changes, the rest of the row must not shift.
+            const float toggleWidth{
+                ImGui::CalcTextSize("Resume").x + ImGui::GetStyle().FramePadding.x * 2.0f };
+
+            // The accent marks the one toolbar state that is not the default.
+            const bool wasPaused{ m_isSimPaused };
+            if (wasPaused)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_SliderGrab));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_SliderGrabActive));
+            }
+            // Text after ### is the ID, so it stays the same button under both labels.
+            if (ImGui::Button(wasPaused ? "Resume###SimPause" : "Pause###SimPause", ImVec2{ toggleWidth, 0.0f }))
+            {
+                m_isSimPaused = !m_isSimPaused;
+            }
+            if (wasPaused) ImGui::PopStyleColor(2);
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("F5");
+
+            // Held down, the button repeats: frame after frame, like holding F6.
+            ImGui::SameLine();
+            ImGui::PushButtonRepeat(true);
+            if (ImGui::Button("Step"))
+            {
+                m_isSimPaused = true;
+                m_isSimStepRequested = true;
+            }
+            ImGui::PopButtonRepeat();
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("F6 (hold to keep stepping)");
+
+            ImGui::SameLine();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Speed");
+
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(sliderWidth);
+            ImGui::SliderFloat("##SimTimeScale", &m_simTimeScale, minTimeScale, maxTimeScale,
+                "%.1fx", ImGuiSliderFlags_AlwaysClamp);
+
+            ImGui::SameLine();
+            if (ImGui::Button("1x")) m_simTimeScale = 1.0f;
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("F7");
         });
 }
 

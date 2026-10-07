@@ -97,6 +97,9 @@ private:
     // Registers Framework's part of the debug window's menu bar.
     void RegisterDebugMenuBar();
 
+    // Registers the toolbar row that drives the simulation clock.
+    void RegisterDebugToolbar();
+
     // Which DebugScene the current scene is; none if there is no scene.
     [[nodiscard]] DebugScene IdentifyDebugScene() const;
 
@@ -158,6 +161,7 @@ private:
 
     // Declared last: unregistered before anything its callback could read is destroyed.
     DebugPanelHandle m_menuBarPanel;
+    DebugPanelHandle m_toolbarPanel;
 
 #endif
 

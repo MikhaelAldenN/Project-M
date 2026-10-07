@@ -37,11 +37,11 @@ namespace
             registry.panels.end());
     }
 
-    void DrawMenuBarPanels(const Registry& registry)
+    void DrawSlotPanels(const Registry& registry, DebugPanelSlot slot)
     {
         for (const Panel& panel : registry.panels)
         {
-            if (!panel.isAlive || panel.slot != DebugPanelSlot::menuBar) continue;
+            if (!panel.isAlive || panel.slot != slot) continue;
 
             ImGui::PushID(static_cast<int>(panel.id)); // two panels may use the same menu label
             panel.draw();
@@ -217,10 +217,13 @@ void DebugUI::Draw(const char* layoutScope)
 
         if (ImGui::BeginMenuBar())
         {
-            DrawMenuBarPanels(registry);
+            DrawSlotPanels(registry, DebugPanelSlot::menuBar);
             DrawPanelsMenu(registry, layoutScope);
             ImGui::EndMenuBar();
         }
+
+        // Takes no space when nothing is registered; the dockspace fills what is left.
+        DrawSlotPanels(registry, DebugPanelSlot::toolbar);
 
         // One dockspace per scope, so every scene keeps its own split tree.
         // Why before the panel windows: a window can only dock into a dockspace

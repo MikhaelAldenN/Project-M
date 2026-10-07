@@ -10,8 +10,8 @@
 enum class DebugPanelSlot : std::uint8_t
 {
     menuBar, // the one-line menu bar; callback may only submit BeginMenu, MenuItem and text
-    tab,     // one dockable window inside the debug window, below the menu bar
-    // (unchanged)
+    toolbar, // one fixed row between the menu bar and the dockspace; callback submits a single line of widgets
+    tab,     // one dockable window inside the debug window, below the toolbar
 };
 
 // Internal storage shared between DebugUI and its handles. Do not use directly.
