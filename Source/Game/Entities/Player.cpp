@@ -130,7 +130,6 @@ void Player::ApplyConfig(const PlayerConfig& config) noexcept
     moveSpeed = config.moveSpeed;
     dashSpeed = config.dashSpeed;
     dashDuration = config.dashDuration;
-    dashCooldown = config.dashCooldown;
     acceleration = config.acceleration;
     deceleration = config.deceleration;
     gravityEnabled = config.gravityEnabled;
@@ -156,7 +155,7 @@ void Player::Update(float elapsedTime, Camera* camera)
         m_uncapRegenAccumulator = 0.0f;
     }
 
-    UpdateDashCooldown(elapsedTime);
+    UpdateDashRecovery(elapsedTime);
 
     SetCamera(camera);
     if (isInputEnabled)
@@ -244,7 +243,7 @@ void Player::Update(float elapsedTime, Camera* camera)
     // =========================================================
 
     if (m_hp <= 0) return;
-    if (canDash)
+    if (HasFullDash()) // standby VFX means "a full dash is available"
     {
         // 1. Jika handle kosong atau efek sebelumnya sudah selesai (mati), putar lagi!
         if (m_dashStandbyVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
@@ -317,7 +316,7 @@ void Player::Update(float elapsedTime, Camera* camera)
         }
 
         // 2. Fallback ke logika normal Dash Standby
-        if (canDash)
+        if (HasFullDash()) // standby VFX means "a full dash is available"
         {
             if (m_dashStandbyVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
             {
@@ -347,22 +346,43 @@ void Player::Update(float elapsedTime, Camera* camera)
 // UPDATE SUB-STEPS
 // ============================================================
 
-void Player::UpdateDashCooldown(float dt)
+void Player::UpdateDashRecovery(float dt)
 {
-    if (canDash) return;
+    if (m_dashCharges >= m_maxDashCharges) return;
 
-    dashCooldownTimer -= dt;
-    if (dashCooldownTimer <= 0.0f)
+    m_dashRecoveryTimer -= dt;
+    if (m_dashRecoveryTimer > 0.0f) return;
+
+    const bool wasPenalized{ m_dashCharges <= 0 };
+    m_dashCharges = m_maxDashCharges;
+
+    // Why only after a penalty: a full dash was still available otherwise, so the
+    // "ready" cue would announce nothing new.
+    if (!wasPenalized) return;
+
+    DirectX::XMFLOAT3 pos = movement->GetPosition();
+    pos.y += m_dashReadyOffsetY;
+
+    m_dashReadyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Ready.efk", pos, 0.5f);
+    AudioManager::Instance().PlaySFX("Data/Sound/SE_Player_Dash_Ready_01.wav", 0.3f);
+}
+
+float Player::BeginDash()
+{
+    const bool hasCharge{ m_dashCharges > 0 };
+    if (hasCharge)
     {
-        canDash = true;
-
-        // [MODIFIKASI] Play VFX dan simpan handle-nya
-        DirectX::XMFLOAT3 pos = movement->GetPosition();
-        pos.y += m_dashReadyOffsetY;
-
-        m_dashReadyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Ready.efk", movement->GetPosition(), 0.5f);
-        AudioManager::Instance().PlaySFX("Data/Sound/SE_Player_Dash_Ready_01.wav", 0.3f);
+        --m_dashCharges;
+        TriggerInvincibility(m_dashIFrameDuration);
     }
+
+    // Why restarted on every dash: recovery is counted from the last dash, so spamming
+    // keeps the penalty active.
+    m_dashRecoveryTimer = m_dashRecoveryTime;
+
+    // USULAN DESAIN: overdrive lifts the distance penalty only; invincibility still needs a charge.
+    const bool isPenalized{ !hasCharge && !m_isPowerUncapped };
+    return isPenalized ? m_dashPenaltyScale : 1.0f;
 }
 
 void Player::HandleMovementInput(float dt)
@@ -1048,6 +1068,7 @@ void Player::DrawDebugGUI()
         scale = { 1.0f, 1.0f, 1.0f }; // the death sequence hides the player by zeroing scale
         isInputEnabled = true;
         m_aimLocked = false;
+        m_dashCharges = m_maxDashCharges;
         if (stateMachine) stateMachine->Initialize(std::make_unique<PlayerIdle>(), this);
     }
 
@@ -1067,7 +1088,12 @@ void Player::DrawDebugGUI()
     {
         DebugProperty::DragFloat("Speed", dashSpeed, 0.5f, 10.0f, 200.0f, "%.1f");
         DebugProperty::DragFloat("Duration", dashDuration, 0.01f, 0.01f, 1.0f, "%.2f s");
-        DebugProperty::DragFloat("Cooldown", dashCooldown, 0.01f, 0.0f, 5.0f, "%.2f s");
+        DebugProperty::Text("Charges", "%d / %d", m_dashCharges, m_maxDashCharges);
+        DebugProperty::Text("Recovery", "%.2f s", (m_dashCharges < m_maxDashCharges) ? m_dashRecoveryTimer : 0.0f);
+        DebugProperty::SliderInt("Full dashes", m_maxDashCharges, 1, 5);
+        DebugProperty::DragFloat("Recovery time", m_dashRecoveryTime, 0.01f, 0.0f, 5.0f, "%.2f s");
+        DebugProperty::SliderFloat("Penalty speed scale", m_dashPenaltyScale, 0.1f, 1.0f, "%.2f");
+        DebugProperty::DragFloat("I-frame duration", m_dashIFrameDuration, 0.01f, 0.0f, 1.0f, "%.2f s");
     }
     ImGui::PopID();
 
@@ -1089,7 +1115,7 @@ void Player::DrawDebugGUI()
         if (DebugProperty::Checkbox("Uncapped", isUncapped))
         {
             if (isUncapped) ReleasePowerCap();
-            else RestorePowerCap();
+            else RestorePowerCap(); 
         }
 
         // Why the extra condition: these are the uncapped values; they only replace the

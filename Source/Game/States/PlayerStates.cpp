@@ -211,7 +211,7 @@ void PlayerIdle::Update(Player* player, float dt)
     if (!player->IsInputEnabled()) return;
 
     // Dash Priority (Seamlessly checks Keyboard and Gamepad LB)
-    if (IsDashInputTriggered() && (player->canDash || player->IsPowerUncapped()))
+    if (IsDashInputTriggered()) 
     {
         player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
         return;
@@ -243,7 +243,7 @@ void PlayerMoving::Update(Player* player, float dt)
     if (player->IsInputEnabled())
     {
         // Dash Priority
-        if (IsDashInputTriggered() && (player->canDash || player->IsPowerUncapped()))
+        if (IsDashInputTriggered()) 
         {
             player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
             return;
@@ -265,14 +265,12 @@ void PlayerMoving::Update(Player* player, float dt)
 
 void PlayerDash::Enter(Player* player)
 {
-    constexpr float DASH_IFRAME_DURATION = 0.2f;
-
     timer = player->GetDashDuration();
     dashDir = player->GetLastValidInput();
 
-    player->canDash = false;
-    player->dashCooldownTimer = player->GetDashCooldown();
-    player->TriggerInvincibility(DASH_IFRAME_DURATION);
+    // Player owns the charge rule: it grants invincibility on a full dash and returns
+    // a reduced multiplier on a penalized one.
+    m_speedScale = player->BeginDash();
 
 
     // =========================================================
@@ -309,11 +307,8 @@ void PlayerDash::Update(Player* player, float dt)
 {
     timer -= dt;
 
-    player->GetMovement()->SetVelocity({
-        dashDir.x * player->GetDashSpeed(),
-        0.0f,
-        dashDir.y * player->GetDashSpeed()
-        });
+    const float speed{ player->GetDashSpeed() * m_speedScale };
+    player->GetMovement()->SetVelocity({ dashDir.x * speed, 0.0f, dashDir.y * speed });
 
     // =========================================================
     // [BARU] Terus seret VFX mengikuti posisi player selama Dash berjalan
@@ -432,7 +427,7 @@ void PlayerShoot::Enter(Player* player)
 void PlayerShoot::Update(Player* player, float dt)
 {
     // Dash Lockout Prevention
-    if (IsDashInputTriggered() && (player->canDash || player->IsPowerUncapped()))
+    if (IsDashInputTriggered()) // always allowed; Player::BeginDash decides full or penalized
     {
         player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
         return;

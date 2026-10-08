@@ -24,7 +24,6 @@ struct PlayerConfig
     float moveSpeed{ PlayerConst::MoveSpeed };
     float dashSpeed{ PlayerConst::DashSpeed };
     float dashDuration{ PlayerConst::DashDuration };
-    float dashCooldown{ PlayerConst::DashCooldown };
     float acceleration{ PlayerConst::Acceleration };
     float deceleration{ PlayerConst::Deceleration };
     bool  gravityEnabled{ true };
@@ -141,13 +140,13 @@ public:
     float GetBaseSpeed()    const { return baseSpeed; }
     float GetDashSpeed()    const { return dashSpeed; }
     float GetDashDuration() const { return dashDuration; }
-    float GetDashCooldown() const { return dashCooldown; } // [BARU] Tambahkan baris ini!
     DirectX::XMFLOAT2 GetLastValidInput() const { return lastValidInput; }
 
-
-    // Written by PlayerDash state
-    bool  canDash = true;
-    float dashCooldownTimer = 0.0f;
+    // Called by PlayerDash on enter. Spends one dash charge, which also grants the dash
+    // invincibility, and restarts the recovery timer. With no charge left the dash still
+    // happens but is penalized: no invincibility and a reduced speed.
+    // Returns the speed multiplier for this dash (1.0 = full dash).
+    [[nodiscard]] float BeginDash();
 
 	// --- Health ---
     void TakeDamage(float damage);
@@ -181,7 +180,8 @@ public:
 
 private:
     // --- Update pipeline (called in order from Update()) ---
-    void UpdateDashCooldown(float dt);
+    void UpdateDashRecovery(float dt);
+    [[nodiscard]] bool HasFullDash() const { return m_dashCharges > 0; }
     void HandleMovementInput(float dt);
     void HandleAimInput(Camera* camera);
     void UpdateHorizontalMovement(float dt);
@@ -219,7 +219,14 @@ private:
     float baseSpeed = 10.0f;
     float dashSpeed = PlayerConst::DashSpeed;
     float dashDuration = PlayerConst::DashDuration;
-    float dashCooldown = PlayerConst::DashCooldown;
+    float m_dashIFrameDuration{ PlayerConst::DashIFrameDuration };
+    int   m_maxDashCharges{ PlayerConst::DashCharges };
+    float m_dashRecoveryTime{ PlayerConst::DashRecoveryTime };
+    float m_dashPenaltyScale{ PlayerConst::DashPenaltyScale }; // USULAN DESAIN: tuned from the Player panel
+
+    // --- Dash state ---
+    int   m_dashCharges{ PlayerConst::DashCharges }; // full dashes left
+    float m_dashRecoveryTimer{ 0.0f };
 
     // --- Health ---
     float m_hp = 30.0f;      // [DIUBAH]
