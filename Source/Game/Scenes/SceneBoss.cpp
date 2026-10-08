@@ -348,12 +348,7 @@ void SceneBoss::Update(float elapsedTime)
 
             if (m_navi)
             {
-                if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase())) {
-                    normalPhase->SetAIEnabled(true);
-                }
-                else if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
-                    wkPhase->SetAIEnabled(true);
-                }
+                if (INaviPhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAIEnabled(true);
             }
         }
     }
@@ -506,13 +501,8 @@ void SceneBoss::Update(float elapsedTime)
     // --- Entities & Collision Update ---
     if (m_navi) {
         // AI Director にプレイヤーのデータを渡す
-        if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase())) {
-            normalPhase->SetAITarget(m_player.get());
-        }
-        // [追加] Windowkill フェーズにもプレイヤーデータを渡す！
-        else if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
-            wkPhase->SetAITarget(m_player.get());
-        }
+        // Why every frame: a phase created mid-fight has no target until the scene hands it one.
+        if (INaviPhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAITarget(m_player.get());
 
         m_navi->Update(scaledDt);
 
@@ -824,12 +814,7 @@ void SceneBoss::StartPlayerDeathSequence()
 
     if (m_navi)
     {
-        if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase())) {
-            normalPhase->SetAIEnabled(false);
-        }
-        else if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
-            wkPhase->SetAIEnabled(false);
-        }
+        if (INaviPhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAIEnabled(false);
     }
 }
 
@@ -948,39 +933,34 @@ void SceneBoss::DrawBossPanel()
         return;
     }
 
-    auto* bulletHell{ dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase()) };
-    auto* windowkill{ dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase()) };
-    if (!bulletHell && !windowkill)
+    INaviPhase* phase{ m_navi->GetCurrentPhase() };
+    if (!phase)
     {
         ImGui::TextDisabled("No active phase.");
         return;
     }
+    const bool isBulletHell{ phase->GetKind() == BossPhaseKind::bulletHell };
+    // Why a cast: the cage hint, wing replay and Wings category exist only in Windowkill.
+    auto* windowkill{ dynamic_cast<BossPhase02*>(phase) };
 
     // ---- Head: state ----
-    bool isAIEnabled{ bulletHell ? bulletHell->IsAIEnabled() : windowkill->IsAIEnabled() };
+    bool isAIEnabled{ phase->IsAIEnabled() };
     if (ImGui::Checkbox("AI enabled", &isAIEnabled))
     {
-        if (bulletHell)
+        phase->SetAIEnabled(isAIEnabled);
+        if (isBulletHell && isAIEnabled)
         {
-            bulletHell->SetAIEnabled(isAIEnabled);
-            if (isAIEnabled)
-            {
-                // Why here: there is no other fight-start trigger yet, so enabling the AI starts the BGM.
-                AudioManager::Instance().PlayMusic("Data/Sound/BGM_Boss_Phase_01.wav",
-                    0.05f * AttackParamManager::Instance().GetUltimateParams().sfxVolume, true);
-            }
-        }
-        else
-        {
-            windowkill->SetAIEnabled(isAIEnabled);
+            // Why here: there is no other fight-start trigger yet, so enabling the AI starts the BGM.
+            AudioManager::Instance().PlayMusic("Data/Sound/BGM_Boss_Phase_01.wav",
+                0.05f * AttackParamManager::Instance().GetUltimateParams().sfxVolume, true);
         }
         AddLog(isAIEnabled ? "Boss AI enabled." : "Boss AI disabled.");
     }
     ImGui::SameLine();
-    ImGui::TextDisabled("Phase: %s", bulletHell ? "Bullet hell" : "Windowkill");
+    ImGui::TextDisabled("Phase: %s", isBulletHell ? "Bullet hell" : "Windowkill");
 
-    const int maxHP{ bulletHell ? bulletHell->GetMaxHP() : windowkill->GetMaxHP() };
-    int hp{ bulletHell ? bulletHell->GetHP() : windowkill->GetHP() };
+    const int maxHP{ phase->GetMaxHP() };
+    int hp{ phase->GetHP() };
     const float hpFraction{ (maxHP > 0) ? static_cast<float>(hp) / static_cast<float>(maxHP) : 0.0f };
     const std::string hpText{ "HP " + std::to_string(hp) + " / " + std::to_string(maxHP) };
     ImGui::ProgressBar(hpFraction, ImVec2{ -1.0f, 0.0f }, hpText.c_str());
@@ -996,11 +976,10 @@ void SceneBoss::DrawBossPanel()
     if (DebugProperty::SliderInt("Set HP", hp, 0, maxHP))
     {
         hp = std::clamp(hp, 0, maxHP); // Ctrl+click input can exceed the slider range
-        if (bulletHell) bulletHell->SetHP(hp);
-        else windowkill->SetHP(hp);
+        phase->SetHP(hp);
     }
 
-    if (bulletHell)
+    if (isBulletHell)
     {
         if (ImGui::Button("Go to Windowkill"))
         {
