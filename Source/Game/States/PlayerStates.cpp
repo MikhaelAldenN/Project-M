@@ -268,10 +268,22 @@ void PlayerDash::Enter(Player* player)
     timer = player->GetDashDuration();
     dashDir = player->GetLastValidInput();
 
+    // Why normalized: gamepad input keeps the stick tilt, which would shorten the dash.
+    const float dirLength{ std::sqrt((dashDir.x * dashDir.x) + (dashDir.y * dashDir.y)) };
+    dashDir = (dirLength > 0.0001f)
+        ? DirectX::XMFLOAT2{ dashDir.x / dirLength, dashDir.y / dirLength }
+    : DirectX::XMFLOAT2{ 0.0f, 1.0f };
+
     // Player owns the charge rule: it grants invincibility on a full dash and returns
     // a reduced multiplier on a penalized one.
     m_speedScale = player->BeginDash();
 
+    // Why here and not in Update: movement runs before the state machine in
+    // Player::Update, so a velocity set in Update would only move the player two frames
+    // after the press.
+    const float speed{ player->GetDashSpeed() * m_speedScale };
+    player->GetMovement()->SetVelocity({ dashDir.x * speed, 0.0f, dashDir.y * speed });
+    player->SetStateMoveTimeLimit(timer);
 
     // =========================================================
     // Play VFX Dash Go dan sesuaikan arah rotasinya!
@@ -311,9 +323,6 @@ void PlayerDash::Update(Player* player, float dt)
     // otherwise be lost and two back-to-back dashes would need frame-perfect timing.
     if (player->IsInputEnabled() && IsDashInputTriggered()) m_isDashBuffered = true;
 
-    const float speed{ player->GetDashSpeed() * m_speedScale };
-    player->GetMovement()->SetVelocity({ dashDir.x * speed, 0.0f, dashDir.y * speed });
-
     // =========================================================
     // [BARU] Terus seret VFX mengikuti posisi player selama Dash berjalan
     // =========================================================
@@ -340,6 +349,7 @@ void PlayerDash::Update(Player* player, float dt)
 void PlayerDash::Exit(Player* player)
 {
     player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f });
+    player->ClearStateMoveTimeLimit();
 }
 
 // ============================================================

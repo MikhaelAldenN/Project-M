@@ -148,6 +148,12 @@ public:
     // Returns the speed multiplier for this dash (1.0 = full dash).
     [[nodiscard]] float BeginDash();
 
+    // Caps how long the state-driven velocity may still move the player, so a timed move
+    // covers exactly speed x duration at any frame rate. PlayerDash sets it in Enter and
+    // clears it in Exit; without a cap the state velocity moves the player every frame.
+    void SetStateMoveTimeLimit(float seconds) noexcept { m_stateMoveTimeLeft = seconds; m_isStateMoveTimed = true; }
+    void ClearStateMoveTimeLimit() noexcept { m_isStateMoveTimed = false; }
+
 	// --- Health ---
     void TakeDamage(float damage);
     void SetMaxHP(float maxHp) { m_maxHp = maxHp; m_hp = maxHp; } // [DIUBAH] Set batas maksimal & isi penuh
@@ -207,6 +213,8 @@ private:
     bool m_isBackpedaling = false;
     bool m_useAimFacing = true;
     bool gravityEnabled = true;   // Set false for top-down scenes (e.g. SceneBoss)
+    bool  m_isStateMoveTimed{ false };  // see SetStateMoveTimeLimit
+    float m_stateMoveTimeLeft{ 0.0f };
     DirectX::XMFLOAT2 currentSmoothInput = { 0.0f, 0.0f };
     DirectX::XMFLOAT2 lastValidInput = { 0.0f, 1.0f };
 

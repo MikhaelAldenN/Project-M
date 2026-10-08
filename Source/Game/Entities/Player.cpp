@@ -565,11 +565,18 @@ void Player::UpdateHorizontalMovement(float dt)
 
     XMFLOAT3 stateVelocity = movement->GetVelocity();
 
-    // State-driven velocity (e.g. dash) takes priority over walk input
     if (stateVelocity.x != 0.0f || stateVelocity.z != 0.0f)
     {
-        displacementX = stateVelocity.x * dt;
-        displacementZ = stateVelocity.z * dt;
+        // Why clamped: the last frame of a timed move would otherwise overshoot by up to
+        // one frame, which makes the distance depend on the frame rate.
+        float moveTime{ dt };
+        if (m_isStateMoveTimed)
+        {
+            moveTime = (std::min)(dt, (std::max)(m_stateMoveTimeLeft, 0.0f));
+            m_stateMoveTimeLeft -= moveTime;
+        }
+        displacementX = stateVelocity.x * moveTime;
+        displacementZ = stateVelocity.z * moveTime;
     }
     else
     {
