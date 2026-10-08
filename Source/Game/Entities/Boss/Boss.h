@@ -61,10 +61,6 @@ public:
     WindowTrackingSystem* GetWindowSystem() const { return m_windowSystem; }
     Beyond::Window* GetMainWindow()   const { return m_naviWindow; }
 
-    // ----- Stats -----
-    float GetHP() const { return m_hp; }
-    void  TakeDamage(float damage) { m_hp -= damage; }
-
     // ----- Breathing Animation -----
     void  SetCoreBreathParams(float speed, float intensity) { m_breathSpeed = speed; m_breathIntensity = intensity; }
     float GetCoreBreathSpeed()     const { return m_breathSpeed; }
@@ -126,7 +122,6 @@ private:
     DirectX::XMFLOAT2 m_windowSize = { 400.0f, 400.0f };
 
     // ----- Timers & Animation -----
-    float m_hp = 100.0f;
     float m_breathSpeed = 2.0f;
     float m_breathIntensity = 14.0f;
     float m_glitchTimer = 0.0f;
