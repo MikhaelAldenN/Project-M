@@ -4,6 +4,7 @@
 #include <DirectXMath.h>
 #include <memory>
 #include <vector>
+#include "DamageTypes.h"
 #include "IBossAttackPattern.h"
 
 class Boss;
@@ -37,7 +38,7 @@ public:
     // Sets HP directly, without hit feedback (debug panel, respawn).
     virtual void SetHP(int hp) = 0;
     // Applies damage with hit feedback at `hitPos` (world space). Does nothing once dead.
-    virtual void TakeDamage(int damage, DirectX::XMFLOAT3 hitPos) = 0;
+    virtual DamageResult TakeDamage(const DamageInfo& damage) = 0;
     // False while player bullets must pass through without dealing damage.
     [[nodiscard]] virtual bool IsVulnerable() const { return !IsDead(); }
 

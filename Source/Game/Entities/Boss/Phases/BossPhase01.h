@@ -37,7 +37,7 @@ public:
     void OnBijuudamaParried(DirectX::XMFLOAT3 parryPos, Boss* boss);
 
     // ----- Boss HP -----
-    void TakeDamage(int damage, DirectX::XMFLOAT3 hitPos) override;
+    DamageResult TakeDamage(const DamageInfo& damage) override;
     int  GetHP()    const override { return m_bossHP; }
     int  GetMaxHP() const override { return m_bossMaxHP; }
     bool IsDead()   const override { return m_bossHP <= 0; }

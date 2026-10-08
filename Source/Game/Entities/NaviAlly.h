@@ -1,8 +1,8 @@
 #pragma once
-
 #include "AnimationController.h"
 #include "Character.h"
 #include "Bullet.h"
+#include "DamageTypes.h"
 #include <DirectXMath.h>
 #include <memory>
 #include <deque>
@@ -46,7 +46,8 @@ public:
 
     void OnHitByPlayerBullet() { /* Add your HP reduction logic here */ }
 
-    void TakeDamage(int damage) noexcept;
+    // Applies one hit with a hit sound. Clears Navi's bullets when HP reaches zero.
+    DamageResult TakeDamage(const DamageInfo& damage);
 
     [[nodiscard]] bool IsAlive() const noexcept { return m_hp > 0; }
 

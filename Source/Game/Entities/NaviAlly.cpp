@@ -391,11 +391,11 @@ void NaviAlly::UpdateProjectiles(float elapsedTime, Camera* camera)
     }
 }
 
-void NaviAlly::TakeDamage(int damage) noexcept
+DamageResult NaviAlly::TakeDamage(const DamageInfo& damage)
 {
-    if (!IsAlive()) return;
+    if (!IsAlive()) return DamageResult::ignored;
 
-    m_hp = (std::max)(0, m_hp - damage);
+    m_hp = (std::max)(0, m_hp - damage.amount);
 
     static const std::string HIT_SFX_PATH{ "Data/Sound/SE_Enemy_Hit.wav" };
 
@@ -404,7 +404,9 @@ void NaviAlly::TakeDamage(int damage) noexcept
     if (m_hp <= 0)
     {
         m_projectiles.clear();
+        return DamageResult::killed;
     }
+    return DamageResult::damaged;
 }
 
 void NaviAlly::SetPotionedState(bool isPotioned) noexcept

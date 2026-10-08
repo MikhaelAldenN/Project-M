@@ -328,14 +328,16 @@ void BossPhase01::OnBijuudamaParried(XMFLOAT3 parryPos, Boss* boss) {
     }
 }
 
-void BossPhase01::TakeDamage(int damage, XMFLOAT3 hitPos) {
-    if (m_bossHP <= 0) return;
-    m_bossHP = max(0, m_bossHP - damage);
+DamageResult BossPhase01::TakeDamage(const DamageInfo& damage) {
+    if (m_bossHP <= 0) return DamageResult::ignored;
+    m_bossHP = max(0, m_bossHP - damage.amount);
     m_hitFlashTimer = 0.05f;
 
     CameraController::Instance().AddTrauma(0.3f);
     AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Hit.wav", 0.1f);
-    EffectManager::Instance().Play("Data/Effect/VFX_Boss_Hit.efk", hitPos, 0.3f);
+    EffectManager::Instance().Play("Data/Effect/VFX_Boss_Hit.efk", damage.hitPosition, 0.3f);
+
+    return (m_bossHP <= 0) ? DamageResult::killed : DamageResult::damaged;
 }
 
 void BossPhase01::UpdateIdleHover(float dt, Boss* boss) {

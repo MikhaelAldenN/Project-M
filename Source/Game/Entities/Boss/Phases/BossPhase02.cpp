@@ -775,15 +775,17 @@ void BossPhase02::TriggerCageFirstHitDialogue(Boss* boss)
     // Dialog tidak dibutuhkan — fungsi dikosongkan dengan sengaja.
 }
 
-void BossPhase02::TakeDamage(int damage, DirectX::XMFLOAT3 hitPos) {
-    if (m_bossHP <= 0) return;
+DamageResult BossPhase02::TakeDamage(const DamageInfo& damage) {
+    if (m_bossHP <= 0) return DamageResult::ignored;
 
-    m_bossHP = max(0, m_bossHP - damage);
+    m_bossHP = max(0, m_bossHP - damage.amount);
     m_hitFlashTimer = 0.05f;
 
     CameraController::Instance().AddTrauma(0.3f);
     AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Hit.wav", 0.1f);
-    EffectManager::Instance().Play("Data/Effect/VFX_Boss_Hit.efk", hitPos, 0.3f);
+    EffectManager::Instance().Play("Data/Effect/VFX_Boss_Hit.efk", damage.hitPosition, 0.3f);
+
+    return (m_bossHP <= 0) ? DamageResult::killed : DamageResult::damaged;
 }
 
 void BossPhase02::AppendActiveProjectiles(std::vector<Bullet*>& out) const

@@ -72,7 +72,7 @@ public:
     void SetAIEnabled(bool val) override { m_aiEnabled = val; }
     bool IsAIEnabled() const override { return m_aiEnabled; }
 
-    void TakeDamage(int damage, DirectX::XMFLOAT3 hitPos) override;
+    DamageResult TakeDamage(const DamageInfo& damage) override;
     void SetHP(int hp) override { m_bossHP = hp; }
     int  GetHP() const override { return m_bossHP; }
     int  GetMaxHP() const override { return m_bossMaxHP; }

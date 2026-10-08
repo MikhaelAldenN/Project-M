@@ -228,7 +228,7 @@ void CollisionManager::Update(float elapsedTime)
                     bPos.z >(bossPos.z - k_halfDepth) && bPos.z < (bossPos.z + k_halfDepth))
                 {
                     bullet->SetActive(false);
-                    phase->TakeDamage(bullet->GetDamage(), bPos);
+                    phase->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos });
                 }
             }
         }
@@ -804,7 +804,7 @@ void CollisionManager::CheckPlayerProjectilesVsNavi(const float elapsedTime)
         // 2D Cylinder Collision: Completely ignore the Y-axis vertical distance
         if (distToPath <= NAVI_HITBOX_RADIUS_XZ)
         {
-            m_navi->TakeDamage(PLAYER_BULLET_DAMAGE);
+            m_navi->TakeDamage(DamageInfo{ PLAYER_BULLET_DAMAGE, currentPos });
             EffectManager::Instance().Play("Data/Effect/Hit.efk", naviPos, 1.0f);
             bullet->SetActive(false); // Instantly recycle the bullet into the object pool
         }
@@ -1104,7 +1104,7 @@ void CollisionManager::CheckBossProjectilesVsBoss(float elapsedTime)
                 // Panggil TakeDamage langsung ke Fase-nya agar sinkron 
                 // dengan UI Bar, Efek Suara, dan Flash Damage!
                 // =========================================================
-                phase->TakeDamage(bullet->GetDamage(), bPos);
+                phase->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos });
 
                 // 3. [JUICE] Berikan micro-shake untuk SETIAP kepingan yang menabrak
                 CameraController::Instance().AddTrauma(0.15f);
