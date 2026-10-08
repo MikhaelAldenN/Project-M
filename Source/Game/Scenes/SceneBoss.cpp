@@ -721,27 +721,17 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
             shapeRenderer->DrawSphere(pPos, 0.3f, { 0.0f, 1.0f, 0.0f, 1.0f });
         }
 
-        // 2. Gambar Hitbox Peluru Navi (Lingkaran Merah / Hijau)
-        if (m_navi) {
-            if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase())) {
-                for (auto& bullet : normalPhase->GetProjectiles()) {
-                    if (bullet->IsActive()) {
-                        DirectX::XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
-                        shapeRenderer->DrawSphere(bPos, bullet->GetRadius(), { 1.0f, 0.0f, 0.0f, 1.0f });
-                    }
-                }
-            }
-            // =========================================================
-            // [FIX MUTLAK] LOGIKA WINDOWKILL DITEMPATKAN DI SINI!
-            // =========================================================
-            else if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
-                for (Bullet* bullet : wkPhase->GetProjectiles()) {
-                    if (bullet && bullet->IsActive()) {
-                        DirectX::XMFLOAT3 bPos = bullet->GetPosition();
-                        // Warna Hijau Lime agar kontras untuk peluru mantul
-                        shapeRenderer->DrawSphere(bPos, bullet->GetRadius(), { 0.0f, 1.0f, 0.0f, 1.0f });
-                    }
-                }
+        // 2. Boss bullet hitboxes: red in bullet hell, lime in Windowkill (bouncing bullets).
+        if (const INaviPhase * phase{ m_navi ? m_navi->GetCurrentPhase() : nullptr })
+        {
+            const bool isWindowkill{ IsWindowkill(phase) };
+            std::vector<Bullet*> bullets; // debug overlay only: a per-frame allocation is acceptable
+            phase->AppendActiveProjectiles(bullets);
+            for (Bullet* bullet : bullets)
+            {
+                if (!bullet || !bullet->IsActive()) continue;
+                if (isWindowkill) shapeRenderer->DrawSphere(bullet->GetPosition(), bullet->GetRadius(), { 0.0f, 1.0f, 0.0f, 1.0f });
+                else              shapeRenderer->DrawSphere(bullet->GetPosition(), bullet->GetRadius(), { 1.0f, 0.0f, 0.0f, 1.0f });
             }
         }
     }

@@ -440,3 +440,11 @@ void BossPhase01::UpdateDeathSequence(float dt, Boss* boss) {
         boss->ChangePhase(std::make_unique<BossPhase02>(m_aiTarget));
     }
 }
+
+void BossPhase01::AppendActiveProjectiles(std::vector<Bullet*>& out) const
+{
+    for (const auto& bullet : m_bulletPool)
+    {
+        if (bullet->IsActive()) out.push_back(bullet.get());
+    }
+}

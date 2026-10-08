@@ -786,14 +786,11 @@ void BossPhase02::TakeDamage(int damage, DirectX::XMFLOAT3 hitPos) {
     EffectManager::Instance().Play("Data/Effect/VFX_Boss_Hit.efk", hitPos, 0.3f);
 }
 
-std::vector<Bullet*> BossPhase02::GetProjectiles() {
-    std::vector<Bullet*> allBullets;
-
-    // 実行中のすべてのアタックパターンから、アクティブな弾を動的に集める
-    for (auto& attack : m_activeAttacks) {
-        std::vector<Bullet*> attackBullets = attack->GetActiveProjectiles();
-        allBullets.insert(allBullets.end(), attackBullets.begin(), attackBullets.end());
+void BossPhase02::AppendActiveProjectiles(std::vector<Bullet*>& out) const
+{
+    for (const auto& attack : m_activeAttacks)
+    {
+        const auto attackBullets{ attack->GetActiveProjectiles() };
+        out.insert(out.end(), attackBullets.begin(), attackBullets.end());
     }
-
-    return allBullets;
 }

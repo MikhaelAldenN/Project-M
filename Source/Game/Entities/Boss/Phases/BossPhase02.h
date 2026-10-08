@@ -66,7 +66,7 @@ public:
 
     Camera* GetFXCamera() const { return m_fxCamera.get(); }
 
-    std::vector<Bullet*> GetProjectiles();
+    void AppendActiveProjectiles(std::vector<Bullet*>& out) const override;
 
     void SetAITarget(Player* p) override { m_aiTarget = p; }
     void SetAIEnabled(bool val) override { m_aiEnabled = val; }

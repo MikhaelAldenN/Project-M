@@ -61,7 +61,7 @@ public:
 
     BossAI_Phase01* GetAI() const { return m_ai.get(); }
     const std::vector<std::unique_ptr<IPooledAttackPattern>>& GetActiveAttacks() const { return m_activeAttacks; }
-    std::vector<std::unique_ptr<Bullet>>& GetProjectiles() { return m_bulletPool; }
+    void AppendActiveProjectiles(std::vector<Bullet*>& out) const override;
 
 private:
     void UpdateBossMovement(float dt, Boss* boss);

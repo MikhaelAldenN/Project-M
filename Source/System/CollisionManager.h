@@ -20,6 +20,7 @@
 class ItemManager;
 class NaviAlly;
 class Boss;
+class Bullet;
 
 // Axis-Aligned Bounding Box for rapid broad-phase rejection
 struct AABB
@@ -81,6 +82,9 @@ private:
     ItemManager* m_itemManager = nullptr;
     NaviAlly* m_navi = nullptr;
     Boss* m_Boss = nullptr;
+
+    // Reused every frame so collecting the boss bullets does not allocate a new buffer.
+    std::vector<Bullet*> m_bossBulletScratch;
 
     std::function<void(DirectX::XMFLOAT3)> m_onCheckpointReachCallback;
     std::function<void(int)> m_onEnableLineReachCallback = nullptr;

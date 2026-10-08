@@ -1084,34 +1084,29 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
             CameraController::Instance().AddTrauma(0.2f);
             AudioManager::Instance().PlaySFX("Data/Sound/SE_Damage.wav", 0.3f);
         }
-        };
+    };
 
-    // =========================================================
-    // 1. CEK PELURU PHASE 01 (NORMAL)
-    // =========================================================
-    if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_Boss->GetCurrentPhase())) {
-        for (auto& bulletPtr : normalPhase->GetProjectiles()) {
-            checkBulletHit(bulletPtr.get());
-        }
-    }
-    // =========================================================
-    // 2. CEK PELURU PHASE 02 (WINDOWKILL)
-    // =========================================================
-    else if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_Boss->GetCurrentPhase())) {
-        std::vector<Bullet*> activeBullets = wkPhase->GetProjectiles();
-        for (Bullet* bullet : activeBullets) {
-            checkBulletHit(bullet);
-        }
+    INaviPhase* phase{ m_Boss->GetCurrentPhase() };
+    if (!phase) return;
+
+    m_bossBulletScratch.clear();
+    phase->AppendActiveProjectiles(m_bossBulletScratch);
+    for (Bullet* bullet : m_bossBulletScratch)
+    {
+        checkBulletHit(bullet);
     }
 }
 
 void CollisionManager::CheckBossProjectilesVsBoss(float elapsedTime)
 {
     if (!m_Boss) return;
-    auto* normalPhase = dynamic_cast<BossPhase01*>(m_Boss->GetCurrentPhase());
-    if (!normalPhase) return;
+    INaviPhase* phase{ m_Boss->GetCurrentPhase() };
+    // Why bullet hell only: the parry that sends bullets back (GetParryableProjectile) exists only there.
+    if (!phase || phase->GetKind() != BossPhaseKind::bulletHell) return;
 
-    for (auto& bullet : normalPhase->GetProjectiles())
+    m_bossBulletScratch.clear();
+    phase->AppendActiveProjectiles(m_bossBulletScratch);
+    for (Bullet* bullet : m_bossBulletScratch)
     {
         if (!bullet->IsActive()) continue;
 
@@ -1142,7 +1137,7 @@ void CollisionManager::CheckBossProjectilesVsBoss(float elapsedTime)
                 // Panggil TakeDamage langsung ke Fase-nya agar sinkron 
                 // dengan UI Bar, Efek Suara, dan Flash Damage!
                 // =========================================================
-                normalPhase->TakeDamage(bullet->GetDamage(), bPos);
+                phase->TakeDamage(bullet->GetDamage(), bPos);
 
                 // 3. [JUICE] Berikan micro-shake untuk SETIAP kepingan yang menabrak
                 CameraController::Instance().AddTrauma(0.15f);

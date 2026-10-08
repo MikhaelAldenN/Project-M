@@ -3,9 +3,11 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <memory>
+#include <vector>
 #include "IBossAttackPattern.h"
 
 class Boss;
+class Bullet;
 class Camera;
 class Player;
 
@@ -45,6 +47,10 @@ public:
 
     // True once the phase's end sequence is over and the scene may leave the fight.
     [[nodiscard]] virtual bool IsReadyToChangeScene() const { return false; }
+
+    // Appends the bullets that are active right now. `out` is not cleared, so one buffer
+    // can be reused. Pointers are borrowed and valid until the phase's next Update.
+    virtual void AppendActiveProjectiles(std::vector<Bullet*>& out) const = 0;
 
     // FSM System Hooks (Virtual default agar tidak error di phase yang belum pakai FSM)
     virtual void AddAttack(std::unique_ptr<IBossAttackPattern> attack) {}
