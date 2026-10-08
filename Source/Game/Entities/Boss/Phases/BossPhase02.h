@@ -36,6 +36,8 @@ public:
     void Render(ID3D11DeviceContext* context, Camera* currentCamera, Boss* boss) override;
     void Exit(Boss* boss) override;
 
+    [[nodiscard]] BossPhaseKind GetKind() const override { return BossPhaseKind::windowkill; }
+
     void ReplayAnimation();
 
     void SetWingFlapParams(float speed, float intensity) { m_wingFlapSpeed = speed; m_wingFlapIntensity = intensity; }
@@ -66,24 +68,24 @@ public:
 
     std::vector<Bullet*> GetProjectiles();
 
-    void SetAITarget(Player* p) { m_aiTarget = p; }
-    void SetAIEnabled(bool val) { m_aiEnabled = val; }
-    bool IsAIEnabled() const { return m_aiEnabled; }
+    void SetAITarget(Player* p) override { m_aiTarget = p; }
+    void SetAIEnabled(bool val) override { m_aiEnabled = val; }
+    bool IsAIEnabled() const override { return m_aiEnabled; }
 
-    void TakeDamage(int damage, DirectX::XMFLOAT3 hitPos);
-    void SetHP(int hp) { m_bossHP = hp; }
-    int  GetHP() const { return m_bossHP; }
-    int  GetMaxHP() const { return m_bossMaxHP; }
-    bool IsDead() const { return m_bossHP <= 0; }
+    void TakeDamage(int damage, DirectX::XMFLOAT3 hitPos) override;
+    void SetHP(int hp) override { m_bossHP = hp; }
+    int  GetHP() const override { return m_bossHP; }
+    int  GetMaxHP() const override { return m_bossMaxHP; }
+    bool IsDead() const override { return m_bossHP <= 0; }
 
     void SetOverdriveSpriteScale(float scale) { m_overdriveSpriteScale = scale; }
     float GetOverdriveSpriteScale() const { return m_overdriveSpriteScale; }
 
-    bool IsReadyToChangeScene() const { return m_isDying && m_deathTimer >= 7.0f; }
+    bool IsReadyToChangeScene() const override { return m_isDying && m_deathTimer >= 7.0f; }
 
-    void AddAttack(std::unique_ptr<IBossAttackPattern> attack);
-    bool HasActiveAttacks() const { return !m_activeAttacks.empty(); }
-    Player* GetAITarget() const { return m_aiTarget; }
+    void AddAttack(std::unique_ptr<IBossAttackPattern> attack) override;
+    bool HasActiveAttacks() const override { return !m_activeAttacks.empty(); }
+    Player* GetAITarget() const override { return m_aiTarget; }
 
     bool IsPlayerCaged() const { return m_isPlayerCaged; }
     DirectX::XMFLOAT3 GetCagePos() const { return m_cagePos; }

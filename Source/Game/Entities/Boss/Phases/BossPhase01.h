@@ -25,6 +25,7 @@ public:
     void Update(float dt, Boss* boss) override;
     void Render(ID3D11DeviceContext* context, Camera* currentCamera, Boss* boss) override;
     void Exit(Boss* boss) override;
+    [[nodiscard]] BossPhaseKind GetKind() const override { return BossPhaseKind::bulletHell; }
 
     // ----- Attack Management -----
     void AddPooledAttack(std::unique_ptr<IPooledAttackPattern> attack);
@@ -36,17 +37,17 @@ public:
     void OnBijuudamaParried(DirectX::XMFLOAT3 parryPos, Boss* boss);
 
     // ----- Boss HP -----
-    void TakeDamage(int damage, DirectX::XMFLOAT3 hitPos);
-    int  GetHP()    const { return m_bossHP; }
-    int  GetMaxHP() const { return m_bossMaxHP; }
-    bool IsDead()   const { return m_bossHP <= 0; }
-    void SetHP(int hp) { m_bossHP = hp; }
+    void TakeDamage(int damage, DirectX::XMFLOAT3 hitPos) override;
+    int  GetHP()    const override { return m_bossHP; }
+    int  GetMaxHP() const override { return m_bossMaxHP; }
+    bool IsDead()   const override { return m_bossHP <= 0; }
+    void SetHP(int hp) override { m_bossHP = hp; }
 
     // ----- AI / player -----
-    void    SetAITarget(Player* p) { m_aiTarget = p; }
-    void    SetAIEnabled(bool val) { m_aiEnabled = val; }
-    bool    IsAIEnabled()     const { return m_aiEnabled; }
-    Player* GetAITarget()     const { return m_aiTarget; }
+    void    SetAITarget(Player* p) override { m_aiTarget = p; }
+    void    SetAIEnabled(bool val) override { m_aiEnabled = val; }
+    bool    IsAIEnabled()     const override { return m_aiEnabled; }
+    Player* GetAITarget()     const override { return m_aiTarget; }
 
     // ----- Accessors -----
     AttackUltimate* GetActiveUltimate() const {
