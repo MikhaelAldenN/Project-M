@@ -45,9 +45,6 @@ public:
 
     // True once the phase's end sequence is over and the scene may leave the fight.
     [[nodiscard]] virtual bool IsReadyToChangeScene() const { return false; }
-    virtual void Update(float dt, Boss* boss) = 0;
-    virtual void Render(ID3D11DeviceContext* context, Camera* currentCamera, Boss* boss) = 0;
-    virtual void Exit(Boss* boss) = 0;
 
     // FSM System Hooks (Virtual default agar tidak error di phase yang belum pakai FSM)
     virtual void AddAttack(std::unique_ptr<IBossAttackPattern> attack) {}
