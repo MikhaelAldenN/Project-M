@@ -49,6 +49,12 @@
     <FxCompile Include="Shader\SwarmPS.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
+    <FxCompile Include="Shader\GameCanvasBlitPS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\GameCanvasBlitVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\System\BasicShader.cpp">
@@ -349,6 +355,15 @@
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Windowing\DebugHostWindow.cpp">
+      <Filter>Source\Engine\Windowing</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Windowing\DebugUI.cpp">
+      <Filter>Source\Engine\Windowing</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\GameCanvas.cpp">
+      <Filter>Source\Engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Windowing\WindowLayoutStore.cpp">
       <Filter>Source\Engine\Windowing</Filter>
     </ClCompile>
   </ItemGroup>
@@ -726,6 +741,18 @@
     <ClInclude Include="Source\Engine\Windowing\DebugHostWindow.h">
       <Filter>Source\Engine\Windowing</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Windowing\DebugUI.h">
+      <Filter>Source\Engine\Windowing</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Common\FitRect.h">
+      <Filter>Source\Engine\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\GameCanvas.h">
+      <Filter>Source\Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Windowing\WindowLayoutStore.h">
+      <Filter>Source\Engine\Windowing</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Basic.hlsli">
@@ -839,5 +866,8 @@
     <Image Include="Data\Icon\ChroniclesOfChaos.ico">
       <Filter>Source\Icon</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="app.manifest" />
   </ItemGroup>
 </Project>

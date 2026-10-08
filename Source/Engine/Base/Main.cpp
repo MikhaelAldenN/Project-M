@@ -5,6 +5,8 @@
 #include <exception> 
 #include "WindowManager.h"
 #include <thread>
+#include <array>
+#include <cstdio>
 
 #include "Framework.h"
 
@@ -51,6 +53,58 @@ void TestPureWin32Transparency()
 // Di main(), panggil sebelum framework:
 // TestPureWin32Transparency();
 
+namespace
+{
+    // Writes one debug-output line: active DPI awareness and primary display size.
+    // Must run after SDL_Init(SDL_INIT_VIDEO), because it queries SDL displays.
+    void LogDisplayStartupInfo()
+    {
+        struct NamedContext
+        {
+            DPI_AWARENESS_CONTEXT context{ nullptr };
+            const char* name{ "" };
+        };
+        // Not constexpr: the Win32 context macros are pointer casts.
+        const std::array<NamedContext, 5> knownContexts{ {
+            { DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, "per-monitor v2" },
+            { DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE,    "per-monitor v1" },
+            { DPI_AWARENESS_CONTEXT_SYSTEM_AWARE,         "system" },
+            { DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED,    "unaware (GDI scaled)" },
+            { DPI_AWARENESS_CONTEXT_UNAWARE,              "unaware" },
+        } };
+
+        const DPI_AWARENESS_CONTEXT activeContext{ GetThreadDpiAwarenessContext() };
+        const char* awarenessName{ "unknown" };
+        for (const auto& known : knownContexts)
+        {
+            if (AreDpiAwarenessContextsEqual(activeContext, known.context))
+            {
+                awarenessName = known.name;
+                break;
+            }
+        }
+
+        const SDL_DisplayID primaryDisplay{ SDL_GetPrimaryDisplay() };
+        SDL_Rect bounds{};
+        if (!SDL_GetDisplayBounds(primaryDisplay, &bounds))
+        {
+            OutputDebugStringA("[Display] SDL_GetDisplayBounds failed: ");
+            OutputDebugStringA(SDL_GetError());
+            OutputDebugStringA("\n");
+        }
+
+        // Why both sizes: SceneBoss and WindowTrackingSystem read GetSystemMetrics,
+        // which is DPI-virtualized when the process is not per-monitor aware.
+        std::array<char, 256> line{};
+        std::snprintf(line.data(), line.size(),
+            "[Display] DPI awareness: %s | SDL primary: %dx%d | GetSystemMetrics: %dx%d | content scale: %.2f\n",
+            awarenessName, bounds.w, bounds.h,
+            GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
+            SDL_GetDisplayContentScale(primaryDisplay));
+        OutputDebugStringA(line.data());
+    }
+}
+
 int main(int argc, char* argv[])
 {
     std::thread safetyThread(EmergencyWatchdog);
@@ -62,6 +116,8 @@ int main(int argc, char* argv[])
         MessageBoxA(NULL, SDL_GetError(), "SDL Init Failed", MB_OK | MB_ICONERROR);
         return -1;
     }
+
+    LogDisplayStartupInfo();
 
     //TestPureWin32Transparency();
     try
@@ -88,8 +144,23 @@ int main(int argc, char* argv[])
             SDL_Event event;
             while (SDL_PollEvent(&event))
             {
-                if (event.type == SDL_EVENT_QUIT) running = false;
-                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
+                // Why first: these keys must work from the debug window too, and that
+                // window swallows its own key events in the next line.
+                if (framework && framework->HandleDebugHotkey(event)) continue;
+
+                // Debug host window events never reach game logic.
+                if (framework && framework->HandleDebugHostEvent(event)) continue;
+
+#if defined(_DEBUG)
+                // F11 switches the main window between windowed and borderless.
+                // Debug only: a shipped build always covers the display.
+                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_F11 && !event.key.repeat)
+                {
+                    if (framework) framework->ToggleMainWindowMode();
+                }
+#endif
+
+                if (event.type == SDL_EVENT_QUIT) running = false;                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
                 if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
                 {
                     // Cek window mana yang barusan diklik tombol silangnya

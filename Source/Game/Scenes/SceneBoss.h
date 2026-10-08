@@ -26,11 +26,13 @@
 #include "PhysXUtils.h"
 #include "Boss.h"
 #include "HUDRenderer.h"
+#include "DebugUI.h"
 
 // =========================================================
 // SCENE BOSS - WINDOWKILL MODE
 // =========================================================
 
+class BossPhase01;
 class CollisionManager;
 class EnemyManager;
 class ItemManager;
@@ -46,7 +48,6 @@ public:
     void Shutdown();
     void Render(float elapsedTime, Camera* camera = nullptr) override;
     void DrawGUI() override;
-    void OnResize(int width, int height) override;
 
     [[nodiscard]] Camera* GetMainCamera() const { return m_mainCamera.get(); }
     [[nodiscard]] Player* GetPlayer()     const { return m_player.get(); }
@@ -63,7 +64,13 @@ private:
     void InitializeSubWindows();
 
     // --- Debug & System Helpers ---
-    void ResetEverything();
+    void DrawBossPanel();
+    void DrawAttacksPanel();
+    void DrawBulletHellAttacks(BossPhase01& phase);
+    void DrawWindowsPanel();
+    void DrawLogPanel();
+    void CloseTestWindows();
+    void DrawViewMenu();
     void SpawnDebugWindow();
     void SpawnTransparentWindow(float bgAlpha, const std::string& typeSuffix);
     void AddLog(const std::string& message);
@@ -125,10 +132,9 @@ private:
     // GUI / DEBUG STATE
     // =========================================================
     bool      m_showGrid = false;
-    float     m_timeScale = 1.0f;
+    int       m_selectedWindowkillSet{ 0 }; // row selected in the Attacks panel list
+    int       m_selectedBulletHellSet{ 0 };
     int       m_spawnCount = 0;
-    bool      m_autoSyncMainWindow = false;
-    bool      m_topmostEnabled = false;
     bool      m_playerWindowTransparent = false;
 
     ImVec2    m_debugPanelSize = { 450.0f, 750.0f };
@@ -140,8 +146,6 @@ private:
     // =========================================================
     float     m_targetZoom = 0.0f;
     float     m_currentZoom = 0.0f;
-    float     m_combatRadius = 25.0f; // Radius deteksi
-    float     m_maxZoomIn = -8.0f;    // Seberapa jauh kamera turun (Y)
 
     // Terminal log (capped at 50 lines)
     std::vector<std::string> m_debugLogs;
@@ -188,4 +192,16 @@ private:
     float m_overdriveBossHpTriggerPercent = 30.0f; // Default: Uncap aktif saat HP Boss di bawah 30%
     bool  m_forceUncapOverride = false;            // Kontrol manual untuk memaksa mode Uncap
     bool  m_lastUncapState = false;                // Menyimpan status state frame sebelumnya
+
+#if defined(_DEBUG)
+    // Keeps the "WINDOWKILL MASTER CONTROL" tab registered while this scene lives.
+    // Declared last: destroyed first, before any member the callback reads.
+    DebugPanelHandle m_debugPanel{};
+    DebugPanelHandle m_bossPanel{};
+    DebugPanelHandle m_attacksPanel{};
+    DebugPanelHandle m_playerPanel{};
+    DebugPanelHandle m_windowsPanel{};
+    DebugPanelHandle m_logPanel{};
+    DebugPanelHandle m_viewMenu{};
+#endif
 };

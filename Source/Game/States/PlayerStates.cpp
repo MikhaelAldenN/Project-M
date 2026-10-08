@@ -16,35 +16,56 @@
 #include "EffectManager.h"
 
 namespace {
+    // Player bindings. Keyboard and mouse buttons are virtual-key codes read through Keyboard.
+    // Charged shot and ult are reserved here so no other action takes them; nothing reads them yet.
+    namespace Binding
+    {
+        constexpr int keyShoot{ VK_LBUTTON };
+        constexpr int keyMelee{ VK_RBUTTON }; // slash / parry
+        constexpr int keyDash{ VK_SPACE };
+        constexpr int keyChargedShot{ VK_SHIFT };
+        constexpr int keyUlt{ 'E' };
+
+        // Gamepad: shoot is the right stick and charged shot is the right trigger (both analog).
+        constexpr GamePadButton padMelee{ GamePad::BTN_X };
+        constexpr GamePadButton padDash{ GamePad::BTN_A };
+        constexpr GamePadButton padUlt{ GamePad::BTN_Y };
+    }
+
     [[nodiscard]] bool IsDashInputTriggered() noexcept
     {
         auto& input{ Input::Instance() };
 
-        // Keyboard Check
-        const bool isKeyboardDash{ input.GetKeyboard().IsTriggered(VK_SHIFT) };
-
-        // Gamepad Check (LB = Left Shoulder)
-        // Use GetButtonDown() so it only triggers exactly on the frame it is pressed.
-        const bool isGamepadDash{ (input.GetGamePad().GetButtonDown() & GamePad::BTN_LEFT_SHOULDER) != 0 };
+        const bool isKeyboardDash{ input.GetKeyboard().IsTriggered(Binding::keyDash) };
+        const bool isGamepadDash{ (input.GetGamePad().GetButtonDown() & Binding::padDash) != 0 };
 
         return isKeyboardDash || isGamepadDash;
     }
 
-    [[nodiscard]] bool IsShootInputPressed() noexcept
+    [[nodiscard]] bool IsMeleeInputTriggered() noexcept
     {
         auto& input{ Input::Instance() };
 
-        // Keyboard/Mouse Check (Left Click)
-        const bool isMouseShoot{ input.GetKeyboard().IsPress(VK_LBUTTON) };
+        const bool isMouseMelee{ input.GetKeyboard().IsTriggered(Binding::keyMelee) };
+        const bool isGamepadMelee{ (input.GetGamePad().GetButtonDown() & Binding::padMelee) != 0 };
 
-        // Gamepad Check (RT = Right Trigger)
-        // BUG ANTICIPATION: The "Hair Trigger" Bug. 
-        // Triggers are analog (0.0f to 1.0f). If we check > 0.0f, resting a finger will fire the gun.
-        // We use a 50% deadzone threshold so it acts like a confident, digital button press.
-        constexpr float triggerThreshold{ 0.5f };
-        const bool isGamepadShoot{ input.GetGamePad().GetTriggerR() > triggerThreshold };
+        return isMouseMelee || isGamepadMelee;
+    }
 
-        return isMouseShoot || isGamepadShoot;
+    [[nodiscard]] bool IsShootInputPressed(const Player& player) noexcept
+    {
+        auto& input{ Input::Instance() };
+
+        const bool isMouseShoot{ input.GetKeyboard().IsPress(Binding::keyShoot) };
+
+        // Why a threshold above the aim deadzone: a light tilt aims without firing.
+        const GamePad& gamePad{ input.GetGamePad() };
+        const float rx{ gamePad.GetAxisRX() };
+        const float ry{ gamePad.GetAxisRY() };
+        const float threshold{ player.GetStickShootThreshold() };
+        const bool isStickShoot{ ((rx * rx) + (ry * ry)) > (threshold * threshold) };
+
+        return isMouseShoot || isStickShoot;
     }
 
     // --- COMBAT ACTION ROUTINE ---
@@ -55,10 +76,13 @@ namespace {
         if (!player || !player->IsInputEnabled()) return false;
 
         // Centralized Input Check
-        if (!IsShootInputPressed()) return false;
+        const bool isMeleeTriggered{ IsMeleeInputTriggered() };
+        const bool isShootPressed{ IsShootInputPressed(*player) };
+        if (!isMeleeTriggered && !isShootPressed) return false;
 
         CollisionManager* const colMgr{ player->GetCollisionManager() };
-        if (colMgr)
+        // Slash and parry answer only to the melee button; shooting never triggers them.
+        if (colMgr && isMeleeTriggered)
         {
             const DirectX::XMFLOAT3 pPos{ player->GetMovement()->GetPosition() };
             const DirectX::XMFLOAT3 aimPos{ player->GetAimTarget() };
@@ -160,7 +184,7 @@ namespace {
         }
 
         // --- Default: Shoot ---
-        if (allowShoot && !player->GetAnimator()->IsUpperPlaying())
+        if (allowShoot && isShootPressed && !player->GetAnimator()->IsUpperPlaying())
         {
             player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerShoot>());
             player->FireProjectile();
@@ -187,7 +211,7 @@ void PlayerIdle::Update(Player* player, float dt)
     if (!player->IsInputEnabled()) return;
 
     // Dash Priority (Seamlessly checks Keyboard and Gamepad LB)
-    if (IsDashInputTriggered() && (player->canDash || player->IsPowerUncapped()))
+    if (IsDashInputTriggered()) 
     {
         player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
         return;
@@ -219,7 +243,7 @@ void PlayerMoving::Update(Player* player, float dt)
     if (player->IsInputEnabled())
     {
         // Dash Priority
-        if (IsDashInputTriggered() && (player->canDash || player->IsPowerUncapped()))
+        if (IsDashInputTriggered()) 
         {
             player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
             return;
@@ -241,14 +265,12 @@ void PlayerMoving::Update(Player* player, float dt)
 
 void PlayerDash::Enter(Player* player)
 {
-    constexpr float DASH_IFRAME_DURATION = 0.2f;
-
     timer = player->GetDashDuration();
     dashDir = player->GetLastValidInput();
 
-    player->canDash = false;
-    player->dashCooldownTimer = player->GetDashCooldown();
-    player->TriggerInvincibility(DASH_IFRAME_DURATION);
+    // Player owns the charge rule: it grants invincibility on a full dash and returns
+    // a reduced multiplier on a penalized one.
+    m_speedScale = player->BeginDash();
 
 
     // =========================================================
@@ -285,11 +307,8 @@ void PlayerDash::Update(Player* player, float dt)
 {
     timer -= dt;
 
-    player->GetMovement()->SetVelocity({
-        dashDir.x * player->GetDashSpeed(),
-        0.0f,
-        dashDir.y * player->GetDashSpeed()
-        });
+    const float speed{ player->GetDashSpeed() * m_speedScale };
+    player->GetMovement()->SetVelocity({ dashDir.x * speed, 0.0f, dashDir.y * speed });
 
     // =========================================================
     // [BARU] Terus seret VFX mengikuti posisi player selama Dash berjalan
@@ -408,7 +427,7 @@ void PlayerShoot::Enter(Player* player)
 void PlayerShoot::Update(Player* player, float dt)
 {
     // Dash Lockout Prevention
-    if (IsDashInputTriggered() && (player->canDash || player->IsPowerUncapped()))
+    if (IsDashInputTriggered()) // always allowed; Player::BeginDash decides full or penalized
     {
         player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
         return;
@@ -417,19 +436,12 @@ void PlayerShoot::Update(Player* player, float dt)
     m_timer -= dt;
     m_minTapCooldown -= dt;
 
-    const bool isHolding{ IsShootInputPressed() };
+    const bool isHolding{ IsShootInputPressed(*player) };
 
-    // =========================================================
-    // BUG FIX: DECOUPLE MELEE FROM FIRE RATE
-    // By checking this outside the m_timer block, the player can 
-    // instantly snap into a slash animation the exact frame a 
-    // Kamikaze enters the danger zone, bypassing gun cooldowns.
-    // =========================================================
-    if (isHolding)
-    {
-        // allowShoot = false ensures we only check for slashes/parries here
-        if (TryExecuteCombatAction(player, false)) return;
-    }
+    // Why outside the m_timer block: the melee button must interrupt shooting on the
+    // frame it is pressed, without waiting for the gun cooldown.
+    // allowShoot = false: only slash and parry are checked here.
+    if (TryExecuteCombatAction(player, false)) return;
 
     // The Tap-Fire Reward Logic (Early Exit)
     if (!isHolding && m_minTapCooldown <= 0.0f)

@@ -33,8 +33,10 @@ namespace Beyond
 
         void SetTitle(const char* title);
         void SetAlwaysOnTop(bool isTop);
-        void SetDraggable(bool isDraggable) { m_isDraggable = isDraggable; }
+        void SetDraggable(bool isDraggable);
         bool IsDraggable() const { return m_isDraggable; }
+
+        void LockUserMoveAndResize();
 
         void SetPriority(int priority) { m_priority = priority; }
         int  GetPriority() const { return m_priority; }
@@ -62,6 +64,7 @@ namespace Beyond
         int  m_height = 0;
         int  m_priority = 100;
         bool m_isDraggable = true;
+        bool m_isUserLocked = false; // set once by LockUserMoveAndResize()
         bool m_isTransparent = false;
         bool m_isClickThrough = false;
 

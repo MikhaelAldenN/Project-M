@@ -62,8 +62,6 @@ public:
     float GetPixelToUnit() const { return m_pixelToUnit; }
     float GetWingGlobalScale() const { return m_wingGlobalScale; }
 
-    void SetClickThrough(bool clickThrough) { m_isClickThrough = clickThrough; }
-    bool IsClickThrough() const { return m_isClickThrough; }
     Camera* GetFXCamera() const { return m_fxCamera.get(); }
 
     std::vector<Bullet*> GetProjectiles();
@@ -87,12 +85,6 @@ public:
     bool HasActiveAttacks() const { return !m_activeAttacks.empty(); }
     Player* GetAITarget() const { return m_aiTarget; }
 
-    // [FIX] 各Attack.h に定義された Params 構造体を返す Getter
-    BouncingBulletParams& GetBouncingParams() { return m_bouncingParams; }
-    BoomerangParams& GetBoomerangParams() { return m_boomerangParams; }
-    BlasterParams& GetBlasterParams() { return m_blasterParams; }
-    UndyneSpearParams& GetUndyneParams() { return m_undyneParams; }
-
     bool IsPlayerCaged() const { return m_isPlayerCaged; }
     DirectX::XMFLOAT3 GetCagePos() const { return m_cagePos; }
     float GetCageSize() const { return m_cageSizeWorld; }
@@ -112,10 +104,10 @@ private:
     std::vector<WingNode> m_leftWingData;
     std::vector<WingNode> m_rightWingData;
 
+    // Size of the full-desktop overlay windows (FX, click blocker) in canvas pixels.
+    // Equals the canvas on a 16:9 monitor, larger on one axis otherwise.
     float m_screenW = 1920.0f;
     float m_screenH = 1080.0f;
-
-    bool m_isClickThrough = false;
 
     enum class WingState { Expanding, Idle };
     WingState m_wingState = WingState::Expanding;
@@ -138,14 +130,6 @@ private:
 
     float m_pixelToUnit = 40.0f;
     float m_wingGlobalScale = 2.5f;
-
-    // ==========================================
-    // 攻撃パラメータの実体（UIから調整可能）
-    // ==========================================
-    BouncingBulletParams m_bouncingParams;
-    BoomerangParams m_boomerangParams;
-    BlasterParams m_blasterParams;
-    UndyneSpearParams m_undyneParams;
 
     Player* m_aiTarget = nullptr;
     bool    m_aiEnabled = false;

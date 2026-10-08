@@ -9,17 +9,10 @@ namespace {
 
 SceneTitle::SceneTitle()
 {
+    // Why only "show": the title is entered from SceneBoss, which hides the main
+    // window during Windowkill. Window size and style belong to the engine, not the scene.
     if (auto window{ Framework::Instance()->GetMainWindow() }) {
-        SDL_Window* sdlWin = window->GetSDLWindow();
-
-        SDL_ShowWindow(sdlWin);
-        SDL_SetWindowBordered(sdlWin, false);
-        SDL_SetWindowResizable(sdlWin, false);
-
-        int fullW = GetSystemMetrics(SM_CXSCREEN);
-        int fullH = GetSystemMetrics(SM_CYSCREEN);
-        SDL_SetWindowSize(sdlWin, fullW, fullH);
-        SDL_SetWindowPosition(sdlWin, 0, 0);
+        SDL_ShowWindow(window->GetSDLWindow());
     }
 
     camera = std::make_unique<Camera>();
@@ -51,6 +44,11 @@ SceneTitle::SceneTitle()
     m_primitive = std::make_unique<Primitive>(device);
     m_uiOption = std::make_unique<UIOption>();
     m_uiOption->Initialize(m_primitive.get());
+
+#if defined(_DEBUG)
+    // Capturing `this` is safe: the handle is a member and dies with this scene.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Title", [this]() { DrawDebugPanel(); }); 
+#endif
 }
 
 bool SceneTitle::IsUpTriggered() noexcept
@@ -492,11 +490,6 @@ void SceneTitle::ExecuteMenuSelection() noexcept
     }
 }
 
-void SceneTitle::OnResize(int width, int height)
-{
-    if (postProcess) postProcess->OnResize(width, height);
-}
-
 // =========================================================
 // DEBUG GUI IMPLEMENTATION
 // =========================================================
@@ -504,7 +497,12 @@ void SceneTitle::OnResize(int width, int height)
 void SceneTitle::DrawGUI()
 {
     ImGui::Begin("Title Scene Debugger");
+    DrawDebugPanel();
+    ImGui::End();
+}
 
+void SceneTitle::DrawDebugPanel()
+{
     if (ImGui::BeginTabBar("InspectorTabs"))
     {
         if (ImGui::BeginTabItem("Post-Process & FX"))
@@ -514,7 +512,6 @@ void SceneTitle::DrawGUI()
         }
         ImGui::EndTabBar();
     }
-    ImGui::End();
 }
 
 void SceneTitle::GUIPostProcessTab()

@@ -38,6 +38,11 @@ public:
     // --- GLOBAL GETTERS / SETTERS ---
     [[nodiscard]] InputDevice GetLastUsedDevice() const noexcept { return m_lastUsedDevice; }
     void SetLastUsedDevice(InputDevice device) noexcept { m_lastUsedDevice = device; }
+    void SetKeyboardMouseSuppressed(bool suppressed) noexcept { m_isKbmSuppressed = suppressed; }
+    
+    // Code that reads keys or the cursor directly from the OS or SDL must check
+    // this first and treat the input as absent while it is true.
+    [[nodiscard]] bool IsKeyboardMouseSuppressed() const noexcept { return m_isKbmSuppressed; }
 
 private:
     std::unique_ptr<GamePad>	gamePad;
@@ -46,6 +51,8 @@ private:
 
     // Will hold its state across all scene changes
     InputDevice m_lastUsedDevice{ InputDevice::Keyboard };
+
+    bool m_isKbmSuppressed{ false };
 
 	// Hardware sync state 
     bool m_isCursorVisible{ true };

@@ -9,13 +9,18 @@ using namespace DirectX;
 
 WindowTrackingSystem::WindowTrackingSystem()
 {
-    // Pre-cache screen dimensions agar tidak hit SDL setiap frame awal
-    SDL_Rect bounds;
-    if (SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &bounds))
-    {
-        m_cachedScreenWidth = bounds.w;
-        m_cachedScreenHeight = bounds.h;
-    }
+}
+
+static_assert(static_cast<float>(Beyond::Config::CANVAS_HEIGHT)
+    == Beyond::Config::ARENA_HEIGHT_UNITS * Beyond::Config::PIXEL_TO_UNIT_RATIO,
+    "canvas height, arena height and pixel-to-unit ratio are out of sync");
+
+void WindowTrackingSystem::SetArenaRect(const Beyond::PixelRect& rect)
+{
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    m_arenaRect = rect;
+    m_desktopScale = static_cast<float>(rect.height) / static_cast<float>(Beyond::Config::CANVAS_HEIGHT);
 }
 
 WindowTrackingSystem::~WindowTrackingSystem()
@@ -64,29 +69,30 @@ bool WindowTrackingSystem::AddTrackedWindow(
             tw->getTargetPositionFunc = getTargetPos;
             tw->getTargetSizeFunc = getTargetSize;
 
+            // target* is the authored size in canvas pixels, actual* the OS size.
             tw->state.targetW = (float)config.width;
             tw->state.targetH = (float)config.height;
-            tw->state.actualW = config.width;
-            tw->state.actualH = config.height;
+            tw->state.actualW = ToDesktopPixels(tw->state.targetW);
+            tw->state.actualH = ToDesktopPixels(tw->state.targetH);
 
             if (tw->window && tw->window->GetSDLWindow()) {
                 SDL_Window* sdlWin = tw->window->GetSDLWindow();
                 SDL_SetWindowTitle(sdlWin, config.title.c_str());
-                SDL_SetWindowSize(sdlWin, config.width, config.height);
+                SDL_SetWindowSize(sdlWin, tw->state.actualW, tw->state.actualH);
                 tw->window->SetBackgroundAlpha(config.isTransparent ? 0.0f : 1.0f);
                 tw->window->SetPriority(config.priority);
                 tw->window->SetAlwaysOnTop(config.isAlwaysOnTop);
 
                 if (config.fpsLimit > 0.0f) tw->window->SetTargetFPS(config.fpsLimit);
-                if (config.name == "player") tw->window->SetDraggable(false);
+                tw->window->LockUserMoveAndResize();
 
                 // Set Posisi Awal agar tidak nge-blink dari koordinat -10000
                 if (getTargetPos) {
                     DirectX::XMFLOAT3 initialPos = getTargetPos();
                     float screenX, screenY;
                     WorldToScreenPos(initialPos, screenX, screenY);
-                    tw->state.targetX = screenX - (config.width * 0.5f);
-                    tw->state.targetY = screenY - (config.height * 0.5f);
+                    tw->state.targetX = screenX - (tw->state.actualW * 0.5f);
+                    tw->state.targetY = screenY - (tw->state.actualH * 0.5f);
                     tw->state.actualX = static_cast<int>(roundf(tw->state.targetX));
                     tw->state.actualY = static_cast<int>(roundf(tw->state.targetY));
                     SDL_SetWindowPosition(sdlWin, tw->state.actualX, tw->state.actualY);
@@ -129,8 +135,7 @@ bool WindowTrackingSystem::AddTrackedWindow(
         window->SetTargetFPS(config.fpsLimit);
     }
 
-    // Hardcoded logic: Player window usually shouldn't be draggable by mouse
-    if (config.name == "player") window->SetDraggable(false);
+    window->LockUserMoveAndResize();
 
     // 2. Create Camera for this window
     auto camera = std::make_shared<Camera>();
@@ -147,10 +152,12 @@ bool WindowTrackingSystem::AddTrackedWindow(
     tracked->getTargetPositionFunc = getTargetPos;
     tracked->getTargetSizeFunc = getTargetSize;
 
+    // target* is the authored size in canvas pixels, actual* the OS size.
     tracked->state.targetW = (float)config.width;
     tracked->state.targetH = (float)config.height;
-    tracked->state.actualW = config.width;
-    tracked->state.actualH = config.height;
+    tracked->state.actualW = ToDesktopPixels(tracked->state.targetW);
+    tracked->state.actualH = ToDesktopPixels(tracked->state.targetH);
+    SDL_SetWindowSize(window->GetSDLWindow(), tracked->state.actualW, tracked->state.actualH);
 
     // 4. Initial Position Setup
     if (getTargetPos)
@@ -159,8 +166,8 @@ bool WindowTrackingSystem::AddTrackedWindow(
         float screenX, screenY;
         WorldToScreenPos(initialPos, screenX, screenY);
 
-        tracked->state.targetX = screenX - (window->GetWidth() * 0.5f);
-        tracked->state.targetY = screenY - (window->GetHeight() * 0.5f);
+        tracked->state.targetX = screenX - (tracked->state.actualW * 0.5f);
+        tracked->state.targetY = screenY - (tracked->state.actualH * 0.5f);
         tracked->state.actualX = static_cast<int>(roundf(tracked->state.targetX));
         tracked->state.actualY = static_cast<int>(roundf(tracked->state.targetY));
 
@@ -186,16 +193,6 @@ TrackedWindow* WindowTrackingSystem::GetTrackedWindow(const std::string& name)
 
 void WindowTrackingSystem::Update(float dt)
 {
-    // 1. Update Screen Cache (Resolusi layar mungkin berubah)
-    m_cacheUpdateTimer += dt;
-    if (m_cacheUpdateTimer >= 1.0f)
-    {
-        m_cachedScreenWidth = GetSystemMetrics(SM_CXSCREEN);
-        m_cachedScreenHeight = GetSystemMetrics(SM_CYSCREEN);
-        m_cacheUpdateTimer = 0.0f;
-    }
-
-    // 2. Update Semua Window
     for (auto& tracked : m_trackedWindows)
     {
         if (!tracked->isActive) continue;
@@ -218,23 +215,28 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
     {
         tracked.state.actualW = osW;
         tracked.state.actualH = osH;
-        tracked.state.targetW = (float)osW; // Update target juga agar tidak snap balik
-        tracked.state.targetH = (float)osH;
+        // Update target juga agar tidak snap balik. Target is kept in canvas pixels.
+        tracked.state.targetW = (float)osW / m_desktopScale;
+        tracked.state.targetH = (float)osH / m_desktopScale;
     }
 
     // 2. UPDATE SIZE
-    if (tracked.getTargetSizeFunc)
+    // Why not the main window: its size belongs to the user and the engine.
+    if (tracked.role != WindowRole::MAIN_VIEWPORT)
     {
-        DirectX::XMFLOAT2 desiredSize = tracked.getTargetSizeFunc();
-        float tSize = min(m_followSpeed * dt, 1.0f);
-        tracked.state.targetW += (desiredSize.x - tracked.state.targetW) * tSize;
-        tracked.state.targetH += (desiredSize.y - tracked.state.targetH) * tSize;
+        if (tracked.getTargetSizeFunc)
+        {
+            DirectX::XMFLOAT2 desiredSize = tracked.getTargetSizeFunc(); // canvas pixels
+            float tSize = min(m_followSpeed * dt, 1.0f);
+            tracked.state.targetW += (desiredSize.x - tracked.state.targetW) * tSize;
+            tracked.state.targetH += (desiredSize.y - tracked.state.targetH) * tSize;
+        }
 
-        int newW = max(10, static_cast<int>(roundf(tracked.state.targetW)));
-        int newH = max(10, static_cast<int>(roundf(tracked.state.targetH)));
-        int deltaW = abs(newW - osW);
-        int deltaH = abs(newH - osH);
-        if (deltaW >= 1 || deltaH >= 1)  // sudah ada, ini OK, tapi tambahkan:
+        // Applied every frame, also without a size function, so a window follows
+        // the arena rect when the game image is resized on the desktop.
+        const int newW{ ToDesktopPixels(tracked.state.targetW) };
+        const int newH{ ToDesktopPixels(tracked.state.targetH) };
+        if (newW != osW || newH != osH)
         {
             SDL_SetWindowSize(tracked.window->GetSDLWindow(), newW, newH);
             tracked.state.actualW = newW;
@@ -243,7 +245,10 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
     }
 
     // 3. UPDATE POSITION LOGIC
-    if (!isBeingDragged && tracked.role == WindowRole::TRACKED_ENTITY)
+    // Every sub-window is placed against the current arena rect, so it follows when
+    // that rect moves (window dragged in Act 2, or the switch to the monitor rect on
+    // entering Windowkill). Only the main window is left where the user put it.
+    if (!isBeingDragged && tracked.role != WindowRole::MAIN_VIEWPORT)
     {
         DirectX::XMFLOAT3 targetWorldPos = tracked.getTargetPositionFunc();
         targetWorldPos.x += tracked.trackingOffset.x;
@@ -268,7 +273,11 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
         // =========================================================
         float trauma = CameraController::Instance().GetTrauma();
 
-        if (trauma > 0.01f) {
+        // Why entities only: viewport windows (FX overlay, click blocker) span the whole
+        // play field, and their image already shakes through the camera.
+        const bool shakesWithCamera{ tracked.role == WindowRole::TRACKED_ENTITY };
+
+        if (shakesWithCamera && trauma > 0.01f) {
             float shakeIntensity = trauma * trauma; // Pangkat 2 untuk natural falloff
             float maxShakePixels = 35.0f; // Jarak loncatan maksimal jendela di monitor!
 
@@ -302,15 +311,22 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
         }
     }
 
+    if (tracked.role == WindowRole::MAIN_VIEWPORT)
+    {
+        // The main window shows the whole arena through the game canvas, wherever the
+        // OS window sits and whatever its size: project the full screen rect instead
+        // of the window's own rect.
+        UpdateOffCenterProjection(tracked.camera.get(),
+            m_arenaRect.x, m_arenaRect.y, m_arenaRect.width, m_arenaRect.height, GetUnifiedCameraHeight());
+        return;
+    }
+
     // 4. THE MAGIC FIX: Proyeksikan 3D menggunakan posisi OS Asli, BUKAN target.
     UpdateOffCenterProjection(tracked.camera.get(), osX, osY, tracked.state.actualW, tracked.state.actualH, GetUnifiedCameraHeight());
 }
 
 void WindowTrackingSystem::UpdateOffCenterProjection(Camera* targetCam, int winX, int winY, int winW, int winH, float camHeight)
 {
-    int screenW, screenH;
-    GetScreenDimensions(screenW, screenH);
-
     // [FIX 3] Gunakan posisi kamera saat ini (yang sudah mengandung Shake dari CameraController)
     // Jangan dipaksa ke (0, camHeight, 0) agar getarannya sinkron di semua jendela.
     DirectX::XMFLOAT3 currentPos = targetCam->GetPosition();
@@ -324,59 +340,46 @@ void WindowTrackingSystem::UpdateOffCenterProjection(Camera* targetCam, int winX
     float farZ = 1000.0f;
     float halfFovTan = tanf(DirectX::XMConvertToRadians(m_fov) * 0.5f);
 
+    // The full frustum covers the arena rect; a window gets the slice of it
+    // that its own desktop rect cuts out.
+    const double arenaW{ static_cast<double>(m_arenaRect.width) };
+    const double arenaH{ static_cast<double>(m_arenaRect.height) };
+
     float halfHeight = nearZ * halfFovTan;
-    float halfWidth = halfHeight * ((float)screenW / screenH);
+    float halfWidth = halfHeight * static_cast<float>(arenaW / arenaH);
 
-    double screenWd = (double)screenW;
-    double screenHd = (double)screenH;
+    const double localX{ static_cast<double>(winX - m_arenaRect.x) };
+    const double localY{ static_cast<double>(winY - m_arenaRect.y) };
 
-    float l = (float)((winX / screenWd) * 2.0 - 1.0);
-    float r = (float)(((winX + winW) / screenWd) * 2.0 - 1.0);
-    float t = (float)(1.0 - (winY / screenHd) * 2.0);
-    float b = (float)(1.0 - ((winY + winH) / screenHd) * 2.0);
+    float l = (float)((localX / arenaW) * 2.0 - 1.0);
+    float r = (float)(((localX + winW) / arenaW) * 2.0 - 1.0);
+    float t = (float)(1.0 - (localY / arenaH) * 2.0);
+    float b = (float)(1.0 - ((localY + winH) / arenaH) * 2.0);
 
     targetCam->SetOffCenterProjection(l * halfWidth, r * halfWidth, b * halfHeight, t * halfHeight, nearZ, farZ);
 }
 // =========================================================
 // MATH HELPERS
 // =========================================================
-void WindowTrackingSystem::GetScreenDimensions(int& outWidth, int& outHeight)
-{
-    if (m_cachedScreenWidth > 0) {
-        outWidth = m_cachedScreenWidth;
-        outHeight = m_cachedScreenHeight;
-        return;
-    }
-
-    // SDL3: Pengganti GetSystemMetrics(SM_CXSCREEN)
-    SDL_Rect bounds;
-    if (SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &bounds)) {
-        outWidth = bounds.w;
-        outHeight = bounds.h;
-
-        m_cachedScreenWidth = outWidth;
-        m_cachedScreenHeight = outHeight;
-    }
-}
 
 void WindowTrackingSystem::WorldToScreenPos(const DirectX::XMFLOAT3& worldPos, float& outScreenX, float& outScreenY)
 {
-    int screenW, screenH;
-    GetScreenDimensions(screenW, screenH);
-
-    // Konversi sederhana: Tengah layar + (Posisi World * Ratio)
+    // World origin sits at the centre of the arena rect.
     // Note: Z world menjadi Y layar (negatif) karena coordinate system game ini
-    outScreenX = (screenW * 0.5f) + (worldPos.x * m_pixelToUnitRatio);
-    outScreenY = (screenH * 0.5f) - (worldPos.z * m_pixelToUnitRatio);
+    const float centerX{ static_cast<float>(m_arenaRect.x) + static_cast<float>(m_arenaRect.width) * 0.5f };
+    const float centerY{ static_cast<float>(m_arenaRect.y) + static_cast<float>(m_arenaRect.height) * 0.5f };
+
+    const float desktopPixelsPerUnit{ Beyond::Config::PIXEL_TO_UNIT_RATIO * m_desktopScale };
+    outScreenX = centerX + (worldPos.x * desktopPixelsPerUnit);
+    outScreenY = centerY - (worldPos.z * desktopPixelsPerUnit);
 }
 
 float WindowTrackingSystem::GetUnifiedCameraHeight()
 {
-    int screenW, screenH;
-    GetScreenDimensions(screenW, screenH);
+    // Height at which the vertical FOV spans exactly the arena height. It no longer
+    // depends on the monitor: pixels per unit already absorb the rect size.
     float halfFovTan = tanf(XMConvertToRadians(m_fov) * 0.5f);
-    // Rumus trigonometri untuk mencari ketinggian kamera agar 1 unit world = X pixel layar
-    return (screenH * 0.5f) / (m_pixelToUnitRatio * halfFovTan);
+    return (Beyond::Config::ARENA_HEIGHT_UNITS * 0.5f) / halfFovTan;
 }
 
 void WindowTrackingSystem::RemoveTrackedWindow(const std::string& name)

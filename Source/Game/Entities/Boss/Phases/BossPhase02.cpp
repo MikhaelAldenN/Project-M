@@ -12,6 +12,7 @@
 #include <System/AudioManager.h>
 #include "EffectManager.h"
 #include "CameraController.h"
+#include "AttackParamManager.h"
 
 using namespace DirectX;
 
@@ -38,8 +39,23 @@ void BossPhase02::Enter(Boss* boss) {
     auto windowSystem = boss->GetWindowSystem();
     m_pixelToUnit = windowSystem->GetPixelToUnitRatio();
 
-    m_screenW = (float)GetSystemMetrics(SM_CXSCREEN);
-    m_screenH = (float)GetSystemMetrics(SM_CYSCREEN);
+    // The overlays must cover the whole monitor, not just its 16:9 arena rect.
+    // The tracker scales canvas pixels by (arena rect height / canvas height), so the
+    // monitor size is converted into canvas pixels with the inverse of that factor.
+    SDL_Rect display{};
+    if (SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &display))
+    {
+        const Beyond::PixelRect arena{ Beyond::FitRect(
+            Beyond::PixelRect{ display.x, display.y, display.w, display.h },
+            Beyond::Config::CANVAS_WIDTH, Beyond::Config::CANVAS_HEIGHT) };
+        if (arena.height > 0)
+        {
+            const float canvasPerDesktop{ static_cast<float>(Beyond::Config::CANVAS_HEIGHT)
+                / static_cast<float>(arena.height) };
+            m_screenW = static_cast<float>(display.w) * canvasPerDesktop;
+            m_screenH = static_cast<float>(display.h) * canvasPerDesktop;
+        }
+    }
 
     m_hudRenderer = std::make_unique<HUDRenderer>(device);
 
@@ -77,11 +93,12 @@ void BossPhase02::Enter(Boss* boss) {
     boss->GetFaceParams().gridResolution = 16;
     boss->InitializeFaceGrid(Graphics::Instance().GetDevice());
 
-    EffectManager::Instance().PreloadEffect(m_blasterParams.chargeEffectPath);
-    EffectManager::Instance().PreloadEffect(m_blasterParams.fireEffectPath);
+    // Windowkill params have a single owner: AttackParamManager (also read by BossAI_Phase02).
+    const BlasterParams& blasterParams{ AttackParamManager::Instance().GetBlasterParams() };
+    EffectManager::Instance().PreloadEffect(blasterParams.chargeEffectPath);
+    EffectManager::Instance().PreloadEffect(blasterParams.fireEffectPath);
 
-    m_bossRef = boss; // Simpan referensi boss untuk dipakai saat jendela hancur
-    m_bossMaxHP = 4000;
+    m_bossRef = boss; // Simpan referensi boss untuk dipakai saat jendela hancur    m_bossMaxHP = 4000;
     m_bossHP = m_bossMaxHP;
     m_hitFlashTimer = 0.0f;
     m_aiEnabled = false;
@@ -405,18 +422,10 @@ void BossPhase02::Update(float dt, Boss* boss) {
             return;
         }
 
-        // Main window ke depan
-        int screenW = GetSystemMetrics(SM_CXSCREEN);
-        int screenH = GetSystemMetrics(SM_CYSCREEN);
-
         Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
         if (mainWindow && mainWindow->GetSDLWindow()) {
             SDL_Window* sdlWin = mainWindow->GetSDLWindow();
             SDL_ShowWindow(sdlWin);
-            SDL_SetWindowBordered(sdlWin, false);
-            SDL_SetWindowResizable(sdlWin, false);
-            SDL_SetWindowPosition(sdlWin, 0, 0);
-            SDL_SetWindowSize(sdlWin, screenW, screenH + 1);
             SDL_SetWindowAlwaysOnTop(sdlWin, true);
 
             mainWindow->SetPriority(0);

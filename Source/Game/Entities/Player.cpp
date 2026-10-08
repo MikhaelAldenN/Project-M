@@ -9,8 +9,11 @@
 #include "PlayerConstants.h"
 #include "PlayerStates.h"
 #include "StateMachine.h"
+#include <array>
 #include <cmath>
+#include <cstdio>
 #include <imgui.h>
+#include "DebugUI.h"
 #include "InputHelper.h"
 #include "EffectManager.h"
 #include "System/AudioManager.h"
@@ -127,7 +130,6 @@ void Player::ApplyConfig(const PlayerConfig& config) noexcept
     moveSpeed = config.moveSpeed;
     dashSpeed = config.dashSpeed;
     dashDuration = config.dashDuration;
-    dashCooldown = config.dashCooldown;
     acceleration = config.acceleration;
     deceleration = config.deceleration;
     gravityEnabled = config.gravityEnabled;
@@ -153,7 +155,7 @@ void Player::Update(float elapsedTime, Camera* camera)
         m_uncapRegenAccumulator = 0.0f;
     }
 
-    UpdateDashCooldown(elapsedTime);
+    UpdateDashRecovery(elapsedTime);
 
     SetCamera(camera);
     if (isInputEnabled)
@@ -241,7 +243,7 @@ void Player::Update(float elapsedTime, Camera* camera)
     // =========================================================
 
     if (m_hp <= 0) return;
-    if (canDash)
+    if (HasFullDash()) // standby VFX means "a full dash is available"
     {
         // 1. Jika handle kosong atau efek sebelumnya sudah selesai (mati), putar lagi!
         if (m_dashStandbyVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
@@ -314,7 +316,7 @@ void Player::Update(float elapsedTime, Camera* camera)
         }
 
         // 2. Fallback ke logika normal Dash Standby
-        if (canDash)
+        if (HasFullDash()) // standby VFX means "a full dash is available"
         {
             if (m_dashStandbyVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
             {
@@ -344,22 +346,43 @@ void Player::Update(float elapsedTime, Camera* camera)
 // UPDATE SUB-STEPS
 // ============================================================
 
-void Player::UpdateDashCooldown(float dt)
+void Player::UpdateDashRecovery(float dt)
 {
-    if (canDash) return;
+    if (m_dashCharges >= m_maxDashCharges) return;
 
-    dashCooldownTimer -= dt;
-    if (dashCooldownTimer <= 0.0f)
+    m_dashRecoveryTimer -= dt;
+    if (m_dashRecoveryTimer > 0.0f) return;
+
+    const bool wasPenalized{ m_dashCharges <= 0 };
+    m_dashCharges = m_maxDashCharges;
+
+    // Why only after a penalty: a full dash was still available otherwise, so the
+    // "ready" cue would announce nothing new.
+    if (!wasPenalized) return;
+
+    DirectX::XMFLOAT3 pos = movement->GetPosition();
+    pos.y += m_dashReadyOffsetY;
+
+    m_dashReadyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Ready.efk", pos, 0.5f);
+    AudioManager::Instance().PlaySFX("Data/Sound/SE_Player_Dash_Ready_01.wav", 0.3f);
+}
+
+float Player::BeginDash()
+{
+    const bool hasCharge{ m_dashCharges > 0 };
+    if (hasCharge)
     {
-        canDash = true;
-
-        // [MODIFIKASI] Play VFX dan simpan handle-nya
-        DirectX::XMFLOAT3 pos = movement->GetPosition();
-        pos.y += m_dashReadyOffsetY;
-
-        m_dashReadyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Ready.efk", movement->GetPosition(), 0.5f);
-        AudioManager::Instance().PlaySFX("Data/Sound/SE_Player_Dash_Ready_01.wav", 0.3f);
+        --m_dashCharges;
+        TriggerInvincibility(m_dashIFrameDuration);
     }
+
+    // Why restarted on every dash: recovery is counted from the last dash, so spamming
+    // keeps the penalty active.
+    m_dashRecoveryTimer = m_dashRecoveryTime;
+
+    // USULAN DESAIN: overdrive lifts the distance penalty only; invincibility still needs a charge.
+    const bool isPenalized{ !hasCharge && !m_isPowerUncapped };
+    return isPenalized ? m_dashPenaltyScale : 1.0f;
 }
 
 void Player::HandleMovementInput(float dt)
@@ -385,12 +408,15 @@ void Player::HandleMovementInput(float dt)
     {
         targetX = 0.0f;
         targetZ = 0.0f;
-        if (GetAsyncKeyState('W') & 0x8000) targetZ += 1.0f;
-        if (GetAsyncKeyState('S') & 0x8000) targetZ -= 1.0f;
-        if (GetAsyncKeyState('A') & 0x8000) targetX -= 1.0f;
-        if (GetAsyncKeyState('D') & 0x8000) targetX += 1.0f;
-    }
-
+        if (!Input::Instance().IsKeyboardMouseSuppressed())
+        {
+            if (GetAsyncKeyState('W') & 0x8000) targetZ += 1.0f;
+            if (GetAsyncKeyState('S') & 0x8000) targetZ -= 1.0f;
+            if (GetAsyncKeyState('A') & 0x8000) targetX -= 1.0f;
+            if (GetAsyncKeyState('D') & 0x8000) targetX += 1.0f;
+        }
+    }   
+    
     // 5. Apply Inversion cleanly
     if (invertControls)
     {
@@ -493,27 +519,23 @@ void Player::HandleAimInput(Camera* camera)
     {
         m_useAimFacing = true;
 
-        // Keyboard & Mouse Raycast Logic
-        float mouseX, mouseY;
-        SDL_GetMouseState(&mouseX, &mouseY);
+        if (Input::Instance().IsKeyboardMouseSuppressed()) return;
 
-        // Safely fetch dynamic screen size
-        float screenW{ 1920.0f };
-        float screenH{ 1080.0f };
-        if (auto window{ Framework::Instance()->GetMainWindow() }) {
-            screenW = static_cast<float>(window->GetWidth());
-            screenH = static_cast<float>(window->GetHeight());
-        }
+        // Keyboard & Mouse Raycast Logic
+        // Why through InputHelper: the scene image is scaled and letterboxed inside the
+        // window, so raw window pixels are not the pixels the camera projected to.
+        const Beyond::MouseViewPos mouse{ Beyond::InputHelper::GetMouseViewPos() };
+        if (mouse.viewWidth <= 0.0f || mouse.viewHeight <= 0.0f) return;
 
         DirectX::XMMATRIX view{ DirectX::XMLoadFloat4x4(&camera->GetView()) };
         DirectX::XMMATRIX proj{ DirectX::XMLoadFloat4x4(&camera->GetProjection()) };
         DirectX::XMMATRIX world{ DirectX::XMMatrixIdentity() };
 
-        DirectX::XMVECTOR nearPoint{ DirectX::XMVectorSet(mouseX, mouseY, 0.0f, 0.0f) };
-        DirectX::XMVECTOR farPoint{ DirectX::XMVectorSet(mouseX, mouseY, 1.0f, 0.0f) };
+        DirectX::XMVECTOR nearPoint{ DirectX::XMVectorSet(mouse.x, mouse.y, 0.0f, 0.0f) };
+        DirectX::XMVECTOR farPoint{ DirectX::XMVectorSet(mouse.x, mouse.y, 1.0f, 0.0f) };
 
-        nearPoint = DirectX::XMVector3Unproject(nearPoint, 0, 0, screenW, screenH, 0.0f, 1.0f, proj, view, world);
-        farPoint = DirectX::XMVector3Unproject(farPoint, 0, 0, screenW, screenH, 0.0f, 1.0f, proj, view, world);
+        nearPoint = DirectX::XMVector3Unproject(nearPoint, 0, 0, mouse.viewWidth, mouse.viewHeight, 0.0f, 1.0f, proj, view, world);
+        farPoint = DirectX::XMVector3Unproject(farPoint, 0, 0, mouse.viewWidth, mouse.viewHeight, 0.0f, 1.0f, proj, view, world);
 
         DirectX::XMVECTOR rayDir{ DirectX::XMVector3Normalize(DirectX::XMVectorSubtract(farPoint, nearPoint)) };
         DirectX::XMFLOAT3 origin, dir;
@@ -1023,75 +1045,111 @@ void Player::RestorePowerCap()
 
 void Player::DrawDebugGUI()
 {
-    if (ImGui::CollapsingHeader("Movement & Physics", ImGuiTreeNodeFlags_DefaultOpen))
+    // ---- Head: state ----
+    const float hpFraction{ (m_maxHp > 0.0f) ? (m_hp / m_maxHp) : 0.0f };
+    std::array<char, 48> hpText{};
+    std::snprintf(hpText.data(), hpText.size(), "HP %.1f / %.1f", m_hp, m_maxHp);
+    ImGui::ProgressBar(hpFraction, ImVec2{ -1.0f, 0.0f }, hpText.data());
+
+    const DirectX::XMFLOAT3 playerPos{ GetPosition() };
+    DebugProperty::Text("Position", "%.2f, %.2f, %.2f", playerPos.x, playerPos.y, playerPos.z);
+    DebugProperty::Text("Input", "%s", isInputEnabled ? "on" : "off");
+
+    // ---- Head: actions ----
+    float hp{ m_hp };
+    if (DebugProperty::DragFloat("Set HP", hp, 1.0f, 0.0f, m_maxHp, "%.0f")) m_hp = hp;
+
+    if (ImGui::Button("Heal")) m_hp = m_maxHp;
+    ImGui::SameLine();
+    // Why no reposition: start position belongs to the scene; use Scene > Reload for that.
+    if (ImGui::Button("Reset state"))
     {
-        ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "Status: %s", isInputEnabled ? "Input ON" : "Input OFF");
-        ImGui::Checkbox("Invert Controls", &invertControls);
-        ImGui::DragFloat("Walk Speed", &moveSpeed, 0.1f, 0.0f, 100.0f, "%.1f");
-        ImGui::DragFloat("Acceleration", &acceleration, 0.1f, 0.1f, 100.0f, "%.1f");
-        ImGui::DragFloat("Deceleration", &deceleration, 0.1f, 0.1f, 100.0f, "%.1f");
+        m_hp = m_maxHp;
+        scale = { 1.0f, 1.0f, 1.0f }; // the death sequence hides the player by zeroing scale
+        isInputEnabled = true;
+        m_aimLocked = false;
+        m_dashCharges = m_maxDashCharges;
+        if (stateMachine) stateMachine->Initialize(std::make_unique<PlayerIdle>(), this);
     }
 
-    if (ImGui::CollapsingHeader("Dash Settings", ImGuiTreeNodeFlags_DefaultOpen))
+    // ---- Categories ----
+    ImGui::PushID("Movement");
+    if (ImGui::CollapsingHeader("Movement", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::DragFloat("Dash Speed", &dashSpeed, 0.5f, 10.0f, 200.0f, "%.1f");
-        ImGui::DragFloat("Dash Duration", &dashDuration, 0.01f, 0.01f, 1.0f, "%.2f sec");
-        ImGui::DragFloat("Dash Cooldown", &dashCooldown, 0.01f, 0.0f, 5.0f, "%.2f sec");
+        DebugProperty::DragFloat("Walk speed", moveSpeed, 0.1f, 0.0f, 100.0f, "%.1f");
+        DebugProperty::DragFloat("Acceleration", acceleration, 0.1f, 0.1f, 100.0f, "%.1f");
+        DebugProperty::DragFloat("Deceleration", deceleration, 0.1f, 0.1f, 100.0f, "%.1f");
+        DebugProperty::Checkbox("Invert controls", invertControls);
     }
+    ImGui::PopID();
 
-    if (ImGui::CollapsingHeader("Combat & Projectiles", ImGuiTreeNodeFlags_DefaultOpen))
+    ImGui::PushID("Dash");
+    if (ImGui::CollapsingHeader("Dash", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "[ General Combat ]");
-        float hp = m_hp;
-        if (ImGui::DragFloat("Player HP", &hp, 1.0f, 0.0f, m_maxHp)) m_hp = hp;
-        float maxHp = m_maxHp;
-        if (ImGui::DragFloat("Player Max HP", &maxHp, 1.0f, 1.0f, 9999.0f)) SetMaxHP(maxHp);
+        DebugProperty::DragFloat("Speed", dashSpeed, 0.5f, 10.0f, 200.0f, "%.1f");
+        DebugProperty::DragFloat("Duration", dashDuration, 0.01f, 0.01f, 1.0f, "%.2f s");
+        DebugProperty::Text("Charges", "%d / %d", m_dashCharges, m_maxDashCharges);
+        DebugProperty::Text("Recovery", "%.2f s", (m_dashCharges < m_maxDashCharges) ? m_dashRecoveryTimer : 0.0f);
+        DebugProperty::SliderInt("Full dashes", m_maxDashCharges, 1, 5);
+        DebugProperty::DragFloat("Recovery time", m_dashRecoveryTime, 0.01f, 0.0f, 5.0f, "%.2f s");
+        DebugProperty::SliderFloat("Penalty speed scale", m_dashPenaltyScale, 0.1f, 1.0f, "%.2f");
+        DebugProperty::DragFloat("I-frame duration", m_dashIFrameDuration, 0.01f, 0.0f, 1.0f, "%.2f s");
+    }
+    ImGui::PopID();
 
-        // --- 無敵時間 (I-Frames) のコントロール ---
-        ImGui::Checkbox("Enable I-Frames (Invincibility on hit)", &m_enableIFrames);
-        if (m_enableIFrames) {
-            ImGui::Indent();
-            ImGui::DragFloat("I-Frame Duration", &m_iFrameDuration, 0.1f, 0.1f, 5.0f, "%.1f sec");
-            ImGui::Unindent();
-        }
-        ImGui::Separator();
+    ImGui::PushID("Health");
+    if (ImGui::CollapsingHeader("Health"))
+    {
+        float maxHp{ m_maxHp };
+        // SetMaxHP also refills HP to the new maximum.
+        if (DebugProperty::DragFloat("Max HP", maxHp, 1.0f, 1.0f, 9999.0f, "%.0f")) SetMaxHP(maxHp);
+        DebugProperty::Checkbox("I-frames enabled", m_enableIFrames);
+        DebugProperty::DragFloat("I-frame duration", m_iFrameDuration, 0.1f, 0.1f, 5.0f, "%.2f s");
+    }
+    ImGui::PopID();
 
-        // --- Toggle Uncap (Overdrive) ---
-        bool powerUncapped = IsPowerUncapped();
-        if (ImGui::Checkbox("Uncap Power (Overdrive)", &powerUncapped)) {
-            if (powerUncapped) ReleasePowerCap();
-            else RestorePowerCap();
-        }
-
-        // --- Parameter Uncap Muncul Jika Aktif ---
-        if (powerUncapped) {
-            ImGui::Indent();
-            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), ">> Uncap Tuning <<");
-
-            // Jika slider digeser saat Uncap aktif, langsung terapkan nilainya secara real-time
-            if (ImGui::DragFloat("Uncap Walk Speed", &m_uncapMoveSpeed, 0.1f, 10.0f, 100.0f, "%.1f")) moveSpeed = m_uncapMoveSpeed;
-            if (ImGui::DragFloat("Uncap Dash Speed", &m_uncapDashSpeed, 0.5f, 10.0f, 200.0f, "%.1f")) dashSpeed = m_uncapDashSpeed;
-            ImGui::DragFloat("Uncap HP Regen / Sec", &m_uncapHealthRegenPerSecond, 0.1f, 0.0f, 100.0f, "%.1f");
-            ImGui::DragFloat("Uncap Regen Max HP", &m_uncapMaxRegenHP, 1.0f, 1.0f, 9999.0f);
-            if (ImGui::ColorEdit4("Uncap Glow Color", (float*)&m_uncapColor)) color = m_uncapColor;
-
-            ImGui::Unindent();
-        }
-
-        ImGui::Separator();
-        ImGui::Separator();
-        ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "[ Crossbow Bullet ]");
-        ImGui::DragFloat("Bullet Speed", &m_bulletSpeed, 0.5f, 1.0f, 150.0f, "%.1f");
-        ImGui::SliderInt("Bullet Damage", &m_bulletDamage, 1, 500); // [BARU] Slider Damage Player
-        ImGui::ColorEdit4("Bullet Tint Color", (float*)&m_playerbulletColor);
-
-        if (ImGui::TreeNode("Bullet Model Transform (Offset)"))
+    ImGui::PushID("Overdrive");
+    if (ImGui::CollapsingHeader("Overdrive"))
+    {
+        bool isUncapped{ IsPowerUncapped() };
+        if (DebugProperty::Checkbox("Uncapped", isUncapped))
         {
-            ImGui::DragFloat3("Position", (float*)&m_playerbulletOffsetPos, 0.01f);
-            ImGui::DragFloat3("Rotation", (float*)&m_playerbulletOffsetRot, 0.5f);
-            ImGui::DragFloat3("Scale", (float*)&m_playerbulletOffsetScale, 0.1f);
-            if (ImGui::Button("Reset Offsets", ImVec2(-1.0f, 25.0f))) ResetPlayerBulletOffsets();
+            if (isUncapped) ReleasePowerCap();
+            else RestorePowerCap(); 
+        }
+
+        // Why the extra condition: these are the uncapped values; they only replace the
+        // live speed and color while Overdrive is active.
+        if (DebugProperty::DragFloat("Walk speed", m_uncapMoveSpeed, 0.1f, 10.0f, 100.0f, "%.1f") && isUncapped)
+        {
+            moveSpeed = m_uncapMoveSpeed;
+        }
+        if (DebugProperty::DragFloat("Dash speed", m_uncapDashSpeed, 0.5f, 10.0f, 200.0f, "%.1f") && isUncapped)
+        {
+            dashSpeed = m_uncapDashSpeed;
+        }
+        DebugProperty::DragFloat("HP regen per second", m_uncapHealthRegenPerSecond, 0.1f, 0.0f, 100.0f, "%.1f");
+        DebugProperty::DragFloat("Regen max HP", m_uncapMaxRegenHP, 1.0f, 1.0f, 9999.0f, "%.0f");
+        if (DebugProperty::ColorEdit4("Glow color", &m_uncapColor.x) && isUncapped) color = m_uncapColor;
+    }
+    ImGui::PopID();
+
+    ImGui::PushID("Bullet");
+    if (ImGui::CollapsingHeader("Bullet"))
+    {
+        DebugProperty::DragFloat("Speed", m_bulletSpeed, 0.5f, 1.0f, 150.0f, "%.1f");
+        DebugProperty::SliderInt("Damage", m_bulletDamage, 1, 500);
+        DebugProperty::SliderFloat("Stick fire threshold", m_stickShootThreshold, 0.3f, 1.0f, "%.2f");
+        DebugProperty::ColorEdit4("Tint color", &m_playerbulletColor.x);
+
+        if (ImGui::TreeNode("Advanced"))
+        {
+            DebugProperty::DragFloat3("Offset position", &m_playerbulletOffsetPos.x, 0.01f);
+            DebugProperty::DragFloat3("Offset rotation", &m_playerbulletOffsetRot.x, 0.5f);
+            DebugProperty::DragFloat3("Offset scale", &m_playerbulletOffsetScale.x, 0.1f);
+            if (ImGui::Button("Reset offsets")) ResetPlayerBulletOffsets();
             ImGui::TreePop();
         }
     }
+    ImGui::PopID();
 }

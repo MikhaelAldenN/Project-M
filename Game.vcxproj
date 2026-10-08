@@ -132,11 +132,13 @@
     <ClInclude Include="Source\Engine\Base\MathUtils.h" />
     <ClInclude Include="Source\Engine\Base\ResourceManager.h" />
     <ClInclude Include="Source\Engine\Common\Constants.h" />
+    <ClInclude Include="Source\Engine\Common\FitRect.h" />
     <ClInclude Include="Source\Engine\Graphics\BitmapFont.h" />
     <ClInclude Include="Source\Engine\Graphics\Camera.h" />
     <ClInclude Include="Source\Engine\Graphics\CameraController.h" />
     <ClInclude Include="Source\Engine\Graphics\FontTTF.h" />
     <ClInclude Include="Source\Engine\Graphics\FreeCameraController.h" />
+    <ClInclude Include="Source\Engine\Graphics\GameCanvas.h" />
     <ClInclude Include="Source\Engine\Graphics\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Primitive.h" />
     <ClInclude Include="Source\Engine\Graphics\stb_truetype.h" />
@@ -165,6 +167,8 @@
     <ClInclude Include="Source\Engine\VFX\JuiceEngine.h" />
     <ClInclude Include="Source\Engine\Windowing\BeyondWindow.h" />
     <ClInclude Include="Source\Engine\Windowing\DebugHostWindow.h" />
+    <ClInclude Include="Source\Engine\Windowing\DebugUI.h" />
+    <ClInclude Include="Source\Engine\Windowing\WindowLayoutStore.h" />
     <ClInclude Include="Source\Engine\Windowing\WindowManager.h" />
     <ClInclude Include="Source\Engine\Windowing\WindowPool.h" />
     <ClInclude Include="Source\Engine\Windowing\WindowShatter.h" />
@@ -258,6 +262,7 @@
     <ClCompile Include="Source\Engine\Graphics\CameraController.cpp" />
     <ClCompile Include="Source\Engine\Graphics\FontTTF.cpp" />
     <ClCompile Include="Source\Engine\Graphics\FreeCameraController.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\GameCanvas.cpp" />
     <ClCompile Include="Source\Engine\Graphics\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Primitive.cpp" />
     <ClCompile Include="Source\Engine\Graphics\UberShader.cpp" />
@@ -279,6 +284,8 @@
     <ClCompile Include="Source\Engine\VFX\JuiceEngine.cpp" />
     <ClCompile Include="Source\Engine\Windowing\BeyondWindow.cpp" />
     <ClCompile Include="Source\Engine\Windowing\DebugHostWindow.cpp" />
+    <ClCompile Include="Source\Engine\Windowing\DebugUI.cpp" />
+    <ClCompile Include="Source\Engine\Windowing\WindowLayoutStore.cpp" />
     <ClCompile Include="Source\Engine\Windowing\WindowManager.cpp" />
     <ClCompile Include="Source\Engine\Windowing\WindowPool.cpp" />
     <ClCompile Include="Source\Engine\Windowing\WindowShatter.cpp" />
@@ -361,6 +368,14 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+    <FxCompile Include="Shader\GameCanvasBlitPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\GameCanvasBlitVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="Shader\LambertPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -428,6 +443,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Data\Icon\ChroniclesOfChaos.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="app.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

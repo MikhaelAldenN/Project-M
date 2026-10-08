@@ -18,9 +18,9 @@ void AttackBoomerangs::Start(Boss* boss) {
 void AttackBoomerangs::Update(float dt, Boss* boss) {
     if (!boss || !boss->GetWindowSystem()) return;
 
-    float p2u = boss->GetWindowSystem()->GetPixelToUnitRatio();
-    float limitX = (GetSystemMetrics(SM_CXSCREEN) / 2.0f) / p2u;
-    float limitZ = (GetSystemMetrics(SM_CYSCREEN) / 2.0f) / p2u;
+    // Edges of the arena in world units, the same on every monitor.
+    const float limitX{ Beyond::Config::ARENA_WIDTH_UNITS * 0.5f };
+    const float limitZ{ Beyond::Config::ARENA_HEIGHT_UNITS * 0.5f };
 
     // 1. Spawning Sequence
     if (m_isSpawning) {

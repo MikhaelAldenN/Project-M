@@ -20,6 +20,28 @@
 
 using json = nlohmann::json;
 
+// Every tunable attack parameter block, grouped so a load can replace all of them at once.
+struct AttackParamSet {
+    // Phase 01 (bullet hell)
+    RadialParams   radialNormal{};
+    RadialParams   radialContinuous{};
+    FanParams      fanNormal{};
+    FanParams      fanContinuous{};
+    PhalanxParams  phalanx{};
+    RainParams     rain{};
+    RainParams     rainTargeted{};
+    UltimateParams ultimate{};
+    WaveParams     wave{};
+    MeteorParams   meteor{};
+    DirectParams   direct{};
+
+    // Phase 02 (Windowkill)
+    BouncingBulletParams bouncing{};
+    BoomerangParams      boomerang{};
+    BlasterParams        blaster{};
+    UndyneSpearParams    spear{};
+};
+
 class AttackParamManager {
 public:
     static AttackParamManager& Instance() {
@@ -27,31 +49,39 @@ public:
         return instance;
     }
 
-    // Memuat ulang data dari file JSON
+    // Replaces all params with struct defaults overridden by the file.
+    // On any failure (open, syntax, wrong value type) the current params are left untouched.
     bool Load(const std::string& filepath);
+
+    // Loads again from the path given to the last Load() call.
+    bool Reload() { return Load(m_filepath); }
+
+    // Values as of the last successful Load() (struct defaults before any load).
+    // The debug panel compares against these to mark edited rows and to revert a set.
+    const AttackParamSet& GetLoadedParams() const { return m_loaded; }
 
     // ========================================================
     // GETTER: PHASE 01
     // ========================================================
-    RadialParams& GetRadialNormalParams() { return m_radialNormal; }
-    RadialParams& GetRadialContinuousParams() { return m_radialContinuous; }
-    FanParams& GetFanNormalParams() { return m_fanNormal; }
-    FanParams& GetFanContinuousParams() { return m_fanContinuous; }
-    PhalanxParams& GetPhalanxParams() { return m_phalanx; }
-    RainParams& GetRainParams() { return m_rain; }
-    RainParams& GetRainTargetedParams() { return m_rainTargeted; } // <--- TAMBAH INI
-    UltimateParams& GetUltimateParams() { return m_ultimate; }
-	WaveParams& GetWaveParams() { return m_wave; }
-	MeteorParams& GetMeteorParams() { return m_meteor; }
-    DirectParams& GetDirectParams() { return m_direct; }
+    RadialParams& GetRadialNormalParams() { return m_params.radialNormal; }
+    RadialParams& GetRadialContinuousParams() { return m_params.radialContinuous; }
+    FanParams& GetFanNormalParams() { return m_params.fanNormal; }
+    FanParams& GetFanContinuousParams() { return m_params.fanContinuous; }
+    PhalanxParams& GetPhalanxParams() { return m_params.phalanx; }
+    RainParams& GetRainParams() { return m_params.rain; }
+    RainParams& GetRainTargetedParams() { return m_params.rainTargeted; }
+    UltimateParams& GetUltimateParams() { return m_params.ultimate; }
+    WaveParams& GetWaveParams() { return m_params.wave; }
+    MeteorParams& GetMeteorParams() { return m_params.meteor; }
+    DirectParams& GetDirectParams() { return m_params.direct; }
 
     // ========================================================
     // GETTER: PHASE 02 (WINDOWKILL)
     // ========================================================
-    BouncingBulletParams& GetBouncingParams() { return m_bouncing; }
-    BoomerangParams& GetBoomerangParams() { return m_boomerang; }
-    BlasterParams& GetBlasterParams() { return m_blaster; }
-    UndyneSpearParams& GetUndyneParams() { return m_spear; }
+    BouncingBulletParams& GetBouncingParams() { return m_params.bouncing; }
+    BoomerangParams& GetBoomerangParams() { return m_params.boomerang; }
+    BlasterParams& GetBlasterParams() { return m_params.blaster; }
+    UndyneSpearParams& GetUndyneParams() { return m_params.spear; }
 
 private:
     AttackParamManager() = default;
@@ -71,22 +101,7 @@ private:
     void ParseBlasterParams(const json& j, BlasterParams& outParams);
     void ParseSpearParams(const json& j, UndyneSpearParams& outParams);
 
-    // Data Storage (Phase 01)
-    RadialParams   m_radialNormal;
-    RadialParams   m_radialContinuous;
-    FanParams      m_fanNormal;
-    FanParams      m_fanContinuous;
-    PhalanxParams  m_phalanx;
-    RainParams     m_rain;
-    RainParams     m_rainTargeted;
-    UltimateParams m_ultimate;
-	WaveParams	   m_wave;
-	MeteorParams   m_meteor;
-    DirectParams   m_direct;
-
-    // Data Storage (Phase 02)
-    BouncingBulletParams m_bouncing;
-    BoomerangParams      m_boomerang;
-    BlasterParams        m_blaster;
-    UndyneSpearParams    m_spear;
+    AttackParamSet m_params{};   // live values, edited by the debug panel
+    AttackParamSet m_loaded{};   // written only by Load(); baseline for "edited" markers and revert
+    std::string    m_filepath{}; // path of the last Load(), used by Reload()
 };

@@ -18,6 +18,7 @@
 #include "UberShader.h"
 #include "UIDialogueBox.h"
 #include "UIPause.h"
+#include "DebugUI.h"
 
 // ==========================================
 // FORWARD DECLARATIONS
@@ -52,14 +53,11 @@ public:
     void Update(float elapsedTime) override;
     void Render(float elapsedTime, Camera* camera = nullptr) override;
     void DrawGUI() override;
-    void OnResize(int width, int height) override;
 
     Camera* GetMainCamera() const { return m_mainCamera.get(); }
 
 private:
     struct Config {
-        static constexpr float DEFAULT_SCREEN_W{ 1920.0f };
-        static constexpr float DEFAULT_SCREEN_H{ 1080.0f };
         static constexpr float TIME_LOOP_MAX{ 1000.0f };
         static constexpr float GRAVITY{ -9.81f };
         static constexpr float CAM_FOV{ 45.0f };
@@ -73,6 +71,8 @@ private:
     };
 
     void RenderScene(float elapsedTime, Camera* camera);
+
+    void DrawDebugPanel();
 
     struct PostProcessState {
         bool MasterEnabled{ true };
@@ -202,4 +202,10 @@ private:
     DirectX::XMFLOAT3 m_fakeBossEffectRotation{ 0.000f, 25.000f, 0.000f };
     DirectX::XMFLOAT3 m_cinematicStartTarget{ 0.0f, 0.0f, 0.0f };
     DirectX::XMFLOAT3 m_cinematicEndTarget{ 0.0f, 0.0f, 0.0f };
+
+#if defined(_DEBUG)
+    // Keeps the "Stage Debug Inspector" tab registered while this scene lives.
+    // Declared last: destroyed first, before any member the callback reads.
+    DebugPanelHandle m_debugPanel{};
+#endif
 };

@@ -23,20 +23,6 @@ void PostProcessManager::Initialize(int screenWidth, int screenHeight)
     CreateBuffers(screenWidth, screenHeight);
 }
 
-void PostProcessManager::OnResize(int width, int height)
-{
-    m_windowWidth = width;
-    m_windowHeight = height;
-
-    // If PSX filter is off, resize the internal buffer to match the new window
-    if (!m_data.psxEnabled)
-    {
-        m_currentRTWidth = width;
-        m_currentRTHeight = height;
-        CreateBuffers(m_currentRTWidth, m_currentRTHeight);
-    }
-}
-
 void PostProcessManager::CreateBuffers(int width, int height)
 {
     auto device = Graphics::Instance().GetDevice();

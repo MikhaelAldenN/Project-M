@@ -8,6 +8,7 @@
 
 // Forward Declaration
 class Scene;
+class GameCanvas;
 
 class WindowManager
 {
@@ -21,8 +22,10 @@ public:
 
     // --- CORE FUNCTIONS ---
     void Update(float dt);
-    void RenderAll(float dt, Scene* scene);
-    void HandleResize(SDL_Window* sdlWindow, int width, int height);
+    // `canvas` is borrowed for this call only. When not null, the main window's scene
+        // is drawn into it and then scaled into the window; null draws straight to the window.
+    void RenderAll(float dt, Scene* scene, const GameCanvas* canvas = nullptr);
+    void HandleResize(SDL_Window* sdlWindow, int width, int height);    
     void ClearAll();
 
     // --- USER FUNCTIONS ---
@@ -48,8 +51,8 @@ public:
         return nullptr;
     }
 
-    void SetTopmost(bool enabled) { m_topmostEnabled = enabled; MarkPriorityDirty(); }
-    bool IsTopmost() const { return m_topmostEnabled; }
+    // False when another window (the debug host) draws ImGui instead of the main window.
+    void SetImGuiOnMainWindow(bool enabled) { m_imguiOnMainWindow = enabled; }
 
 private:
     WindowManager() = default;
@@ -57,11 +60,11 @@ private:
     WindowManager(const WindowManager&) = delete;
     void operator=(const WindowManager&) = delete;
 
-    bool m_topmostEnabled = false;
 private:
     std::vector<std::unique_ptr<Beyond::Window>> windows;
 
     Beyond::Window* debugWindow = nullptr;
 
     bool m_dirtyPriority = false;
+    bool m_imguiOnMainWindow = true;
 };

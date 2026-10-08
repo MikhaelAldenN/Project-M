@@ -74,10 +74,16 @@ int UIOption::GetHorizontalInputTriggered() noexcept
     if (leftPress || analogLeftTrigger) return -1;
     if (rightPress || analogRightTrigger) return 1;
 
-    bool isHoldingLeft = (GetAsyncKeyState('A') & 0x8000) || (GetAsyncKeyState(VK_LEFT) & 0x8000) ||
+    const bool isKbmSuppressed{ input.IsKeyboardMouseSuppressed() };
+    const bool isKeyHoldingLeft{ !isKbmSuppressed &&
+        ((GetAsyncKeyState('A') & 0x8000) || (GetAsyncKeyState(VK_LEFT) & 0x8000)) };
+    const bool isKeyHoldingRight{ !isKbmSuppressed &&
+        ((GetAsyncKeyState('D') & 0x8000) || (GetAsyncKeyState(VK_RIGHT) & 0x8000)) };
+
+    bool isHoldingLeft = isKeyHoldingLeft ||
         (pad.GetButton() & GamePad::BTN_LEFT) || isAnalogPushedLeft;
 
-    bool isHoldingRight = (GetAsyncKeyState('D') & 0x8000) || (GetAsyncKeyState(VK_RIGHT) & 0x8000) ||
+    bool isHoldingRight = isKeyHoldingRight ||
         (pad.GetButton() & GamePad::BTN_RIGHT) || isAnalogPushedRight;
 
     if (isHoldingLeft) return -2;

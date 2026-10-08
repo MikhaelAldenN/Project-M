@@ -1,5 +1,5 @@
-
 #include "SceneIntro.h"
+#include "Engine/Common/Constants.h"
 
 SceneIntro::SceneIntro()
 {
@@ -11,6 +11,11 @@ SceneIntro::SceneIntro()
     CreateRenderTarget();     
 
     //AudioManager::Instance().PlayMusic("Data/Sound/BGM_Intro.wav", true, 0.0f);
+
+#if defined(_DEBUG)
+// Capturing `this` is safe: the handle is a member and dies with this scene.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Intro", [this]() { DrawDebugPanel(); }); 
+#endif
 }
 
 void SceneIntro::Update(float elapsedTime)
@@ -122,32 +127,27 @@ void SceneIntro::Render(float dt, Camera* targetCamera)
     if (originalDSV) originalDSV->Release();
 }
 
-void SceneIntro::OnResize(int width, int height)
-{
-    if (camera && height > 0)
-    {
-        camera->SetAspectRatio((float)width / (float)height);
-    }
-
-    CreateRenderTarget();
-}
-
-void SceneIntro::DrawGUI() 
+void SceneIntro::DrawGUI()
 {
     ImGui::SetNextWindowSize(ImVec2(400, 600), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Bios Inspector", nullptr))
     {
-        if (ImGui::BeginTabBar("InspectorTabs"))
-        {
-            if (ImGui::BeginTabItem("Post-Process & FX"))
-            {
-                GUIPostProcessTab();
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
-        }
+        DrawDebugPanel();
     }
     ImGui::End();
+}
+
+void SceneIntro::DrawDebugPanel()
+{
+    if (ImGui::BeginTabBar("InspectorTabs"))
+    {
+        if (ImGui::BeginTabItem("Post-Process & FX"))
+        {
+            GUIPostProcessTab();
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
 }
 
 void SceneIntro::GUIPostProcessTab()
@@ -232,18 +232,12 @@ void SceneIntro::CreateRenderTarget()
 {
     auto device = Graphics::Instance().GetDevice();
 
-    float screenW = 1920;
-    float screenH = 1080;
-    if (auto window = Framework::Instance()->GetMainWindow())
-    {
-        screenW = static_cast<float>(window->GetWidth());
-        screenH = static_cast<float>(window->GetHeight());
-    }
-
     // Create Texture
+    // Why canvas size: the scene draws with the canvas viewport, and this target
+    // is drawn back onto the engine canvas 1:1.
     D3D11_TEXTURE2D_DESC textureDesc = {};
-    textureDesc.Width = static_cast<UINT>(screenW);
-    textureDesc.Height = static_cast<UINT>(screenH);
+    textureDesc.Width = static_cast<UINT>(Beyond::Config::CANVAS_WIDTH);
+    textureDesc.Height = static_cast<UINT>(Beyond::Config::CANVAS_HEIGHT);
     textureDesc.MipLevels = 1;
     textureDesc.ArraySize = 1;
     textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;

@@ -14,6 +14,4 @@ public:
 	virtual void Render(float dt, class Camera* camera = nullptr) = 0;
 	// GUI•`‰æˆ—
 	virtual void DrawGUI() {}
-
-	virtual void OnResize(int width, int height) {}
 };

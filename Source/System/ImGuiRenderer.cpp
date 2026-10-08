@@ -5,6 +5,108 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+namespace
+{
+	// Neutral dark-gray editor theme, modelled on the Unreal Engine 5 Details panel.
+	// Global: it also restyles the DrawGUI() windows drawn in Release.
+	void ApplyEditorTheme()
+	{
+		// Base palette first, so every ImGuiCol_ not overridden below keeps a valid value.
+		ImGui::StyleColorsDark();
+
+		const auto gray = [](float value, float alpha = 1.0f) { return ImVec4{ value, value, value, alpha }; };
+
+		// USULAN DESAIN: Unreal-style blue accent. To change the accent, edit only these two lines.
+		const ImVec4 accent{ 0.00f, 0.44f, 0.88f, 1.00f };
+		const ImVec4 accentBright{ 0.15f, 0.55f, 1.00f, 1.00f };
+
+		ImVec4* colors{ ImGui::GetStyle().Colors };
+
+		// Text
+		colors[ImGuiCol_Text] = gray(0.78f);
+		colors[ImGuiCol_TextDisabled] = gray(0.47f);
+		colors[ImGuiCol_TextSelectedBg] = ImVec4{ accent.x, accent.y, accent.z, 0.45f };
+
+		// Surfaces
+		colors[ImGuiCol_WindowBg] = gray(0.14f);
+		colors[ImGuiCol_ChildBg] = gray(0.00f, 0.00f);
+		colors[ImGuiCol_PopupBg] = gray(0.10f, 0.98f);
+		colors[ImGuiCol_Border] = gray(0.24f);
+		colors[ImGuiCol_BorderShadow] = gray(0.00f, 0.00f);
+		colors[ImGuiCol_DockingEmptyBg] = gray(0.06f);
+
+		// Input fields: darker than the panel they sit on
+		colors[ImGuiCol_FrameBg] = gray(0.06f);
+		colors[ImGuiCol_FrameBgHovered] = gray(0.10f);
+		colors[ImGuiCol_FrameBgActive] = gray(0.12f);
+
+		// Title bar, menu bar and tabs share one color; the active tab merges with the panel
+		colors[ImGuiCol_TitleBg] = gray(0.08f);
+		colors[ImGuiCol_TitleBgActive] = gray(0.08f);
+		colors[ImGuiCol_TitleBgCollapsed] = gray(0.08f);
+		colors[ImGuiCol_MenuBarBg] = gray(0.08f);
+		colors[ImGuiCol_Tab] = gray(0.08f);
+		colors[ImGuiCol_TabHovered] = gray(0.20f);
+		colors[ImGuiCol_TabActive] = gray(0.14f);
+		colors[ImGuiCol_TabUnfocused] = gray(0.08f);
+		colors[ImGuiCol_TabUnfocusedActive] = gray(0.14f);
+
+		// Category headers: a neutral bar. Header* is also used by Selectable and MenuItem.
+		colors[ImGuiCol_Header] = gray(0.20f);
+		colors[ImGuiCol_HeaderHovered] = gray(0.26f);
+		colors[ImGuiCol_HeaderActive] = gray(0.30f);
+
+		// Buttons and scrollbars stay neutral
+		colors[ImGuiCol_Button] = gray(0.22f);
+		colors[ImGuiCol_ButtonHovered] = gray(0.29f);
+		colors[ImGuiCol_ButtonActive] = gray(0.35f);
+		colors[ImGuiCol_ScrollbarBg] = gray(0.10f);
+		colors[ImGuiCol_ScrollbarGrab] = gray(0.28f);
+		colors[ImGuiCol_ScrollbarGrabHovered] = gray(0.34f);
+		colors[ImGuiCol_ScrollbarGrabActive] = gray(0.40f);
+		colors[ImGuiCol_Separator] = gray(0.24f);
+		colors[ImGuiCol_ResizeGrip] = gray(0.24f, 0.50f);
+
+		// Accent: the only non-gray colors in the theme
+		colors[ImGuiCol_CheckMark] = accentBright;
+		colors[ImGuiCol_SliderGrab] = accent;
+		colors[ImGuiCol_SliderGrabActive] = accentBright;
+		colors[ImGuiCol_SeparatorHovered] = accent;
+		colors[ImGuiCol_SeparatorActive] = accentBright;
+		colors[ImGuiCol_ResizeGripHovered] = accent;
+		colors[ImGuiCol_ResizeGripActive] = accentBright;
+		colors[ImGuiCol_DockingPreview] = ImVec4{ accent.x, accent.y, accent.z, 0.50f };
+		colors[ImGuiCol_DragDropTarget] = accentBright;
+		colors[ImGuiCol_NavHighlight] = accent;
+
+		// Sizes, in raw pixels (not DPI-scaled). Tighter than the ImGui defaults.
+		ImGuiStyle& style{ ImGui::GetStyle() };
+
+		// Square panels with a thin outline
+		style.WindowPadding = ImVec2{ 6.0f, 6.0f };
+		style.WindowRounding = 0.0f;
+		style.WindowBorderSize = 1.0f;
+		style.ChildRounding = 0.0f;
+		style.PopupRounding = 2.0f;
+
+		// Fields: small rounded corners and a 1 px outline so dark fields keep an edge
+		style.FramePadding = ImVec2{ 4.0f, 2.0f };
+		style.FrameRounding = 3.0f;
+		style.FrameBorderSize = 1.0f;
+		style.GrabMinSize = 8.0f;
+		style.GrabRounding = 2.0f;
+
+		// Denser rows
+		style.ItemSpacing = ImVec2{ 6.0f, 3.0f };
+		style.ItemInnerSpacing = ImVec2{ 4.0f, 3.0f };
+		style.IndentSpacing = 16.0f;
+
+		style.ScrollbarSize = 12.0f;
+		style.ScrollbarRounding = 3.0f;
+		style.TabRounding = 2.0f;
+	}
+}
+
 // èâä˙âª
 void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* dc)
 {
@@ -28,7 +130,8 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
 #endif
 
 	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsDark();
+	ApplyEditorTheme();
 	//ImGui::StyleColorsClassic();
 
 	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.

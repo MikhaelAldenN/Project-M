@@ -25,8 +25,11 @@ namespace PlayerConst
     // --- Dash ---
     inline constexpr float DashSpeed = 45.0f;  // Burst speed during dash (units/s)
     inline constexpr float DashDuration = 0.15f;  // How long the dash lasts (s)
-    inline constexpr float DashCooldown = 1.0f;   // Time before dash can be used again (s)
-
+    inline constexpr float DashIFrameDuration = 0.2f;  // Invincibility granted by a full dash (s)
+    inline constexpr int   DashCharges = 2;      // Full dashes available before the penalty starts
+    inline constexpr float DashRecoveryTime = 1.0f;   // Time without dashing that restores all charges (s)
+    inline constexpr float DashPenaltyScale = 0.5f;   // USULAN DESAIN: speed multiplier of a penalized dash
+    
     // --- Slash ---
     inline constexpr float SlashLungeForce = 40.0f;  // Initial velocity burst on slash enter
     inline constexpr float SlashDrag = 0.7f;   // Velocity multiplier applied per frame during slash

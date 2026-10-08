@@ -11,6 +11,7 @@
 #include "PhysXUtils.h"
 #include "Scene.h"
 #include "System/Light.h"
+#include "DebugUI.h"
 
 // ==========================================
 // FORWARD DECLARATIONS
@@ -41,14 +42,11 @@ public:
     void Update(float elapsedTime) override;
     void Render(float elapsedTime, Camera* camera = nullptr) override;
     void DrawGUI() override;
-    void OnResize(int width, int height) override;
 
     Camera* GetMainCamera() const { return m_mainCamera.get(); }
 
 private:
     struct Config {
-        static constexpr float DEFAULT_SCREEN_W{ 1920.0f };
-        static constexpr float DEFAULT_SCREEN_H{ 1080.0f };
         static constexpr float GRAVITY{ -9.81f };
         static constexpr float CAM_FOV{ 45.0f };
         static constexpr float CAM_NEAR{ 0.1f };
@@ -61,6 +59,8 @@ private:
     static constexpr const char* SANDBOX_STAGE_PATH{ "Data/Model/Stage/ExampleStage.glb" };
 
     void RenderScene(float elapsedTime, Camera* camera);
+
+    void DrawDebugPanel();
 
     std::unique_ptr<Player> m_player{};
     std::unique_ptr<Stage> m_stage{};
@@ -93,4 +93,12 @@ private:
     bool m_showGrid{ true };
     bool m_showStageDebug{ true };
     bool m_showPlayerInfo{ true };
+
+#if defined(_DEBUG)
+    // Keeps the "Sandbox" tab registered while this scene lives.
+    // Declared last: destroyed first, before any member the callback reads.
+    DebugPanelHandle m_debugPanel{};
+    DebugPanelHandle m_playerPanel{};
+#endif
+
 };

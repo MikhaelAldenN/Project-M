@@ -1,0 +1,14 @@
+{
+    "debug_window": {
+        "height": 1000,
+        "width": 404,
+        "x": 1512,
+        "y": 38
+    },
+    "main_window": {
+        "height": 1000,
+        "width": 1510,
+        "x": 0,
+        "y": 31
+    }
+}

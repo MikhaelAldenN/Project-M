@@ -11,6 +11,13 @@ struct DebugHostWindowConfig
     std::string title{ "Project M - Debug" };
     int width{ 560 };
     int height{ 900 };
+    bool isAlwaysOnTop{ true };
+
+    // Desktop position of the client area. Used only when hasPosition is true;
+    // otherwise the OS picks the position.
+    int x{ 0 };
+    int y{ 0 };
+    bool hasPosition{ false };
 };
 
 // Debug-only OS window that will host the whole debug UI.
@@ -35,8 +42,22 @@ public:
     // Presents without vsync so the game's frame pacing is untouched.
     void Present();
 
+    // Returns true if the event belongs to this window. The caller must then
+    // skip its own handling, so game logic never reacts to debug window events.
+    [[nodiscard]] bool HandleEvent(const SDL_Event& event);
+
+    // Native handle for the ImGui platform backend. Null if the window is invalid.
+    [[nodiscard]] HWND GetHwnd() const;
+
+    // The SDL window, for reading its position and size. Null if the window is invalid.
+    [[nodiscard]] SDL_Window* GetSDLWindow() const;
+
+    // True while this window is the OS foreground window.
+    [[nodiscard]] bool HasFocus() const;
+
 private:
     Beyond::Window m_window{};
+    SDL_WindowID m_windowId{ 0 }; // 0 is SDL's "no window" id
     bool m_isValid{ false };
 };
 

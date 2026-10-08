@@ -76,7 +76,14 @@ XMFLOAT3 CameraController::CalculateHermitePos(const XMFLOAT3& p0, const XMFLOAT
 // CORE LOGIC
 // =========================================================
 
-CameraController::CameraController() {}
+CameraController::CameraController()
+{
+#if defined(_DEBUG)
+    // Capturing `this` is safe: the handle is a member of this singleton, and it
+    // holds the registry weakly, so shutdown order against DebugUI does not matter.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Camera", [this]() { DrawDebugPanel(); }); 
+#endif
+}
 
 CameraController& CameraController::Instance()
 {
@@ -117,8 +124,8 @@ void CameraController::Update(float elapsedTime)
 
     // --- Global Inputs (Cursor Toggle) ---
     static bool isF1Pressed = false;
-    bool f1Down = (GetKeyState(VK_F1) & 0x8000) != 0;
-
+    const bool isKbmSuppressed{ Input::Instance().IsKeyboardMouseSuppressed() };
+    bool f1Down = !isKbmSuppressed && (GetKeyState(VK_F1) & 0x8000) != 0;
     if (f1Down && !isF1Pressed)
     {
         if (m_controlMode == CameraControlMode::Mouse || m_controlMode == CameraControlMode::Free)
@@ -391,12 +398,15 @@ void CameraController::UpdateFreeCamera(float dt, std::shared_ptr<Camera>& camer
     float moveAmount = m_moveSpeed * dt;
     XMFLOAT3 moveDir = { 0, 0, 0 };
 
-    if (GetKeyState('W') & 0x8000) moveDir.z += moveAmount;
-    if (GetKeyState('S') & 0x8000) moveDir.z -= moveAmount;
-    if (GetKeyState('A') & 0x8000) moveDir.x -= moveAmount;
-    if (GetKeyState('D') & 0x8000) moveDir.x += moveAmount;
-    if (GetKeyState(VK_SPACE) & 0x8000)   moveDir.y += moveAmount;
-    if (GetKeyState(VK_CONTROL) & 0x8000) moveDir.y -= moveAmount;
+    if (!Input::Instance().IsKeyboardMouseSuppressed())
+    {
+        if (GetKeyState('W') & 0x8000) moveDir.z += moveAmount;
+        if (GetKeyState('S') & 0x8000) moveDir.z -= moveAmount;
+        if (GetKeyState('A') & 0x8000) moveDir.x -= moveAmount;
+        if (GetKeyState('D') & 0x8000) moveDir.x += moveAmount;
+        if (GetKeyState(VK_SPACE) & 0x8000)   moveDir.y += moveAmount;
+        if (GetKeyState(VK_CONTROL) & 0x8000) moveDir.y -= moveAmount;
+    }
 
     camera->Translate(moveDir);
     m_eyePos = camera->GetPosition();
@@ -556,10 +566,17 @@ void CameraController::StopSequence()
 
 void CameraController::DrawDebugGUI()
 {
-    auto camera = m_activeCamera.lock();
-    if (!camera) return;
+    if (m_activeCamera.expired()) return;
 
     ImGui::Begin("Camera Controller");
+    DrawDebugPanel();
+    ImGui::End();
+}
+
+void CameraController::DrawDebugPanel()
+{
+    auto camera = m_activeCamera.lock();
+    if (!camera) return;
 
     // Helper lambda for radio buttons
     auto ModeRadio = [&](const char* label, CameraControlMode mode) {
@@ -593,8 +610,6 @@ void CameraController::DrawDebugGUI()
         }
         if (ImGui::Button("Stop")) StopSequence();
     }
-
-    ImGui::End();
 }
 
 CameraController::SequenceTimeInfo CameraController::GetSequenceProgress() const

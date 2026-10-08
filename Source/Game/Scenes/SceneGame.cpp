@@ -10,6 +10,7 @@
 #include "System/CollisionManager.h"
 #include "System/Graphics.h"
 #include "InputHelper.h"
+#include "Engine/Common/Constants.h"
 #include <algorithm>
 
 // Game Objects
@@ -26,6 +27,11 @@ using namespace DirectX;
 
 namespace
 {
+    // The scene always draws into the engine's fixed-size canvas, so every
+    // "screen" size in this file is the canvas size, never the window size.
+    constexpr float k_canvasWidth{ static_cast<float>(Beyond::Config::CANVAS_WIDTH) };
+    constexpr float k_canvasHeight{ static_cast<float>(Beyond::Config::CANVAS_HEIGHT) };
+
     size_t NextUtf8Offset(const std::string& text, size_t offset)
     {
         if (offset >= text.size()) return text.size();
@@ -87,26 +93,8 @@ namespace
 
 SceneGame::SceneGame()
 {
-    float screenW{ Config::DEFAULT_SCREEN_W };
-    float screenH{ Config::DEFAULT_SCREEN_H };
-
-    if (auto window{ Framework::Instance()->GetMainWindow() }) {
-        SDL_Window* sdlWin = window->GetSDLWindow();
-
-        // Disable window borders and the ability to resize
-        SDL_SetWindowBordered(sdlWin, false);
-        SDL_SetWindowResizable(sdlWin, false);
-
-        // Grab monitor size and force the window to match it perfectly
-        int fullW = GetSystemMetrics(SM_CXSCREEN);
-        int fullH = GetSystemMetrics(SM_CYSCREEN);
-        SDL_SetWindowSize(sdlWin, fullW, fullH);
-        SDL_SetWindowPosition(sdlWin, 0, 0);
-
-        // Update local configuration variables
-        screenW = static_cast<float>(fullW);
-        screenH = static_cast<float>(fullH);
-    }
+    const float screenW{ k_canvasWidth };
+    const float screenH{ k_canvasHeight };
 
     auto& camCtrl{ CameraController::Instance() };
     camCtrl.ClearCamera();
@@ -216,6 +204,11 @@ SceneGame::SceneGame()
     m_whiteSprite = std::make_unique<Sprite>(Graphics::Instance().GetDevice(), "Data/Sprite/Scene Game/White.png");
     EffectManager::Instance().PreloadEffect("Data/Effect/Hit.efk");
     EffectManager::Instance().PreloadEffect("Data/Effect/FakeBossPoison.efk");
+
+#if defined(_DEBUG)
+    // Capturing `this` is safe: the handle is a member and dies with this scene.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Game", [this]() { DrawDebugPanel(); }); 
+#endif
 }
 
 SceneGame::~SceneGame()
@@ -1036,7 +1029,10 @@ void SceneGame::Render(float elapsedTime, Camera* camera)
         m_postProcess->EndCapture(renderTime);
     }
 
+#if !defined(_DEBUG)
+    // Release keeps the floating window until ImGui is removed (beta).
     DrawGUI();
+#endif
 
     if (m_dialogueBox)
     {
@@ -1045,13 +1041,8 @@ void SceneGame::Render(float elapsedTime, Camera* camera)
 
     if (m_fadeAlpha > 0.001f && m_fadeSprite)
     {
-        // Get dynamic screen size
-        float screenW{ Config::DEFAULT_SCREEN_W };
-        float screenH{ Config::DEFAULT_SCREEN_H };
-        if (auto window{ Framework::Instance()->GetMainWindow() }) {
-            screenW = static_cast<float>(window->GetWidth());
-            screenH = static_cast<float>(window->GetHeight());
-        }
+        const float screenW{ k_canvasWidth };
+        const float screenH{ k_canvasHeight };
 
         // Enable 2D Transparency
         dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
@@ -1071,12 +1062,8 @@ void SceneGame::Render(float elapsedTime, Camera* camera)
 
     if (m_whiteAlpha > 0.001f && m_whiteSprite)
     {
-        float screenW{ Config::DEFAULT_SCREEN_W };
-        float screenH{ Config::DEFAULT_SCREEN_H };
-        if (auto window{ Framework::Instance()->GetMainWindow() }) {
-            screenW = static_cast<float>(window->GetWidth());
-            screenH = static_cast<float>(window->GetHeight());
-        }
+        const float screenW{ k_canvasWidth };
+        const float screenH{ k_canvasHeight };
 
         // Enable 2D Transparency
         dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
@@ -1096,14 +1083,8 @@ void SceneGame::Render(float elapsedTime, Camera* camera)
 
     if (m_isPaused && m_fadeSprite)
     {
-        float screenW{ Config::DEFAULT_SCREEN_W };
-        float screenH{ Config::DEFAULT_SCREEN_H };
-
-        // Safely extract current window dimensions
-        if (auto window{ Framework::Instance()->GetMainWindow() }) {
-            screenW = static_cast<float>(window->GetWidth());
-            screenH = static_cast<float>(window->GetHeight());
-        }
+        const float screenW{ k_canvasWidth };
+        const float screenH{ k_canvasHeight };
 
         // Enable 2D Transparency pipeline state
         dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
@@ -1169,8 +1150,15 @@ void SceneGame::DrawGUI()
 {
     if (!m_stage) return;
 
-    // --- FIX: Create the actual ImGui Window ---
     ImGui::Begin("Stage Debug Inspector");
+    DrawDebugPanel();
+    ImGui::End();
+}
+
+void SceneGame::DrawDebugPanel()
+{
+    // Why: the stage is destroyed in the Navi defeat sequence while this scene still lives.
+    if (!m_stage) return;
 
     ImGui::Spacing();
     if (ImGui::CollapsingHeader("Debug Line Transform", ImGuiTreeNodeFlags_DefaultOpen))
@@ -1270,18 +1258,6 @@ void SceneGame::DrawGUI()
 
         ImGui::Unindent();
     }
-
-    // --- FIX: End the ImGui Window ---
-    ImGui::End(); 
-}
-
-void SceneGame::OnResize(int width, int height)
-{
-    if (height <= 0) height = 1;
-    if (m_mainCamera) {
-        m_mainCamera->SetPerspectiveFov(DirectX::XMConvertToRadians(Config::CAM_FOV), static_cast<float>(width) / static_cast<float>(height), Config::CAM_NEAR, Config::CAM_FAR);
-    }
-    if (m_postProcess) m_postProcess->OnResize(width, height);
 }
 
 bool SceneGame::AreTrackingEnemiesDead() const

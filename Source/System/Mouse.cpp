@@ -25,7 +25,7 @@ void Mouse::Update()
 
 	for (int i = 0; i < ARRAYSIZE(KeyMap); ++i)
 	{
-		if (::GetAsyncKeyState(KeyMap[i]) & 0x8000)
+		if (!isSuppressed && (::GetAsyncKeyState(KeyMap[i]) & 0x8000))
 		{
 			newButtonState |= (1 << i);
 		}
@@ -46,6 +46,14 @@ void Mouse::Update()
 	POINT cursor;
 	::GetCursorPos(&cursor);
 	::ScreenToClient(hWnd, &cursor);
+
+	if (isSuppressed)
+	{
+		// Why: the cursor belongs to the debug window now; do not move the camera
+		// and never pull the cursor back to the game window's centre.
+		deltaX = 0.0f;
+		deltaY = 0.0f;
+	}
 
 	// Perbaikan: Logika kunci kursor yang baru
 	if (isCursorLocked)
@@ -83,9 +91,11 @@ void Mouse::Update()
 	// ‰æ–Ê•â³
 	positionX[1] = positionX[0];
 	positionY[1] = positionY[0];
-	positionX[0] = (LONG)(cursor.x / static_cast<float>(viewportW) * static_cast<float>(screenW));
-	positionY[0] = (LONG)(cursor.y / static_cast<float>(viewportH) * static_cast<float>(screenH));
-
+	if (!isSuppressed)
+	{
+		positionX[0] = (LONG)(cursor.x / static_cast<float>(viewportW) * static_cast<float>(screenW));
+		positionY[0] = (LONG)(cursor.y / static_cast<float>(viewportH) * static_cast<float>(screenH));
+	}
 	//if (isCursorLocked)
 	//{
 	//	// Hitung posisi tengah layar

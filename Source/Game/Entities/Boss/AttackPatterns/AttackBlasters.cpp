@@ -141,7 +141,6 @@ void AttackBlasters::Update(float dt, Boss* boss) {
 void AttackBlasters::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
     if (!m_placeholderModel || !m_solidRenderer) return;
     auto modelRenderer = Graphics::Instance().GetModelRenderer();
-    float p2u = boss->GetWindowSystem()->GetPixelToUnitRatio();
 
     for (auto& b : m_blasters) {
         if (!b->active) continue;
@@ -159,33 +158,20 @@ void AttackBlasters::Render(ID3D11DeviceContext* context, Camera* camera, Boss* 
 
         // Render Beam Rect (Solid 2D)
         if (b->beamScaleX > 0.0f) {
-            float startX, startY, endY, dummyX;
-            boss->GetWindowSystem()->WorldToScreenPos(b->pos, startX, startY);
+            // The beam is a ground rect (y = 0) from the cannon towards -Z. Its two
+            // opposite corners are projected through the camera of the window being
+            // drawn, which already accounts for that window's position and shake.
+            const float halfBeamWidth{ b->beamScaleX * 0.5f };
+            const DirectX::XMFLOAT2 topLeft{ WorldToViewportPixels(context, *camera,
+                { b->pos.x - halfBeamWidth, 0.0f, b->pos.z }) };
+            const DirectX::XMFLOAT2 bottomRight{ WorldToViewportPixels(context, *camera,
+                { b->pos.x + halfBeamWidth, 0.0f, b->pos.z - b->beamCurrentLength }) };
 
-            DirectX::XMFLOAT3 endPos = b->pos;
-            endPos.z -= b->beamCurrentLength;
-            boss->GetWindowSystem()->WorldToScreenPos(endPos, dummyX, endY);
-
-            DirectX::XMFLOAT3 camPos = camera->GetPosition();
-            startX -= (camPos.x * p2u);
-            startY += (camPos.z * p2u);
-            endY += (camPos.z * p2u);
-
-            // Correct projection for shaking windows
-            for (auto& tw : boss->GetWindowSystem()->GetWindows()) {
-                if (tw->camera.get() == camera) {
-                    startX -= (float)tw->state.actualX;
-                    startY -= (float)tw->state.actualY;
-                    endY -= (float)tw->state.actualY;
-                    break;
-                }
-            }
-
-            float pixelWidth = b->beamScaleX * p2u;
-            float pixelHeight = endY - startY;
             DirectX::XMFLOAT4 color = (b->state == 2) ? DirectX::XMFLOAT4{ 1,0,0,0.5f } : DirectX::XMFLOAT4{ 0,1,1,0.9f };
 
-            m_solidRenderer->Rect(startX, startY, pixelWidth, pixelHeight, pixelWidth * 0.5f, 0.0f, 0.0f, color.x, color.y, color.z, color.w);
+            m_solidRenderer->Rect(topLeft.x, topLeft.y,
+                bottomRight.x - topLeft.x, bottomRight.y - topLeft.y,
+                0.0f, 0.0f, 0.0f, color.x, color.y, color.z, color.w);
             m_solidRenderer->Render(context);
         }
     }

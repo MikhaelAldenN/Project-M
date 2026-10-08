@@ -5,6 +5,7 @@
 #include "System/CollisionManager.h"
 #include "System/Graphics.h"
 #include "InputHelper.h"
+#include "Engine/Common/Constants.h"
 
 #include "Player.h"
 #include "PlayerStates.h"
@@ -14,13 +15,8 @@ using namespace DirectX;
 
 SceneSandbox::SceneSandbox()
 {
-    float screenW{ Config::DEFAULT_SCREEN_W };
-    float screenH{ Config::DEFAULT_SCREEN_H };
-
-    if (auto window{ Framework::Instance()->GetMainWindow() }) {
-        screenW = static_cast<float>(window->GetWidth());
-        screenH = static_cast<float>(window->GetHeight());
-    }
+    constexpr float canvasAspect{ static_cast<float>(Beyond::Config::CANVAS_WIDTH)
+           / static_cast<float>(Beyond::Config::CANVAS_HEIGHT) };
 
     // --- Camera: top-down, sama style-nya SceneGame ---
     auto& camCtrl{ CameraController::Instance() };
@@ -31,7 +27,7 @@ SceneSandbox::SceneSandbox()
     camCtrl.SetFixedRollOffset(0.0f);
 
     m_mainCamera = std::make_shared<Camera>();
-    m_mainCamera->SetPerspectiveFov(XMConvertToRadians(Config::CAM_FOV), screenW / screenH, Config::CAM_NEAR, Config::CAM_FAR);
+    m_mainCamera->SetPerspectiveFov(XMConvertToRadians(Config::CAM_FOV), canvasAspect, Config::CAM_NEAR, Config::CAM_FAR);
 
     XMFLOAT3 startPos{ m_cameraPosition };
     startPos.x = 0.0f;
@@ -101,6 +97,14 @@ SceneSandbox::SceneSandbox()
     m_collisionManager->Initialize(m_player.get(), m_stage.get(), nullptr, nullptr);
 
     m_player->SetCollisionManager(m_collisionManager.get());
+
+#if defined(_DEBUG)
+    // Capturing `this` is safe: the handles are members and die with this scene.
+    m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Sandbox", [this]() { DrawDebugPanel(); });
+    m_playerPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Player", [this]() {
+        if (m_player) m_player->DrawDebugGUI();
+        });
+#endif
 }
 
 SceneSandbox::~SceneSandbox()
@@ -166,7 +170,11 @@ void SceneSandbox::Render(float elapsedTime, Camera* camera)
         primRenderer->Render(dc, targetCam->GetView(), targetCam->GetProjection(), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
     }
 
+#if !defined(_DEBUG)
+    // Release keeps the floating window until ImGui is removed (beta).
     DrawGUI();
+#endif
+
 }
 
 void SceneSandbox::RenderScene(const float elapsedTime, Camera* camera)
@@ -194,7 +202,12 @@ void SceneSandbox::RenderScene(const float elapsedTime, Camera* camera)
 void SceneSandbox::DrawGUI()
 {
     ImGui::Begin("Sandbox");
+    DrawDebugPanel();
+    ImGui::End();
+}
 
+void SceneSandbox::DrawDebugPanel()
+{
     ImGui::TextDisabled("Stage: %s", SANDBOX_STAGE_PATH);
     ImGui::Separator();
 
@@ -208,15 +221,5 @@ void SceneSandbox::DrawGUI()
         ImGui::Separator();
         ImGui::Text("Player Pos: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
         ImGui::Text("Player HP: %.1f", m_player->GetHP());
-    }
-
-    ImGui::End();
-}
-
-void SceneSandbox::OnResize(int width, int height)
-{
-    if (height <= 0) height = 1;
-    if (m_mainCamera) {
-        m_mainCamera->SetPerspectiveFov(DirectX::XMConvertToRadians(Config::CAM_FOV), static_cast<float>(width) / static_cast<float>(height), Config::CAM_NEAR, Config::CAM_FAR);
     }
 }
