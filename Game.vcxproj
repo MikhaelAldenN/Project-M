@@ -197,6 +197,7 @@
     <ClInclude Include="Source\Game\Entities\Bullet.h" />
     <ClInclude Include="Source\Game\Entities\Character.h" />
     <ClInclude Include="Source\Game\Entities\CharacterMovement.h" />
+    <ClInclude Include="Source\Game\Entities\DamageTypes.h" />
     <ClInclude Include="Source\Game\Entities\Enemy.h" />
     <ClInclude Include="Source\Game\Entities\EnemyManager.h" />
     <ClInclude Include="Source\Game\Entities\Item.h" />

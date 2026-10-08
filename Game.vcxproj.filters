@@ -753,6 +753,9 @@
     <ClInclude Include="Source\Engine\Windowing\WindowLayoutStore.h">
       <Filter>Source\Engine\Windowing</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Entities\DamageTypes.h">
+      <Filter>Source\Game\Entities</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Basic.hlsli">

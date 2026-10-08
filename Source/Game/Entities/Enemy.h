@@ -2,6 +2,7 @@
 
 #include "Bullet.h"
 #include "Character.h"
+#include "DamageTypes.h"
 #include "EffectManager.h"
 #include "EnemyManager.h"
 #include <cmath>
@@ -73,7 +74,8 @@ public:
     void SetScale(const DirectX::XMFLOAT3& scale) { m_scale = scale; }
     DirectX::XMFLOAT3 GetScale() const { return m_scale; }
 
-    void TakeDamage(int damage);
+    // Applies one hit with blink, sound and hit effect. Deactivates the enemy when HP reaches zero.
+    DamageResult TakeDamage(const DamageInfo& damage);
     void SetMaxHP(int hp) { m_hp = hp; }
     [[nodiscard]] int GetHP() const { return m_hp; }
 

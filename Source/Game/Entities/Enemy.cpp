@@ -506,25 +506,27 @@ void Enemy::UpdateOriginalTransform(const DirectX::XMFLOAT3& pos, const DirectX:
     }
 }
 
-void Enemy::TakeDamage(int damage)
+DamageResult Enemy::TakeDamage(const DamageInfo& damage)
 {
     // Guard Clause: If invincible OR inactive, ignore the hit entirely.
-    if (m_isInvincible || !m_isActive || m_hp <= 0) return;
+    if (m_isInvincible || !m_isActive || m_hp <= 0) return DamageResult::ignored;
 
-    m_hp -= damage;
+    m_hp -= damage.amount;
     m_blinkTimer = BLINK_DURATION; // Trigger blink effect
 
     static const std::string HIT_SFX_PATH{ "Data/Sound/SE_Enemy_Hit.wav" };
     AudioManager::Instance().PlaySFX(HIT_SFX_PATH, 0.6f);
 
-	// Play visual effect
+    // Why not damage.hitPosition: the effect has always been centred on the enemy.
     EffectManager::Instance().Play("Data/Effect/Hit.efk", GetPosition(), 1.0f);
 
     if (m_hp <= 0)
     {
         m_hp = 0; // Clamp to 0 to prevent negative HP logic bugs
         SetActive(false); // Kill the enemy
+        return DamageResult::killed;
     }
+    return DamageResult::damaged;
 }
 
 void Enemy::SetPosition(const DirectX::XMFLOAT3& pos) { movement->SetPosition(pos); }

@@ -119,7 +119,7 @@ namespace {
                 const bool isKamikaze{ slashTarget->GetAttackType() == AttackType::Tracking };
                 const int finalDamage{ isKamikaze ? 9999 : MELEE_DAMAGE };
 
-                slashTarget->TakeDamage(finalDamage);
+                slashTarget->TakeDamage(DamageInfo{ finalDamage, slashTarget->GetPosition() });
 
                 return true;
             }

@@ -349,7 +349,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                 {
                     // ---> APPLY PARRY DAMAGE <---
                     constexpr int PARRY_DAMAGE = 30;
-                    targetEnemy->TakeDamage(PARRY_DAMAGE);
+                    targetEnemy->TakeDamage(DamageInfo{ PARRY_DAMAGE, bPos });
 
                     // Destroy the bullet
                     it = projectiles.erase(it);
@@ -462,7 +462,7 @@ void CollisionManager::CheckPlayerVsEnemies()
                 m_player->GetStateMachine()->ChangeState(m_player, std::make_unique<PlayerDead>());
 
                 // 3. Kill the kamikaze enemy so it doesn't survive the explosion
-                enemy->TakeDamage(9999);
+                enemy->TakeDamage(DamageInfo{ 9999, ePos });
 
                 enemy->SetKilledPlayer(true);
 
@@ -706,7 +706,7 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
             // 4. NARROW-PHASE: The expensive exact math (Only runs if broad-phase passes)
             if (CheckSphereCollision(currentPos, ePos, BULLET_HITBOX_RADIUS + enemyRadius))
             {
-                enemy->TakeDamage(bullet->GetDamage());
+                enemy->TakeDamage(DamageInfo{ bullet->GetDamage(), currentPos });
                 bullet->SetActive(false);
                 break; // Stop checking this bullet against other enemies
             }
@@ -762,7 +762,7 @@ void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
 
             if (distToPath <= exactHitDistance)
             {
-                enemy->TakeDamage(NAVI_BULLET_DAMAGE);
+                enemy->TakeDamage(DamageInfo{ NAVI_BULLET_DAMAGE, currentPos });
                 bullet->SetActive(false); // Send back to Object Pool instantly
                 break; // Stop checking this bullet against other enemies
             }
