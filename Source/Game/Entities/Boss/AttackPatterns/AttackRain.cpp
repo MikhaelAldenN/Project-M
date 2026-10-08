@@ -156,7 +156,14 @@ void AttackRain::Update(float dt, Boss* boss) {
 
         // Terapkan damage HANYA 1 KALI per update meskipun banyak area hujan menumpuk
         if (isHit && m_target && m_target->GetHP() > 0) {
-            m_target->TakeDamage(m_params.damage);
+            // Why accumulate: damage is whole HP, but one frame is worth less than 1 HP.
+            // The fraction is carried over so the total follows elapsed time at any frame rate.
+            m_damageCarry += m_params.damagePerSecond * dt;
+            const int wholeDamage{ static_cast<int>(m_damageCarry) };
+            if (wholeDamage > 0) {
+                m_damageCarry -= static_cast<float>(wholeDamage);
+                m_target->TakeDamage(static_cast<float>(wholeDamage));
+            }
             CameraController::Instance().AddTrauma(0.15f);
         }
     }

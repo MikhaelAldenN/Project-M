@@ -1261,7 +1261,8 @@ namespace
         DebugProperty::DragFloatRange("Speed range", p.minSpeed, p.maxSpeed, 1.0f, 10.0f, 150.0f, "%.1f",
             p.minSpeed != loaded.minSpeed || p.maxSpeed != loaded.maxSpeed);
         DebugProperty::SliderFloat("Active duration", p.activeDuration, 0.5f, 10.0f, "%.2f s", p.activeDuration != loaded.activeDuration);
-        DebugProperty::SliderFloat("Damage", p.damage, 0.0f, 50.0f, "%.2f", p.damage != loaded.damage);
+        DebugProperty::SliderFloat("Damage per second", p.damagePerSecond, 0.0f, 100.0f, "%.1f HP/s", p.damagePerSecond != loaded.damagePerSecond);
+
     }
 
     void DrawRainTargetedRows(RainParams& p, const RainParams& loaded)
@@ -1274,7 +1275,8 @@ namespace
         DebugProperty::SliderFloat("Zone depth", p.depth, 10.0f, 80.0f, "%.1f units", p.depth != loaded.depth);
         DebugProperty::SliderInt("Trigger count", p.triggerCount, 1, 10, p.triggerCount != loaded.triggerCount);
         DebugProperty::SliderFloat("Trigger delay", p.triggerDelay, 0.1f, 3.0f, "%.2f s", p.triggerDelay != loaded.triggerDelay);
-        DebugProperty::SliderFloat("Damage", p.damage, 0.0f, 50.0f, "%.2f", p.damage != loaded.damage);
+        DebugProperty::SliderFloat("Damage per second", p.damagePerSecond, 0.0f, 100.0f, "%.1f HP/s", p.damagePerSecond != loaded.damagePerSecond);
+
     }
 }
 

@@ -61,7 +61,7 @@ void AttackParamManager::ParseRadialParams(const json& j, RadialParams& out) {
     if (j.contains("speed")) out.speed = j["speed"];
     if (j.contains("burstDelay")) out.burstDelay = j["burstDelay"];
     if (j.contains("burstCount")) out.burstCount = j["burstCount"];
-    if (j.contains("damage")) out.damage = j["damage"];
+    if (j.contains("damagePerSecond")) out.damagePerSecond = j["damagePerSecond"];
     if (j.contains("sfxVolume")) out.sfxVolume = j["sfxVolume"];
     if (j.contains("activeDuration")) out.activeDuration = j["activeDuration"];
     if (j.contains("color") && j["color"].is_array() && j["color"].size() == 4) {

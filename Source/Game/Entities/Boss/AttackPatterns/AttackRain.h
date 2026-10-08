@@ -15,7 +15,7 @@ struct RainParams {
     float activeDuration = 2.0f;
     float width = 25.0f;
     float depth = 40.0f;
-    float damage = 0.2f;
+    float damagePerSecond = 12.0f; // HP per second while the player stands in an active zone
     float sfxVolume = 1.0f;
 
     int   triggerCount = 1;     // Berapa kali hujan turun
@@ -72,7 +72,7 @@ private:
 
     bool              m_active = false;
     float             m_sfxTimer = 0.0f;
-    const float       SFX_LOOP = 0.8f;
+    float             m_damageCarry{ 0.0f }; // HP owed to the player but not yet a whole point
 
     std::vector<int>  m_vfxHandles;
     std::unique_ptr<Primitive> m_zonePrimitive;
