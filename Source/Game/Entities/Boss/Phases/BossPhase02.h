@@ -88,6 +88,8 @@ public:
     Player* GetAITarget() const override { return m_aiTarget; }
 
     bool IsPlayerCaged() const { return m_isPlayerCaged; }
+    [[nodiscard]] bool IsVulnerable() const override { return !m_isPlayerCaged && !IsDead(); }
+
     DirectX::XMFLOAT3 GetCagePos() const { return m_cagePos; }
     float GetCageSize() const { return m_cageSizeWorld; }
     void DamageCage(int dmg);

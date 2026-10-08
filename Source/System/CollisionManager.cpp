@@ -211,57 +211,24 @@ void CollisionManager::Update(float elapsedTime)
     CheckBossProjectilesVsPlayer(elapsedTime);
     CheckBossProjectilesVsBoss(elapsedTime);
 
-    // =========================================================
-    // DETEKSI PELURU PLAYER VS WINDOW BOSS (AABB COLLISION)
-    // =========================================================
+    // ----- Player bullets vs boss window (point inside an XZ box) -----
     if (m_Boss && m_player) {
-        if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_Boss->GetCurrentPhase())) {
+        INaviPhase* phase{ m_Boss->GetCurrentPhase() };
+        if (phase && phase->IsVulnerable()) {
+            // The boss window is 5 x 5 world units, so half of that on each axis.
+            constexpr float k_halfWidth{ 2.5f };
+            constexpr float k_halfDepth{ 2.5f };
+            const DirectX::XMFLOAT3 bossPos{ m_Boss->GetPosition() };
 
-            if (!normalPhase->IsDead()) {
-                DirectX::XMFLOAT3 bossPos = m_Boss->GetPosition();
+            for (auto& bullet : m_player->GetProjectiles()) {
+                if (!bullet->IsActive()) continue;
 
-                // Ukuran Window di 3D World adalah 5.0f (Radius/Setengahnya adalah 2.5f)
-                float halfW = 2.5f;
-                float halfD = 2.5f;
-
-                // Asumsi: m_player memiliki fungsi GetProjectiles() yang me-return peluru player
-                for (auto& bullet : m_player->GetProjectiles()) {
-                    if (!bullet->IsActive()) continue;
-
-                    DirectX::XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
-
-                    // Pengecekan Kotak (AABB): Apakah titik peluru berada di DALAM kotak Window?
-                    if (bPos.x > (bossPos.x - halfW) && bPos.x < (bossPos.x + halfW) &&
-                        bPos.z >(bossPos.z - halfD) && bPos.z < (bossPos.z + halfD))
-                    {
-                        // BOOM! Kena kaca window!
-                        bullet->SetActive(false); // Hancurkan peluru player
-                        normalPhase->TakeDamage(bullet->GetDamage(), bPos);
-
-                        // Opsional: Mainkan suara kaca retak / benturan peluru di sini
-                        // AudioManager::Instance().PlaySFX("Hit.wav");
-                    }
-                }
-            }
-        }
-        else if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_Boss->GetCurrentPhase())) {
-            if (!wkPhase->IsPlayerCaged() && !wkPhase->IsDead()) {
-                DirectX::XMFLOAT3 bossPos = m_Boss->GetPosition();
-
-                float halfW = 2.5f;
-                float halfD = 2.5f;
-
-                for (auto& bullet : m_player->GetProjectiles()) {
-                    if (!bullet->IsActive()) continue;
-
-                    DirectX::XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
-
-                    if (bPos.x > (bossPos.x - halfW) && bPos.x < (bossPos.x + halfW) &&
-                        bPos.z >(bossPos.z - halfD) && bPos.z < (bossPos.z + halfD))
-                    {
-                        bullet->SetActive(false);
-                        wkPhase->TakeDamage(bullet->GetDamage(), bPos);
-                    }
+                const DirectX::XMFLOAT3 bPos{ bullet->GetMovement()->GetPosition() };
+                if (bPos.x > (bossPos.x - k_halfWidth) && bPos.x < (bossPos.x + k_halfWidth) &&
+                    bPos.z >(bossPos.z - k_halfDepth) && bPos.z < (bossPos.z + k_halfDepth))
+                {
+                    bullet->SetActive(false);
+                    phase->TakeDamage(bullet->GetDamage(), bPos);
                 }
             }
         }

@@ -38,6 +38,8 @@ public:
     virtual void SetHP(int hp) = 0;
     // Applies damage with hit feedback at `hitPos` (world space). Does nothing once dead.
     virtual void TakeDamage(int damage, DirectX::XMFLOAT3 hitPos) = 0;
+    // False while player bullets must pass through without dealing damage.
+    [[nodiscard]] virtual bool IsVulnerable() const { return !IsDead(); }
 
     // ----- AI -----
     // `target` is borrowed: the scene owns the player and outlives the phase.
