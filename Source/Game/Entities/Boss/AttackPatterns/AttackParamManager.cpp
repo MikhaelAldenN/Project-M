@@ -50,6 +50,7 @@ bool AttackParamManager::Load(const std::string& filepath) {
     m_loaded = fresh;
 
     std::cout << "[AttackParamManager] Parameters successfully loaded from " << filepath << "\n";
+    return true;
 }
 
 // ========================================================
