@@ -26,6 +26,15 @@
 #include "Engine/Common/Constants.h"
 using namespace DirectX;
 
+namespace
+{
+    // Null-safe: no boss phase counts as "not Windowkill".
+    [[nodiscard]] bool IsWindowkill(const INaviPhase* phase)
+    {
+        return phase && phase->GetKind() == BossPhaseKind::windowkill;
+    }
+}
+
 // =========================================================
 // CONSTRUCTOR / DESTRUCTOR
 // =========================================================
@@ -222,10 +231,7 @@ void SceneBoss::InitializeSubWindows()
     // [FIX MUTLAK] Jangan pernah spawn window "player" jika 
     // bos sedang berada di Fase Windowkill!
     // =========================================================
-    bool isWindowkillPhase = false;
-    if (m_navi && dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
-        isWindowkillPhase = true;
-    }
+    const bool isWindowkillPhase{ m_navi && IsWindowkill(m_navi->GetCurrentPhase()) };
 
     if (!isWindowkillPhase)
     {
@@ -369,10 +375,10 @@ void SceneBoss::Update(float elapsedTime)
     Camera* activeCam = CameraController::Instance().GetActiveCamera().get();
 
     if (m_navi) {
-        auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase());
+        const INaviPhase* phase{ m_navi->GetCurrentPhase() };
 
         // Trigger the start of the death sequence
-        if (wkPhase && wkPhase->IsDead() && !m_isNaviDefeated)
+        if (IsWindowkill(phase) && phase->IsDead() && !m_isNaviDefeated)
         {
             m_isNaviDefeated = true;
             m_naviDefeatTimer = 0.0f;
@@ -393,12 +399,12 @@ void SceneBoss::Update(float elapsedTime)
 
     // Windowkill Phase Logic (Check for Scene Change)
     if (m_navi) {
-        auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase());
+        const INaviPhase* phase{ m_navi->GetCurrentPhase() };
         Beyond::Window* mw = WindowManager::Instance().GetWindowByIndex(0);
 
-        if (wkPhase) {
+        if (IsWindowkill(phase)) {
             // Visibility logic
-            if (!wkPhase->IsDead()) {
+            if (!phase->IsDead()) {
                 if (mw && mw->GetSDLWindow()) SDL_HideWindow(mw->GetSDLWindow());
             }
             else {
@@ -506,15 +512,14 @@ void SceneBoss::Update(float elapsedTime)
 
         m_navi->Update(scaledDt);
 
-        if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
-            if (!m_isPendingSceneChange && wkPhase->IsReadyToChangeScene()) {
-                m_isPendingSceneChange = true;
-                //Framework::Instance()->ChangeScene(std::make_unique<SceneTitle>());
-                return;
-            }
+        // Why fetched here: Boss::Update can swap the phase, so an earlier pointer may be stale.
+        const INaviPhase* updatedPhase{ m_navi->GetCurrentPhase() };
+        if (updatedPhase && !m_isPendingSceneChange && updatedPhase->IsReadyToChangeScene()) {
+            m_isPendingSceneChange = true;
+            return;
         }
 
-        bool isWindowkillPhase = (dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase()) != nullptr);
+        const bool isWindowkillPhase{ IsWindowkill(updatedPhase) };
 
         if (isWindowkillPhase && !m_playerWindowTransparent) {
             // Jika bos baru saja masuk Phase 2, nyalakan transparansi!
@@ -661,10 +666,10 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
     // =========================================================
     // POST-PROCESS VIGNETTE (Only applied to Main Window)
     // =========================================================
-    auto* wkPhase = m_navi ? dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase()) : nullptr;
+    const INaviPhase* activePhase{ m_navi ? m_navi->GetCurrentPhase() : nullptr };
 
     // 2. Determine if Windowkill is active AND the boss is NOT dead
-    bool isWindowkillAndAlive = (wkPhase != nullptr && !wkPhase->IsDead());
+    const bool isWindowkillAndAlive{ IsWindowkill(activePhase) && !activePhase->IsDead() };
 
     // 3. Use the updated boolean to gate post-processing
     bool usePostProcess = (!isTransparentWindow &&
@@ -847,8 +852,8 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
         // Logika bawaan:
         bool shouldRenderHere = m_playerWindowTransparent ? isWingCamera : !isWingCamera;
 
-        // [FIX MUTLAK] PAKSA RENDER DI SEMUA KAMERA SAAT WINDOWKILL
-        if (m_navi && dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
+        // Why: in Windowkill every tracked window can show the player, not only the wing camera.
+        if (m_navi && IsWindowkill(m_navi->GetCurrentPhase())) {
             shouldRenderHere = true;
         }
 
