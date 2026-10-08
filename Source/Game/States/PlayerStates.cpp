@@ -307,6 +307,10 @@ void PlayerDash::Update(Player* player, float dt)
 {
     timer -= dt;
 
+    // Why buffered: the dash input is an edge trigger, so a press during the dash would
+    // otherwise be lost and two back-to-back dashes would need frame-perfect timing.
+    if (player->IsInputEnabled() && IsDashInputTriggered()) m_isDashBuffered = true;
+
     const float speed{ player->GetDashSpeed() * m_speedScale };
     player->GetMovement()->SetVelocity({ dashDir.x * speed, 0.0f, dashDir.y * speed });
 
@@ -322,7 +326,11 @@ void PlayerDash::Update(Player* player, float dt)
 
     if (timer <= 0.0f)
     {
-        if (player->IsMoving())
+        // A buffered press chains into the next dash; its Enter asks Player::BeginDash
+        // whether that dash is full or penalized.
+        if (m_isDashBuffered)
+            player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
+        else if (player->IsMoving())
             player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerMoving>());
         else
             player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerIdle>());
