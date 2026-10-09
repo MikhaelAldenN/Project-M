@@ -12,7 +12,9 @@ AttackDirect::AttackDirect(const DirectParams& params, Player* target)
     : m_params(params), m_target(target) {}
 
 void AttackDirect::Start(Boss* boss, BossBulletPool* pool) {
-    assert(pool && "AttackRadial needs the phase's bullet pool");
+    // Why: without the pool the attack spawns nothing and never reports a cause.
+    assert(pool && "AttackDirect needs the phase's shared bullet pool");
+    m_pool = pool;
     m_boss = boss;
     m_active = true;
     m_spawnedCount = 0;

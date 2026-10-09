@@ -198,25 +198,22 @@ void BossPhase01::Update(float dt, Boss* boss) {
         m_ai->Update(dt, boss);
     }
 
+    // Last attack in the list wins, as before.
+    const BossMoveTarget* moveTarget{ nullptr };
     for (auto& attack : m_activeAttacks) {
         attack->Update(dt, boss);
+        if (const BossMoveTarget * target{ attack->GetBossMoveTarget() }) moveTarget = target;
+    }
 
-        if (auto* phalanx = dynamic_cast<AttackPhalanx*>(attack.get())) {
-            if (phalanx->ShouldResetLerp()) {
-                m_currentMoveLerpSpeed = 0.0f;
-                phalanx->ClearResetFlag();
-            }
-            m_targetPosition = phalanx->GetTargetPosition();
-            m_moveLerpSpeed = phalanx->GetMoveLerpSpeed();
-        }
-        else if (auto* ultimate = dynamic_cast<AttackUltimate*>(attack.get())) {
-            if (ultimate->ShouldResetLerp()) {
-                m_currentMoveLerpSpeed = 0.0f;
-                ultimate->ClearResetFlag();
-            }
-            m_targetPosition = ultimate->GetTargetPosition();
-            m_moveLerpSpeed = ultimate->GetMoveLerpSpeed();
-        }
+    // Read before the erase below: the pointer dies with its attack.
+    if (moveTarget) {
+        const bool isNewTarget{ !m_isAttackMovingBoss
+            || moveTarget->position.x != m_targetPosition.x
+            || moveTarget->position.z != m_targetPosition.z };
+        // Why: easing restarts from zero so the boss does not jerk toward a new target.
+        if (isNewTarget) m_currentMoveLerpSpeed = 0.0f;
+        m_targetPosition = moveTarget->position;
+        m_moveLerpSpeed = moveTarget->lerpSpeed;
     }
 
     for (auto it = m_activeAttacks.begin(); it != m_activeAttacks.end(); ) {
@@ -282,7 +279,7 @@ void BossPhase01::AddPooledAttack(std::unique_ptr<IBossAttackPattern> attack) {
     attack->Start(m_bossRef, &m_bulletPool);
 
     if (auto* phalanx = dynamic_cast<AttackPhalanx*>(attack.get())) {
-        float bossDestX = phalanx->GetTargetPosition().x;
+        float bossDestX = phalanx->GetBossMoveTarget()->position.x;
         float sweepDir = (bossDestX < 0.0f) ? 1.0f : -1.0f;
         bool randomSide = (rand() % 2 == 0);
 
@@ -341,16 +338,20 @@ DamageResult BossPhase01::TakeDamage(const DamageInfo& damage) {
 }
 
 void BossPhase01::UpdateIdleHover(float dt, Boss* boss) {
-    bool isFloating = m_activeAttacks.empty() || (
-        !dynamic_cast<AttackPhalanx*>(m_activeAttacks.front().get()) &&
-        !dynamic_cast<AttackUltimate*>(m_activeAttacks.front().get()));
-
-    if (isFloating) {
-        m_idleHoverTimer += dt;
-        m_targetPosition.x = sinf(m_idleHoverTimer * 0.8f) * 6.0f;
-        m_targetPosition.z = cosf(m_idleHoverTimer * 1.1f) * 3.0f;
-        m_moveLerpSpeed += (1.5f - m_moveLerpSpeed) * 2.0f * dt;
+    // Runs after finished attacks are erased, so an attack that ended this frame no longer holds the boss.
+    m_isAttackMovingBoss = false;
+    for (const auto& attack : m_activeAttacks) {
+        if (attack->GetBossMoveTarget()) {
+            m_isAttackMovingBoss = true;
+            break;
+        }
     }
+    if (m_isAttackMovingBoss) return;
+
+    m_idleHoverTimer += dt;
+    m_targetPosition.x = sinf(m_idleHoverTimer * 0.8f) * 6.0f;
+    m_targetPosition.z = cosf(m_idleHoverTimer * 1.1f) * 3.0f;
+    m_moveLerpSpeed += (1.5f - m_moveLerpSpeed) * 2.0f * dt;
 }
 
 void BossPhase01::UpdateBossMovement(float dt, Boss* boss) {

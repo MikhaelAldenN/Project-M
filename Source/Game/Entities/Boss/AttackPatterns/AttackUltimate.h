@@ -71,11 +71,7 @@ public:
     void ShatterBijuudama(DirectX::XMFLOAT3 parryPos, Boss* boss);
 
     // Phase movement target — read by BossPhase01 to update boss position
-    bool              IsMovingBoss()     const { return m_state != State::Done && m_state != State::Recovering; }
-    DirectX::XMFLOAT3 GetTargetPosition()const { return m_targetPosition; }
-    float             GetMoveLerpSpeed() const { return m_moveLerpSpeed; }
-    bool              ShouldResetLerp()  const { return m_resetLerpFlag; }
-    void              ClearResetFlag() { m_resetLerpFlag = false; }
+    [[nodiscard]] const BossMoveTarget* GetBossMoveTarget() const override { return &m_moveTarget; }
 
     bool IsCharging()        const { return m_state == State::Charging; }
     bool IsInParryWindow()   const;
@@ -100,7 +96,5 @@ private:
 
     int m_chargeEffectHandle = -1;
 
-    DirectX::XMFLOAT3 m_targetPosition = {};
-    float             m_moveLerpSpeed = 3.0f;
-    bool              m_resetLerpFlag = false;
+    BossMoveTarget m_moveTarget{}; // set in Start, changed once when the attack ends
 };

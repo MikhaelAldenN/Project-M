@@ -50,12 +50,7 @@ public:
     bool IsFinished() const override;
     std::vector<Bullet*> GetActiveProjectiles() const override { return {}; }
 
-    // The phase reads these to update boss movement target externally
-    bool                      IsMovingBoss()       const { return m_state >= 1 && m_state <= 5; }
-    DirectX::XMFLOAT3         GetTargetPosition()  const { return m_targetPosition; }
-    float                     GetMoveLerpSpeed()   const { return m_moveLerpSpeed; }
-    bool                      ShouldResetLerp()    const { return m_resetLerpFlag; }
-    void                      ClearResetFlag() { m_resetLerpFlag = false; }
+    [[nodiscard]] const BossMoveTarget* GetBossMoveTarget() const override { return &m_moveTarget; }
 
 private:
     void TriggerRainCallback(); // Calls back into the phase to trigger rain
@@ -71,9 +66,7 @@ private:
     int   m_fired = 0;
     bool  m_flareTriggered = false;
 
-    DirectX::XMFLOAT3 m_targetPosition = { 0.0f, 0.0f, 0.0f };
-    float             m_moveLerpSpeed = 3.0f;
-    bool              m_resetLerpFlag = false;
+    BossMoveTarget m_moveTarget{}; // set in Start, changed once when returning to center
 
     std::vector<Bullet*> m_bullets; // Raw pointers into the shared pool
 };

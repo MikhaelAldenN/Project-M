@@ -27,10 +27,9 @@ void AttackPhalanx::Start(Boss* boss, BossBulletPool* pool) {
 
     // Pick a random side to slide to
     std::mt19937 gen(std::random_device{}());
-    m_targetPosition.x = (std::uniform_int_distribution<>(0, 1)(gen) == 0) ? -15.0f : 15.0f;
-    m_targetPosition.z = 0.0f;
-    m_moveLerpSpeed = m_params.attackMoveSpeed;
-    m_resetLerpFlag = true;
+    m_moveTarget.position.x = (std::uniform_int_distribution<>(0, 1)(gen) == 0) ? -15.0f : 15.0f;
+    m_moveTarget.position.z = 0.0f;
+    m_moveTarget.lerpSpeed = m_params.attackMoveSpeed;
 }
 
 void AttackPhalanx::Update(float dt, Boss* boss) {
@@ -69,8 +68,8 @@ void AttackPhalanx::Update(float dt, Boss* boss) {
 
     // --- State 1: Moving + Charging ---
     if (m_state == 1) {
-        float dx = m_targetPosition.x - bPos.x;
-        float dz = m_targetPosition.z - bPos.z;
+        float dx = m_moveTarget.position.x - bPos.x;
+        float dz = m_moveTarget.position.z - bPos.z;
 
         if ((dx * dx + dz * dz) > 1.0f) {
             m_timer = 0.0f; // Not at position yet, keep waiting
@@ -160,16 +159,15 @@ void AttackPhalanx::Update(float dt, Boss* boss) {
     else if (m_state == 4) {
         if (m_timer >= m_params.postFireDelay) {
             m_state = 5;
-            m_targetPosition = { 0.0f, 0.0f, 0.0f };
-            m_moveLerpSpeed = m_params.returnMoveSpeed;
-            m_resetLerpFlag = true;
+            m_moveTarget.position = { 0.0f, 0.0f, 0.0f };
+            m_moveTarget.lerpSpeed = m_params.returnMoveSpeed;
         }
     }
     // --- State 5: Returning to center ---
     else if (m_state == 5) {
         XMFLOAT3 pos = boss->GetPosition();
-        float dx = m_targetPosition.x - pos.x;
-        float dz = m_targetPosition.z - pos.z;
+        float dx = m_moveTarget.position.x - pos.x;
+        float dz = m_moveTarget.position.z - pos.z;
         if ((dx * dx + dz * dz) < 1.0f) {
             m_state = 0;
             m_bullets.clear();

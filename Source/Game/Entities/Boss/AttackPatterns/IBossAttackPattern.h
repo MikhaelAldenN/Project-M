@@ -1,4 +1,5 @@
 #pragma once
+#include <DirectXMath.h>
 #include <memory>
 #include <vector>
 
@@ -9,6 +10,11 @@ struct ID3D11DeviceContext;
 
 // Bullets shared by all attacks of one phase. Owned by the phase.
 using BossBulletPool = std::vector<std::unique_ptr<Bullet>>;
+
+struct BossMoveTarget {
+    DirectX::XMFLOAT3 position{};
+    float             lerpSpeed{ 0.0f };
+};
 
 // Base interface for all modular boss attacks to enforce SRP and DRY principles.
 class IBossAttackPattern {
@@ -34,4 +40,8 @@ public:
 
     // Returns active bullets for the global collision manager.
     virtual std::vector<Bullet*> GetActiveProjectiles() const = 0;
+
+    // Non-null while the attack steers the boss; the phase then stops its idle hover.
+// The pointer stays valid until the attack is destroyed.
+    [[nodiscard]] virtual const BossMoveTarget* GetBossMoveTarget() const { return nullptr; }
 };

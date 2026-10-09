@@ -24,9 +24,8 @@ void AttackUltimate::Start(Boss* boss, BossBulletPool* pool) {
     m_chargeEffectHandle = -1;
 
     // Boss slides to top center to charge
-    m_targetPosition = { 0.0f, 0.0f, 10.0f };
-    m_moveLerpSpeed = m_params.attackMoveSpeed;
-    m_resetLerpFlag = true;
+    m_moveTarget.position = { 0.0f, 0.0f, 10.0f };
+    m_moveTarget.lerpSpeed = m_params.attackMoveSpeed;
 
     // Claim a bullet from the pool for the ball
     for (auto& bullet : *m_pool) {
@@ -58,8 +57,8 @@ void AttackUltimate::Update(float dt, Boss* boss) {
 
     // --- Moving: wait for boss to reach charge position ---
     if (m_state == State::Moving) {
-        float dx = m_targetPosition.x - bPos.x;
-        float dz = m_targetPosition.z - bPos.z;
+        float dx = m_moveTarget.position.x - bPos.x;
+        float dz = m_moveTarget.position.z - bPos.z;
         if ((dx * dx + dz * dz) <= 1.0f) {
             m_state = State::Charging;
             m_chargeTimer = 0.0f;
@@ -126,9 +125,8 @@ void AttackUltimate::Update(float dt, Boss* boss) {
         m_recoveryTimer += dt;
         if (m_recoveryTimer >= m_params.postFireDelay) {
             m_state = State::Done;
-            m_targetPosition = { 0.0f, 0.0f, 0.0f };
-            m_moveLerpSpeed = m_params.returnMoveSpeed;
-            m_resetLerpFlag = true;
+            m_moveTarget.position = { 0.0f, 0.0f, 0.0f };
+            m_moveTarget.lerpSpeed = m_params.returnMoveSpeed;
         }
     }
 }

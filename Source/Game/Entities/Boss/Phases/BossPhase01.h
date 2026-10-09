@@ -91,6 +91,7 @@ private:
     float             m_currentMoveLerpSpeed = 0.0f;
     float             m_moveAcceleration = 8.0f;
     float             m_idleHoverTimer = 0.0f;
+    bool              m_isAttackMovingBoss = false; // result of the previous frame's hover check
 
     // ---- Boss HP & hit flash ----
     int   m_bossMaxHP = 2000;
