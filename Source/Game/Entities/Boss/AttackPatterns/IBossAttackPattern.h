@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <vector>
 
 class Boss;
@@ -6,13 +7,18 @@ class Bullet;
 class Camera;
 struct ID3D11DeviceContext;
 
+// Bullets shared by all attacks of one phase. Owned by the phase.
+using BossBulletPool = std::vector<std::unique_ptr<Bullet>>;
+
 // Base interface for all modular boss attacks to enforce SRP and DRY principles.
 class IBossAttackPattern {
 public:
     virtual ~IBossAttackPattern() = default;
 
-    // Initializes resources, tracking windows, and VFX for the attack.
-    virtual void Start(Boss* boss) = 0;
+    // Starts the attack: resources, tracking windows, VFX, first bullets.
+    // `boss` and `pool` are borrowed and outlive the attack. `pool` is the running phase's
+    // shared bullet pool; it is null in Windowkill, whose attacks own their bullets.
+    virtual void Start(Boss* boss, BossBulletPool* pool) = 0;
 
     // Processes bullet physics, window tracking, and spawning logic.
     virtual void Update(float dt, Boss* boss) = 0;

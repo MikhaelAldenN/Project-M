@@ -10,9 +10,9 @@ using namespace DirectX;
 AttackMeteor::AttackMeteor(const MeteorParams& params)
     : m_params(params) {}
 
-void AttackMeteor::StartPooled(Boss* boss, std::vector<std::unique_ptr<Bullet>>* pool) {
+void AttackMeteor::Start(Boss* boss, BossBulletPool* pool) {
+    assert(pool && "AttackMeteor needs the phase's bullet pool");
     m_pool = pool;
-    m_boss = boss;
     m_active = true;
     m_spawnedCount = 0;
     m_currentTrigger = 0;

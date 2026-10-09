@@ -11,8 +11,8 @@ using namespace DirectX;
 AttackDirect::AttackDirect(const DirectParams& params, Player* target)
     : m_params(params), m_target(target) {}
 
-void AttackDirect::StartPooled(Boss* boss, std::vector<std::unique_ptr<Bullet>>* pool) {
-    m_pool = pool;
+void AttackDirect::Start(Boss* boss, BossBulletPool* pool) {
+    assert(pool && "AttackRadial needs the phase's bullet pool");
     m_boss = boss;
     m_active = true;
     m_spawnedCount = 0;

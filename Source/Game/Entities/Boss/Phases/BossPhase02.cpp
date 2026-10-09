@@ -347,7 +347,8 @@ void BossPhase02::GenerateButterflyWings() {
 
 void BossPhase02::AddAttack(std::unique_ptr<IBossAttackPattern> attack) {
     if (attack) {
-        attack->Start(m_bossRef);
+        // Why null: this phase has no shared pool; its attacks own their bullets.
+        attack->Start(m_bossRef, nullptr);
         m_activeAttacks.push_back(std::move(attack));
     }
 }

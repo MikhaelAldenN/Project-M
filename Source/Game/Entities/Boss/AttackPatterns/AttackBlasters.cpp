@@ -12,7 +12,8 @@ using namespace DirectX;
 AttackBlasters::AttackBlasters(const BlasterParams& params, bool isTargeted, float targetX)
     : m_params(params), m_isTargeted(isTargeted), m_targetX(targetX) {}
 
-void AttackBlasters::Start(Boss* boss) {
+void AttackBlasters::Start(Boss* boss, BossBulletPool* /*pool*/) 
+{
     auto device = Graphics::Instance().GetDevice();
     m_solidRenderer = std::make_unique<Primitive>(device);
     m_placeholderModel = std::make_shared<Model>(device, "Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");

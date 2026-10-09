@@ -190,7 +190,6 @@
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackRain.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackUltimate.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\IBossAttackPattern.h" />
-    <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\IPooledAttackPattern.h" />
     <ClInclude Include="Source\Game\Entities\Boss\Phases\BossPhase01.h" />
     <ClInclude Include="Source\Game\Entities\Boss\Phases\BossPhase02.h" />
     <ClInclude Include="Source\Game\Entities\Boss\Phases\INaviPhase.h" />

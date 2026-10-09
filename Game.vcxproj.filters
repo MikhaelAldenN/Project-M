@@ -680,9 +680,6 @@
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\IBossAttackPattern.h">
       <Filter>Source\Game\Entities\Boss\AttackPatterns</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\IPooledAttackPattern.h">
-      <Filter>Source\Game\Entities\Boss\AttackPatterns</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackRadial.h">
       <Filter>Source\Game\Entities\Boss\AttackPatterns\PhaseOne</Filter>
     </ClInclude>

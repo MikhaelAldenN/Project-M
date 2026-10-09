@@ -11,7 +11,7 @@ using namespace DirectX;
 AttackSpears::AttackSpears(const UndyneSpearParams& params, Player* target)
     : m_params(params), m_playerTarget(target) {}
 
-void AttackSpears::Start(Boss* boss) {
+void AttackSpears::Start(Boss* boss, BossBulletPool* /*pool*/) {
     m_isSpawning = true;
     m_spawnedCount = 0;
     m_spawnTimer = 0.0f;

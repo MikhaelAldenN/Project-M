@@ -23,7 +23,7 @@ public:
     explicit AttackBoomerangs(const BoomerangParams& params);
     ~AttackBoomerangs() override = default;
 
-    void Start(Boss* boss) override;
+    void Start(Boss* boss, BossBulletPool* pool) override;
     void Update(float dt, Boss* boss) override;
     void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) override;
     void Stop(Boss* boss) override;

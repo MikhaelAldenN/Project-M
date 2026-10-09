@@ -9,7 +9,7 @@ using namespace DirectX;
 AttackBoomerangs::AttackBoomerangs(const BoomerangParams& params)
     : m_params(params) {}
 
-void AttackBoomerangs::Start(Boss* boss) {
+void AttackBoomerangs::Start(Boss* boss, BossBulletPool* /*pool*/) {
     m_isSpawning = true;
     m_spawnedCount = 0;
     m_spawnTimer = m_params.spawnDelay;

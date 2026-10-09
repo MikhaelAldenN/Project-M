@@ -1,5 +1,6 @@
 ﻿#pragma once
-#include "IPooledAttackPattern.h"
+#include "IBossAttackPattern.h"
+#include "Bullet.h"
 #include <DirectXMath.h>
 
 // ============================================================
@@ -53,12 +54,12 @@ struct UltimateParams {
 
 class Player;
 
-class AttackUltimate : public IPooledAttackPattern {
+class AttackUltimate : public IBossAttackPattern {
 public:
     AttackUltimate(const UltimateParams& params, Player* target);
     ~AttackUltimate() override = default;
 
-    void StartPooled(Boss* boss, std::vector<std::unique_ptr<Bullet>>* pool) override;
+    void Start(Boss* boss, BossBulletPool* pool) override;
     void Update(float dt, Boss* boss) override;
     void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) override;
     void Stop(Boss* boss) override;

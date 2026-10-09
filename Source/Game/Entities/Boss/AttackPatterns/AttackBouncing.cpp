@@ -10,7 +10,7 @@ using namespace DirectX;
 AttackBouncing::AttackBouncing(const BouncingBulletParams& params)
     : m_params(params) {}
 
-void AttackBouncing::Start(Boss* boss) {
+void AttackBouncing::Start(Boss* boss, BossBulletPool* /*pool*/) {
     m_isSpawning = true;
     m_spawnedCount = 0;
     m_spawnTimer = m_params.spawnDelay; // Force immediate first spawn

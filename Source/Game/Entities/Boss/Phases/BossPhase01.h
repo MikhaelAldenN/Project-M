@@ -3,7 +3,7 @@
 #include "Bullet.h"
 #include "Primitive.h"
 #include "UIDialogueBox.h"
-#include "IPooledAttackPattern.h"
+#include "IBossAttackPattern.h"
 
 // AI
 #include "BossAI.h"
@@ -28,7 +28,7 @@ public:
     [[nodiscard]] BossPhaseKind GetKind() const override { return BossPhaseKind::bulletHell; }
 
     // ----- Attack Management -----
-    void AddPooledAttack(std::unique_ptr<IPooledAttackPattern> attack);
+    void AddPooledAttack(std::unique_ptr<IBossAttackPattern> attack);
     bool HasActiveAttacks() const override { return !m_activeAttacks.empty(); }
 
     void TriggerRain(const RainParams& params, RainMode mode, bool isPositiveSide, float sweepDir = 1.0f);
@@ -60,7 +60,7 @@ public:
     }
 
     BossAI_Phase01* GetAI() const { return m_ai.get(); }
-    const std::vector<std::unique_ptr<IPooledAttackPattern>>& GetActiveAttacks() const { return m_activeAttacks; }
+    const std::vector<std::unique_ptr<IBossAttackPattern>>& GetActiveAttacks() const { return m_activeAttacks; }
     void AppendActiveProjectiles(std::vector<Bullet*>& out) const override;
 
 private:
@@ -77,7 +77,7 @@ private:
     std::vector<std::unique_ptr<Bullet>> m_bulletPool;
 
     // ---- Active attacks ----
-    std::vector<std::unique_ptr<IPooledAttackPattern>> m_activeAttacks;
+    std::vector<std::unique_ptr<IBossAttackPattern>> m_activeAttacks;
     std::unique_ptr<AttackRain> m_rainAttack;
 
     // ---- AI Director ----

@@ -9,7 +9,8 @@ using namespace DirectX;
 AttackRadial::AttackRadial(const RadialParams& params)
     : m_params(params) {}
 
-void AttackRadial::StartPooled(Boss* boss, std::vector<std::unique_ptr<Bullet>>* pool) {
+void AttackRadial::Start(Boss* boss, BossBulletPool* pool) {
+    assert(pool && "AttackRadial needs the phase's bullet pool");
     m_pool = pool;
     m_boss = boss;
     m_active = true;

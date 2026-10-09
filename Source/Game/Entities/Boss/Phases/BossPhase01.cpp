@@ -276,10 +276,10 @@ void BossPhase01::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
         m_dialogueBox->Render3D(context, currentCamera);
 }
 
-void BossPhase01::AddPooledAttack(std::unique_ptr<IPooledAttackPattern> attack) {
+void BossPhase01::AddPooledAttack(std::unique_ptr<IBossAttackPattern> attack) {
     if (!attack) return;
 
-    attack->StartPooled(m_bossRef, &m_bulletPool);
+    attack->Start(m_bossRef, &m_bulletPool);
 
     if (auto* phalanx = dynamic_cast<AttackPhalanx*>(attack.get())) {
         float bossDestX = phalanx->GetTargetPosition().x;
@@ -303,7 +303,7 @@ void BossPhase01::AddPooledAttack(std::unique_ptr<IPooledAttackPattern> attack) 
 void BossPhase01::TriggerRain(const RainParams& params, RainMode mode, bool isPositiveSide, float sweepDir) {
     if (HasRainActive() || !m_ai) return;
     m_rainAttack = std::make_unique<AttackRain>(params, mode, isPositiveSide, sweepDir, m_aiTarget);
-    m_rainAttack->StartPooled(m_bossRef, &m_bulletPool);
+    m_rainAttack->Start(m_bossRef, &m_bulletPool);
 }
 
 //void BossPhase01::TriggerRain(RainMode mode, bool isPositiveSide, float sweepDir, float customDuration) {

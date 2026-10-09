@@ -11,7 +11,8 @@ using namespace DirectX;
 AttackFan::AttackFan(const FanParams& params, float lockedBaseAngle, Player* target)
     : m_params(params), m_lockedBaseAngle(lockedBaseAngle), m_target(target) {}
 
-void AttackFan::StartPooled(Boss* boss, std::vector<std::unique_ptr<Bullet>>* pool) {
+void AttackFan::Start(Boss* boss, BossBulletPool* pool) {
+    assert(pool && "AttackFan needs the phase's bullet pool");
     m_pool = pool;
     m_boss = boss;
     m_active = true;

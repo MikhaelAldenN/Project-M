@@ -14,7 +14,8 @@ using namespace DirectX;
 AttackPhalanx::AttackPhalanx(const PhalanxParams& params, Player* target)
     : m_params(params), m_target(target) {}
 
-void AttackPhalanx::StartPooled(Boss* boss, std::vector<std::unique_ptr<Bullet>>* pool) {
+void AttackPhalanx::Start(Boss* boss, BossBulletPool* pool) {
+    assert(pool && "AttackPhalanx needs the phase's bullet pool");
     m_pool = pool;
     m_boss = boss;
     m_state = 1;

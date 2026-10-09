@@ -9,7 +9,8 @@ using namespace DirectX;
 AttackWave::AttackWave(const WaveParams& params)
     : m_params(params) {}
 
-void AttackWave::StartPooled(Boss* boss, std::vector<std::unique_ptr<Bullet>>* pool) {
+void AttackWave::Start(Boss* boss, BossBulletPool* pool) {
+    assert(pool && "AttackWave needs the phase's bullet pool");
     m_pool = pool;
     m_boss = boss;
     m_active = true;

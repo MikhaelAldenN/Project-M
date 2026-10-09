@@ -1,5 +1,6 @@
 #pragma once
-#include "IPooledAttackPattern.h"
+#include "IBossAttackPattern.h"
+#include "Bullet.h"
 #include <DirectXMath.h>
 #include <vector>
 
@@ -31,12 +32,12 @@ struct MeteorParams {
     float triggerDelay = 1.0f;
 }; 
 
-class AttackMeteor : public IPooledAttackPattern {
+class AttackMeteor :public IBossAttackPattern {
 public:
     explicit AttackMeteor(const MeteorParams& params);
     ~AttackMeteor() override = default;
 
-    void StartPooled(Boss* boss, std::vector<std::unique_ptr<Bullet>>* pool) override;
+    void Start(Boss* boss, BossBulletPool* pool) override;
     void Update(float dt, Boss* boss) override;
     void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) override;
     void Stop(Boss* boss) override;
