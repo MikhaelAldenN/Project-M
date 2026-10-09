@@ -89,16 +89,15 @@ public:
 
     bool IsPlayerCaged() const { return m_isPlayerCaged; }
     [[nodiscard]] bool IsVulnerable() const override { return !m_isPlayerCaged && !IsDead(); }
-
-    DirectX::XMFLOAT3 GetCagePos() const { return m_cagePos; }
-    float GetCageSize() const { return m_cageSizeWorld; }
-    void DamageCage(int dmg);
+    // While the player is caged, a bullet that leaves the cage square hits the cage.
+    bool TryAbsorbPlayerBullet(const DirectX::XMFLOAT3& bulletPosition, int damage) override;
 
     BossAI_Phase02* GetAI() const { return m_ai.get(); }
 
 private:
     void GenerateButterflyWings();
     void TriggerCageFirstHitDialogue(Boss* boss);
+    void DamageCage(int dmg);
 
 private:
     Beyond::Window* m_fxWindow = nullptr;

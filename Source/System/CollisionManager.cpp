@@ -626,32 +626,12 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
 
         const DirectX::XMFLOAT3 currentPos{ bullet->GetMovement()->GetPosition() };
 
-        // =========================================================
-        // [BARU] DETEKSI TABRAKAN PELURU VS KANDANG (CAGE)
-        // =========================================================
-        bool hitCage = false;
-        if (m_Boss) {
-            // Cek apakah sedang berada di fase Windowkill
-            if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_Boss->GetCurrentPhase())) {
-                if (wkPhase->IsPlayerCaged()) {
-                    DirectX::XMFLOAT3 cPos = wkPhase->GetCagePos();
-                    float halfSize = wkPhase->GetCageSize() * 0.5f;
-
-                    // Jika posisi peluru MELEWATI batas kotak kandang
-                    if (currentPos.x > cPos.x + halfSize || currentPos.x < cPos.x - halfSize ||
-                        currentPos.z > cPos.z + halfSize || currentPos.z < cPos.z - halfSize)
-                    {
-                        // Kurangi HP kandang dan hancurkan peluru
-                        wkPhase->DamageCage(bullet->GetDamage());
-                        bullet->SetActive(false);
-                        hitCage = true;
-                    }
-                }
+        if (INaviPhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr }) {
+            if (phase->TryAbsorbPlayerBullet(currentPos, bullet->GetDamage())) {
+                bullet->SetActive(false);
+                continue;
             }
         }
-
-        // Jika peluru hancur menabrak kandang, lewati pengecekan musuh untuk peluru ini
-        if (hitCage) continue;
 
         // =========================================================
         // DETEKSI PELURU VS MUSUH (Logika Aslimu)

@@ -713,6 +713,18 @@ void BossPhase02::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
     }
 }
 
+bool BossPhase02::TryAbsorbPlayerBullet(const DirectX::XMFLOAT3& bulletPosition, int damage) {
+    if (!m_isPlayerCaged) return false;
+
+    const float halfSize{ m_cageSizeWorld * 0.5f };
+    const bool isInsideCage{
+        bulletPosition.x <= m_cagePos.x + halfSize && bulletPosition.x >= m_cagePos.x - halfSize &&
+        bulletPosition.z <= m_cagePos.z + halfSize && bulletPosition.z >= m_cagePos.z - halfSize };
+    if (isInsideCage) return false;
+
+    DamageCage(damage);
+    return true;
+}
 
 void BossPhase02::DamageCage(int dmg) {
     if (!m_isPlayerCaged) return;
