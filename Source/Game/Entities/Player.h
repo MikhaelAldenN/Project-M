@@ -159,6 +159,10 @@ public:
     // Applies one hit, starts i-frames if they are enabled, and triggers the damage glitch.
     // Returns `ignored` while invincible or already dead. The death state is set by the caller.
     DamageResult TakeDamage(const DamageInfo& damage);
+    // Hides the model, locks input, stops movement and enters PlayerDead.
+    // Does not touch HP: callers decide when the player counts as dead.
+    void EnterDeathState();
+
     void SetMaxHP(float maxHp) { m_maxHp = maxHp; m_hp = maxHp; } // [DIUBAH] Set batas maksimal & isi penuh
     void Heal(float amount);
     void Heal(int amount);

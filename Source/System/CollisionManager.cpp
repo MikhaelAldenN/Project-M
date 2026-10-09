@@ -379,17 +379,8 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
 
                 if (distToPath <= combinedRadius)
                 {
-                    bool wasAlive = (m_player->GetHP() > 0);
                     m_player->TakeDamage(DamageInfo{ ENEMY_BULLET_DAMAGE, currentPos });
-
-                    // ---> THE SIMPLE DEATH STATE <---
-                    if (m_player->GetHP() <= 0)
-                    {
-                        m_player->scale = { 0.0f, 0.0f, 0.0f }; // Make the 3D model vanish
-                        m_player->SetInputEnabled(false);       // Stop WASD and Spacebar input
-                        m_player->GetMovement()->SetVelocity({ 0,0,0 }); // Stop sliding
-                        m_player->GetStateMachine()->ChangeState(m_player, std::make_unique<PlayerDead>());
-                    }
+                    if (m_player->GetHP() <= 0) m_player->EnterDeathState();
 
                     // Destroy the bullet and prevent crashes
                     it = projectiles.erase(it);
@@ -456,10 +447,7 @@ void CollisionManager::CheckPlayerVsEnemies()
                 m_player->TakeDamage(DamageInfo{ 9999, ePos });
 
                 // 2. Trigger standard death sequence
-                m_player->scale = { 0.0f, 0.0f, 0.0f }; // Hide 3D model
-                m_player->SetInputEnabled(false);       // Lock controls
-                m_player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f }); // Stop sliding
-                m_player->GetStateMachine()->ChangeState(m_player, std::make_unique<PlayerDead>());
+                m_player->EnterDeathState();
 
                 // 3. Kill the kamikaze enemy so it doesn't survive the explosion
                 enemy->TakeDamage(DamageInfo{ 9999, ePos });
@@ -849,11 +837,7 @@ void CollisionManager::CheckNaviAllyProjectilesVsPlayer(const float elapsedTime)
             // --- Death Sequence Logic ---
             if (m_player->GetHP() <= 0)
             {
-                // Visual & State Reset
-                m_player->scale = { 0.0f, 0.0f, 0.0f };
-                m_player->SetInputEnabled(false);
-                m_player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f });
-                m_player->GetStateMachine()->ChangeState(m_player, std::make_unique<PlayerDead>());
+                m_player->EnterDeathState();
 
                 // Trigger Fade via Callback
                 if (m_onPlayerDeathCallback)

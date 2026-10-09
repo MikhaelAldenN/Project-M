@@ -971,6 +971,14 @@ DamageResult Player::TakeDamage(const DamageInfo& damage)
     return DamageResult::damaged;
 }
 
+void Player::EnterDeathState()
+{
+    scale = { 0.0f, 0.0f, 0.0f };
+    SetInputEnabled(false);
+    movement->SetVelocity({ 0.0f, 0.0f, 0.0f });
+    stateMachine->ChangeState(this, std::make_unique<PlayerDead>());
+}
+
 void Player::Heal(float amount) {
     if (amount <= 0.0f || m_hp <= 0.0f) return;
     m_hp += amount;
