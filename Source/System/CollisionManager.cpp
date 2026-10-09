@@ -987,14 +987,16 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
         float totalRadius = bullet->GetRadius() + playerHitboxRadius;
 
         if (distSq <= (totalRadius * totalRadius)) {
-            // Player Kena Hit!
-            m_player->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos });
-            bullet->SetActive(false); // Matikan peluru
+            const DamageResult result{ m_player->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos }) };
+            // Why: an invincible player (dash) passes through. The bullet stays alive and
+            // there is no hit feedback, the same as enemy and Navi bullets.
+            if (result == DamageResult::ignored) return;
 
+            bullet->SetActive(false);
             CameraController::Instance().AddTrauma(0.2f);
             AudioManager::Instance().PlaySFX("Data/Sound/SE_Damage.wav", 0.3f);
         }
-    };
+        };
 
     INaviPhase* phase{ m_Boss->GetCurrentPhase() };
     if (!phase) return;
