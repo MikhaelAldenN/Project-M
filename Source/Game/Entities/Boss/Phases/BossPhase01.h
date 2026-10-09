@@ -61,6 +61,9 @@ public:
     void AppendActiveProjectiles(std::vector<Bullet*>& out) const override;
 
 private:
+    // Stops and destroys every running attack, including the Rain.
+    // Must run while m_bulletPool is still alive: Stop() touches pooled bullets.
+    void StopAllAttacks(Boss* boss);
     void UpdateBossMovement(float dt, Boss* boss);
     void UpdateIdleHover(float dt, Boss* boss);
     void UpdateBulletPool(float dt, Boss* boss);

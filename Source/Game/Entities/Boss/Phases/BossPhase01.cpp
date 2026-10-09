@@ -121,9 +121,9 @@ void BossPhase01::Enter(Boss* boss) {
 }
 
 void BossPhase01::Exit(Boss* boss) {
+    // Why this order: attacks hold raw pointers into the pool.
+    StopAllAttacks(boss);
     m_bulletPool.clear();
-    m_activeAttacks.clear();
-    m_rainAttack.reset();
 
     if (m_bossGlitchVfxHandle != -1) {
         EffectManager::Instance().Stop(m_bossGlitchVfxHandle);
@@ -280,6 +280,18 @@ void BossPhase01::AddAttack(std::unique_ptr<IBossAttackPattern> attack) {
     m_activeAttacks.push_back(std::move(attack));
 }
 
+void BossPhase01::StopAllAttacks(Boss* boss) {
+    for (auto& attack : m_activeAttacks) {
+        attack->Stop(boss);
+    }
+    m_activeAttacks.clear();
+
+    if (m_rainAttack) {
+        m_rainAttack->Stop(boss);
+        m_rainAttack.reset();
+    }
+}
+
 void BossPhase01::AddPhalanx(std::unique_ptr<AttackPhalanx> attack) {
     if (!attack) return;
 
@@ -423,8 +435,7 @@ void BossPhase01::UpdateDeathSequence(float dt, Boss* boss) {
         m_isDying = true;
         m_deathTimer = 0.0f;
         m_aiEnabled = false;
-        m_activeAttacks.clear();
-        m_rainAttack.reset();
+        StopAllAttacks(boss);
 
         m_deathVfxHandle = EffectManager::Instance().Play(
             "Data/Effect/VFX_Boss_Death.efk", boss->GetPosition(), 2.0f);
