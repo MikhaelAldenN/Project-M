@@ -1412,28 +1412,28 @@ void SceneBoss::DrawBulletHellAttacks(BossPhase01& phase)
     case BulletHellSet::direct:
     {
         DirectParams& params{ manager.GetDirectParams() };
-        if (ImGui::Button("Fire") && m_player) phase.AddPooledAttack(std::make_unique<AttackDirect>(params, m_player.get()));
+        if (ImGui::Button("Fire") && m_player) phase.AddAttack(std::make_unique<AttackDirect>(params, m_player.get()));
         DrawRevertAndRows(params, loaded.direct, DrawDirectRows);
         break;
     }
     case BulletHellSet::radial:
     {
         RadialParams& params{ manager.GetRadialNormalParams() };
-        if (ImGui::Button("Fire")) phase.AddPooledAttack(std::make_unique<AttackRadial>(params));
+        if (ImGui::Button("Fire")) phase.AddAttack(std::make_unique<AttackRadial>(params));
         DrawRevertAndRows(params, loaded.radialNormal, DrawRadialRows);
         break;
     }
     case BulletHellSet::radialContinuous:
     {
         RadialParams& params{ manager.GetRadialContinuousParams() };
-        if (ImGui::Button("Fire")) phase.AddPooledAttack(std::make_unique<AttackRadial>(params));
+        if (ImGui::Button("Fire")) phase.AddAttack(std::make_unique<AttackRadial>(params));
         DrawRevertAndRows(params, loaded.radialContinuous, DrawRadialRows);
         break;
     }
     case BulletHellSet::fan:
     {
         FanParams& params{ manager.GetFanNormalParams() };
-        if (ImGui::Button("Fire") && m_player) phase.AddPooledAttack(std::make_unique<AttackFan>(params, getAngleToPlayer()));
+        if (ImGui::Button("Fire") && m_player) phase.AddAttack(std::make_unique<AttackFan>(params, getAngleToPlayer()));
         DrawRevertAndRows(params, loaded.fanNormal, DrawFanRows);
         break;
     }
@@ -1442,7 +1442,7 @@ void SceneBoss::DrawBulletHellAttacks(BossPhase01& phase)
         FanParams& params{ manager.GetFanContinuousParams() };
         if (ImGui::Button("Fire") && m_player)
         {
-            phase.AddPooledAttack(std::make_unique<AttackFan>(params, getAngleToPlayer(), m_player.get()));
+            phase.AddAttack(std::make_unique<AttackFan>(params, getAngleToPlayer(), m_player.get()));
         }
         DrawRevertAndRows(params, loaded.fanContinuous, DrawFanRows);
         break;
@@ -1456,7 +1456,7 @@ void SceneBoss::DrawBulletHellAttacks(BossPhase01& phase)
     case BulletHellSet::wave:
     {
         WaveParams& params{ manager.GetWaveParams() };
-        if (ImGui::Button("Fire")) phase.AddPooledAttack(std::make_unique<AttackWave>(params));
+        if (ImGui::Button("Fire")) phase.AddAttack(std::make_unique<AttackWave>(params));
         DrawRevertAndRows(params, loaded.wave, DrawWaveRows);
         break;
     }
@@ -1470,7 +1470,7 @@ void SceneBoss::DrawBulletHellAttacks(BossPhase01& phase)
     case BulletHellSet::meteor:
     {
         MeteorParams& params{ manager.GetMeteorParams() };
-        if (ImGui::Button("Fire")) phase.AddPooledAttack(std::make_unique<AttackMeteor>(params));
+        if (ImGui::Button("Fire")) phase.AddAttack(std::make_unique<AttackMeteor>(params));
         DrawRevertAndRows(params, loaded.meteor, DrawMeteorRows);
         break;
     }

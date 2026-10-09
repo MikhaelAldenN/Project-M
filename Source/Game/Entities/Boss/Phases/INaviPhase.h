@@ -55,8 +55,9 @@ public:
     // can be reused. Pointers are borrowed and valid until the phase's next Update.
     virtual void AppendActiveProjectiles(std::vector<Bullet*>& out) const = 0;
 
-    // FSM System Hooks (Virtual default agar tidak error di phase yang belum pakai FSM)
-    virtual void AddAttack(std::unique_ptr<IBossAttackPattern> attack) {}
+    // Takes ownership of `attack` and starts it. A null `attack` is ignored.
+    virtual void AddAttack(std::unique_ptr<IBossAttackPattern> attack) = 0;
+    // Optional hooks: the defaults fit a phase without attacks or AI target.
     virtual bool HasActiveAttacks() const { return false; }
     virtual Player* GetAITarget() const { return nullptr; }
 };

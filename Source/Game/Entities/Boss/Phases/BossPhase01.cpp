@@ -273,7 +273,7 @@ void BossPhase01::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
         m_dialogueBox->Render3D(context, currentCamera);
 }
 
-void BossPhase01::AddPooledAttack(std::unique_ptr<IBossAttackPattern> attack) {
+void BossPhase01::AddAttack(std::unique_ptr<IBossAttackPattern> attack) {
     if (!attack) return;
 
     attack->Start(m_bossRef, &m_bulletPool);
@@ -284,7 +284,7 @@ void BossPhase01::AddPhalanx(std::unique_ptr<AttackPhalanx> attack) {
     if (!attack) return;
 
     const AttackPhalanx* phalanx{ attack.get() }; // still valid after the move: the phase owns it
-    AddPooledAttack(std::move(attack));           // Start picks the side the boss slides to
+    AddAttack(std::move(attack));           // Start picks the side the boss slides to
 
     // The Rain sweeps away from the side the boss moved to.
     const float bossDestX{ phalanx->GetBossMoveTarget()->position.x };
@@ -299,7 +299,7 @@ void BossPhase01::AddPhalanx(std::unique_ptr<AttackPhalanx> attack) {
 void BossPhase01::AddUltimate(std::unique_ptr<AttackUltimate> attack) {
     if (!attack) return;
 
-    AddPooledAttack(std::move(attack));
+    AddAttack(std::move(attack));
 
     RainParams p = AttackParamManager::Instance().GetRainParams();
     p.activeDuration = 4.0f;

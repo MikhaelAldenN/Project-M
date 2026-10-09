@@ -77,19 +77,19 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
             // Tidak lagi reachable dari GetNextTacticianAttack() atau default state.
             // ========================================================
         case AttackSequence::Direct:
-            m_phase->AddPooledAttack(std::make_unique<AttackDirect>(AttackParamManager::Instance().GetDirectParams(), m_target));
+            m_phase->AddAttack(std::make_unique<AttackDirect>(AttackParamManager::Instance().GetDirectParams(), m_target));
             m_cooldownTimer = 1.0f;
             m_currentAttack = GetNextTacticianAttack();
             break;
 
         case AttackSequence::Fan:
-            m_phase->AddPooledAttack(std::make_unique<AttackFan>(AttackParamManager::Instance().GetFanNormalParams(), lockedAngle, m_target));
+            m_phase->AddAttack(std::make_unique<AttackFan>(AttackParamManager::Instance().GetFanNormalParams(), lockedAngle, m_target));
             m_cooldownTimer = 1.0f;
             m_currentAttack = GetNextTacticianAttack();
             break;
 
         case AttackSequence::Radial:
-            m_phase->AddPooledAttack(std::make_unique<AttackRadial>(AttackParamManager::Instance().GetRadialNormalParams()));
+            m_phase->AddAttack(std::make_unique<AttackRadial>(AttackParamManager::Instance().GetRadialNormalParams()));
             m_cooldownTimer = 1.0f;
             m_currentAttack = GetNextTacticianAttack();
             break;
@@ -111,7 +111,7 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
             break;
 
         case AttackSequence::Wave:
-            m_phase->AddPooledAttack(std::make_unique<AttackWave>(AttackParamManager::Instance().GetWaveParams()));
+            m_phase->AddAttack(std::make_unique<AttackWave>(AttackParamManager::Instance().GetWaveParams()));
             if (isEnraged) {
                 m_phase->TriggerRain(AttackParamManager::Instance().GetRainParams(), RainMode::VerticalSweep, m_target->GetPosition().x > 0);
                 m_currentAttack = AttackSequence::Meteor;
@@ -123,7 +123,7 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
             break;
 
         case AttackSequence::Meteor:
-            m_phase->AddPooledAttack(std::make_unique<AttackMeteor>(AttackParamManager::Instance().GetMeteorParams()));
+            m_phase->AddAttack(std::make_unique<AttackMeteor>(AttackParamManager::Instance().GetMeteorParams()));
             if (isEnraged) {
                 m_phase->TriggerRain(AttackParamManager::Instance().GetRainParams(), RainMode::VerticalSweep, m_target->GetPosition().x > 0);
                 m_currentAttack = AttackSequence::Ultimate;

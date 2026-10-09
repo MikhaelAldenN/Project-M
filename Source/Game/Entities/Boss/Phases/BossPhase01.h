@@ -28,9 +28,10 @@ public:
     [[nodiscard]] BossPhaseKind GetKind() const override { return BossPhaseKind::bulletHell; }
 
     // ----- Attack Management -----
-    void AddPooledAttack(std::unique_ptr<IBossAttackPattern> attack);
+    // Starts `attack` on this phase's shared bullet pool.
+    void AddAttack(std::unique_ptr<IBossAttackPattern> attack) override;
     // Phalanx and Ultimate each start a companion Rain. Adding one through
-    // AddPooledAttack starts the attack without its Rain.
+    // AddAttack starts the attack without its Rain.
     void AddPhalanx(std::unique_ptr<AttackPhalanx> attack);
     void AddUltimate(std::unique_ptr<AttackUltimate> attack);
     bool HasActiveAttacks() const override { return !m_activeAttacks.empty(); }
