@@ -29,6 +29,10 @@ public:
 
     // ----- Attack Management -----
     void AddPooledAttack(std::unique_ptr<IBossAttackPattern> attack);
+    // Phalanx and Ultimate each start a companion Rain. Adding one through
+    // AddPooledAttack starts the attack without its Rain.
+    void AddPhalanx(std::unique_ptr<AttackPhalanx> attack);
+    void AddUltimate(std::unique_ptr<AttackUltimate> attack);
     bool HasActiveAttacks() const override { return !m_activeAttacks.empty(); }
 
     void TriggerRain(const RainParams& params, RainMode mode, bool isPositiveSide, float sweepDir = 1.0f);

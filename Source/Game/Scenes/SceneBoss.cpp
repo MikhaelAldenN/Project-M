@@ -1450,8 +1450,7 @@ void SceneBoss::DrawBulletHellAttacks(BossPhase01& phase)
     case BulletHellSet::phalanx:
     {
         PhalanxParams& params{ manager.GetPhalanxParams() };
-        if (ImGui::Button("Fire") && m_player) phase.AddPooledAttack(std::make_unique<AttackPhalanx>(params, m_player.get()));
-        DrawRevertAndRows(params, loaded.phalanx, DrawPhalanxRows);
+        if (ImGui::Button("Fire") && m_player) phase.AddPhalanx(std::make_unique<AttackPhalanx>(params, m_player.get()));        DrawRevertAndRows(params, loaded.phalanx, DrawPhalanxRows);
         break;
     }
     case BulletHellSet::wave:
@@ -1464,7 +1463,7 @@ void SceneBoss::DrawBulletHellAttacks(BossPhase01& phase)
     case BulletHellSet::ultimate:
     {
         UltimateParams& params{ manager.GetUltimateParams() };
-        if (ImGui::Button("Fire") && m_player) phase.AddPooledAttack(std::make_unique<AttackUltimate>(params, m_player.get()));
+        if (ImGui::Button("Fire") && m_player) phase.AddUltimate(std::make_unique<AttackUltimate>(params, m_player.get()));
         DrawRevertAndRows(params, loaded.ultimate, DrawUltimateRows);
         break;
     }

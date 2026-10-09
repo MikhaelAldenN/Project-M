@@ -277,23 +277,33 @@ void BossPhase01::AddPooledAttack(std::unique_ptr<IBossAttackPattern> attack) {
     if (!attack) return;
 
     attack->Start(m_bossRef, &m_bulletPool);
-
-    if (auto* phalanx = dynamic_cast<AttackPhalanx*>(attack.get())) {
-        float bossDestX = phalanx->GetBossMoveTarget()->position.x;
-        float sweepDir = (bossDestX < 0.0f) ? 1.0f : -1.0f;
-        bool randomSide = (rand() % 2 == 0);
-
-        RainParams p = AttackParamManager::Instance().GetRainParams();
-        p.activeDuration = 3.5f;
-        TriggerRain(p, RainMode::HorizontalSweep, randomSide, sweepDir);
-    }
-    else if (dynamic_cast<AttackUltimate*>(attack.get())) {
-        RainParams p = AttackParamManager::Instance().GetRainParams();
-        p.activeDuration = 4.0f;
-        TriggerRain(p, RainMode::DualPillar, true, 1.0f);
-    }
-
     m_activeAttacks.push_back(std::move(attack));
+}
+
+void BossPhase01::AddPhalanx(std::unique_ptr<AttackPhalanx> attack) {
+    if (!attack) return;
+
+    const AttackPhalanx* phalanx{ attack.get() }; // still valid after the move: the phase owns it
+    AddPooledAttack(std::move(attack));           // Start picks the side the boss slides to
+
+    // The Rain sweeps away from the side the boss moved to.
+    const float bossDestX{ phalanx->GetBossMoveTarget()->position.x };
+    const float sweepDir{ (bossDestX < 0.0f) ? 1.0f : -1.0f };
+    const bool randomSide{ rand() % 2 == 0 };
+
+    RainParams p = AttackParamManager::Instance().GetRainParams();
+    p.activeDuration = 3.5f;
+    TriggerRain(p, RainMode::HorizontalSweep, randomSide, sweepDir);
+}
+
+void BossPhase01::AddUltimate(std::unique_ptr<AttackUltimate> attack) {
+    if (!attack) return;
+
+    AddPooledAttack(std::move(attack));
+
+    RainParams p = AttackParamManager::Instance().GetRainParams();
+    p.activeDuration = 4.0f;
+    TriggerRain(p, RainMode::DualPillar, true, 1.0f);
 }
 
 // Implementasi fungsi TriggerRain baru

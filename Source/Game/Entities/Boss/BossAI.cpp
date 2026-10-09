@@ -98,7 +98,7 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
             // SHARED MAIN ATTACKS (Tactician = Single, Enraged = Combo + Rain)
             // ========================================================
         case AttackSequence::Phalanx:
-            m_phase->AddPooledAttack(std::make_unique<AttackPhalanx>(AttackParamManager::Instance().GetPhalanxParams(), m_target));
+            m_phase->AddPhalanx(std::make_unique<AttackPhalanx>(AttackParamManager::Instance().GetPhalanxParams(), m_target));
             if (isEnraged) {
                 // Eksekusi Combo Rain secara bersamaan
                 m_phase->TriggerRain(AttackParamManager::Instance().GetRainParams(), RainMode::VerticalSweep, m_target->GetPosition().x > 0);
@@ -135,7 +135,7 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
             break;
 
         case AttackSequence::Ultimate:
-            m_phase->AddPooledAttack(std::make_unique<AttackUltimate>(AttackParamManager::Instance().GetUltimateParams(), m_target));
+            m_phase->AddUltimate(std::make_unique<AttackUltimate>(AttackParamManager::Instance().GetUltimateParams(), m_target));
             if (isEnraged) {
                 m_phase->TriggerRain(AttackParamManager::Instance().GetRainParams(), RainMode::VerticalSweep, m_target->GetPosition().x > 0);
                 m_currentAttack = AttackSequence::Phalanx; // Kembali ke awal siklus Chaos
