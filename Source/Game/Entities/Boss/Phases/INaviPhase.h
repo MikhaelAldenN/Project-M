@@ -45,6 +45,9 @@ public:
     // Offers a live player bullet to the phase before it is tested against anything else.
     // Returns true when the phase consumed it (the caller then deactivates the bullet).
     virtual bool TryAbsorbPlayerBullet(const DirectX::XMFLOAT3& /*bulletPosition*/, int /*damage*/) { return false; }
+    // The player parried at `parryPosition`. Returns the bullet that was parried (borrowed,
+    // owned by the phase), or null when no running attack can be parried right now.
+    virtual Bullet* TryParryAttack(const DirectX::XMFLOAT3& /*parryPosition*/, Boss* /*boss*/) { return nullptr; }
 
     // ----- AI -----
     // `target` is borrowed: the scene owns the player and outlives the phase.

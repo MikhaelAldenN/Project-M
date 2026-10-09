@@ -1,11 +1,8 @@
 #include "CollisionManager.h"
-#include "Boss.h"        
-#include "BossPhase01.h" 
+#include "Boss.h"
 #include "EffectManager.h"
 #include "TimeManager.h"
 #include <CameraController.h>
-#include "BossPhase02.h"
-#include "EffectManager.h"
 
 using namespace DirectX;
 
@@ -948,18 +945,14 @@ bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float t
     // =========================================================
     // 2. DETEKSI BIJUUDAMA NAVI BOSS
     // =========================================================
-    if (m_Boss)
+    if (INaviPhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr })
     {
-        auto* normalPhase = dynamic_cast<BossPhase01*>(m_Boss->GetCurrentPhase());
-        if (normalPhase)
+        // The attack decides whether it can be parried now, and shatters itself if so.
+        if (Bullet * ball{ phase->TryParryAttack(playerPos, m_Boss) })
         {
-            // The attack decides whether it can be parried now, and shatters itself if so.
-            if (Bullet* ball = normalPhase->TryParryAttack(playerPos, m_Boss))
-            {
-                if (outBullet) *outBullet = ball;
-                if (outNearestEnemy) *outNearestEnemy = nullptr;
-                return true;
-            }
+            if (outBullet) *outBullet = ball;
+            if (outNearestEnemy) *outNearestEnemy = nullptr;
+            return true;
         }
     }
 

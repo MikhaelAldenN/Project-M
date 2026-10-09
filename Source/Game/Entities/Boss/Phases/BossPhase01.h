@@ -39,7 +39,8 @@ public:
     void TriggerRain(const RainParams& params, RainMode mode, bool isPositiveSide, float sweepDir = 1.0f);
     bool HasRainActive() const { return m_rainAttack != nullptr && !m_rainAttack->IsFinished(); }
 
-    Bullet* TryParryAttack(const DirectX::XMFLOAT3& parryPosition, Boss* boss);
+    // Offers the parry to each running attack; the first one that accepts wins.
+    Bullet* TryParryAttack(const DirectX::XMFLOAT3& parryPosition, Boss* boss) override;
 
     // ----- Boss HP -----
     DamageResult TakeDamage(const DamageInfo& damage) override;
