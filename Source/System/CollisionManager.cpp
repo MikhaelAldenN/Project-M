@@ -207,32 +207,35 @@ void CollisionManager::Update(float elapsedTime)
     CheckNaviProjectilesVsEnemies(elapsedTime);
     CheckBossProjectilesVsPlayer(elapsedTime);
     CheckBossProjectilesVsBoss(elapsedTime);
+    CheckPlayerProjectilesVsBoss();
+}
 
-    // ----- Player bullets vs boss window (point inside an XZ box) -----
-    if (m_Boss && m_player) {
-        INaviPhase* phase{ m_Boss->GetCurrentPhase() };
-        if (phase && phase->IsVulnerable()) {
-            // The boss window is 5 x 5 world units, so half of that on each axis.
-            constexpr float k_halfWidth{ 2.5f };
-            constexpr float k_halfDepth{ 2.5f };
-            const DirectX::XMFLOAT3 bossPos{ m_Boss->GetPosition() };
+void CollisionManager::CheckPlayerProjectilesVsBoss()
+{
+    if (!m_Boss || !m_player) return;
 
-            for (auto& bullet : m_player->GetProjectiles()) {
-                if (!bullet->IsActive()) continue;
+    INaviPhase* phase{ m_Boss->GetCurrentPhase() };
+    if (!phase || !phase->IsVulnerable()) return;
 
-                const DirectX::XMFLOAT3 bPos{ bullet->GetMovement()->GetPosition() };
-                if (bPos.x > (bossPos.x - k_halfWidth) && bPos.x < (bossPos.x + k_halfWidth) &&
-                    bPos.z >(bossPos.z - k_halfDepth) && bPos.z < (bossPos.z + k_halfDepth))
-                {
-                    bullet->SetActive(false);
-                    phase->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos });
-                }
-            }
+    // The boss window is 5 x 5 world units, so half of that on each axis.
+    constexpr float k_halfWidth{ 2.5f };
+    constexpr float k_halfDepth{ 2.5f };
+    const DirectX::XMFLOAT3 bossPos{ m_Boss->GetPosition() };
+
+    for (auto& bullet : m_player->GetProjectiles()) {
+        if (!bullet->IsActive()) continue;
+
+        const DirectX::XMFLOAT3 bPos{ bullet->GetMovement()->GetPosition() };
+        if (bPos.x > (bossPos.x - k_halfWidth) && bPos.x < (bossPos.x + k_halfWidth) &&
+            bPos.z >(bossPos.z - k_halfDepth) && bPos.z < (bossPos.z + k_halfDepth))
+        {
+            bullet->SetActive(false);
+            phase->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos });
         }
     }
 }
 
-void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
+void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime) 
 {
     if (!m_enemyManager) return;
 
@@ -812,16 +815,7 @@ void CollisionManager::CheckNaviAllyProjectilesVsPlayer(const float elapsedTime)
             m_player->TakeDamage(DamageInfo{ NAVI_BULLET_DAMAGE, currentPos });
 
             // --- Death Sequence Logic ---
-            if (m_player->GetHP() <= 0)
-            {
-                m_player->EnterDeathState();
-
-                // Trigger Fade via Callback
-                if (m_onPlayerDeathCallback)
-                {
-                    m_onPlayerDeathCallback();
-                }
-            }
+            if (m_player->GetHP() <= 0) m_player->EnterDeathState();
         }
     }
 }

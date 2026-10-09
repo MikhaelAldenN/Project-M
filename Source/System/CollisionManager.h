@@ -49,8 +49,6 @@ public:
     void Update(float elapsedTime);
     void SetOnCheckpointReachCallback(std::function<void(DirectX::XMFLOAT3)> callback) { m_onCheckpointReachCallback = callback; }
     void SetOnLevelCompleteCallback(std::function<void()> callback) { m_onLevelCompleteCallback = callback; }
-    void SetOnPlayerDeathCallback(std::function<void()> callback) { m_onPlayerDeathCallback = callback; }
-    void SetOnPlayerHitCallback(std::function<void()> callback) { m_onPlayerHitCallback = callback; }
     void SetOnEnableLineReachCallback(std::function<void(int)> callback) { m_onEnableLineReachCallback = callback; }
     [[nodiscard]] float GetEnemyPushRadius(const Enemy* enemy) const;
     [[nodiscard]] Enemy* GetTargetInSlashCone(const DirectX::XMFLOAT3& playerPos, const DirectX::XMFLOAT3& aimDir, float reach, float minDotProduct) const;
@@ -74,6 +72,8 @@ private:
     void CheckNaviAllyProjectilesVsPlayer(float elapsedTime);
     void CheckBossProjectilesVsPlayer(float elapsedTime);
     void CheckBossProjectilesVsBoss(float elapsedTime); // Fungsi pantulan
+    // Player bullets against the boss window (point inside an XZ box).
+    void CheckPlayerProjectilesVsBoss();
 
     Player* m_player = nullptr;
     Stage* m_stage = nullptr;
@@ -89,6 +89,4 @@ private:
     std::function<void(DirectX::XMFLOAT3)> m_onCheckpointReachCallback;
     std::function<void(int)> m_onEnableLineReachCallback = nullptr;
     std::function<void()> m_onLevelCompleteCallback = nullptr;
-    std::function<void()> m_onPlayerDeathCallback;
-    std::function<void()> m_onPlayerHitCallback = nullptr;
 };
