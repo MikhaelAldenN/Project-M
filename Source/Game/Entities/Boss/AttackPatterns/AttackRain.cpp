@@ -162,7 +162,8 @@ void AttackRain::Update(float dt, Boss* boss) {
             const int wholeDamage{ static_cast<int>(m_damageCarry) };
             if (wholeDamage > 0) {
                 m_damageCarry -= static_cast<float>(wholeDamage);
-                m_target->TakeDamage(static_cast<float>(wholeDamage));
+                // Rain has no single impact point, so the hit is reported at the player.
+                m_target->TakeDamage(DamageInfo{ wholeDamage, pPos });
             }
             CameraController::Instance().AddTrauma(0.15f);
         }

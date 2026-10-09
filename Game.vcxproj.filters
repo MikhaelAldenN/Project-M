@@ -572,9 +572,6 @@
     <ClInclude Include="Source\Game\Entities\ItemManager.h">
       <Filter>Source\Game\Entities</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Entities\Player.h">
-      <Filter>Source\Game\Entities</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\States\PlayerState.h">
       <Filter>Source\Game\States</Filter>
     </ClInclude>
@@ -756,6 +753,9 @@
       <Filter>Source\Game\Entities</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Entities\NaviAlly.h">
+      <Filter>Source\Game\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Entities\Player.h">
       <Filter>Source\Game\Entities</Filter>
     </ClInclude>
   </ItemGroup>

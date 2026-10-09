@@ -380,7 +380,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                 if (distToPath <= combinedRadius)
                 {
                     bool wasAlive = (m_player->GetHP() > 0);
-                    m_player->TakeDamage(ENEMY_BULLET_DAMAGE);
+                    m_player->TakeDamage(DamageInfo{ ENEMY_BULLET_DAMAGE, currentPos });
 
                     // ---> THE SIMPLE DEATH STATE <---
                     if (m_player->GetHP() <= 0)
@@ -453,7 +453,7 @@ void CollisionManager::CheckPlayerVsEnemies()
             if (enemy->GetAttackType() == AttackType::Tracking && !m_player->IsInvincible())
             {
                 // 1. Instantly nuke player HP
-                m_player->TakeDamage(9999);
+                m_player->TakeDamage(DamageInfo{ 9999, ePos });
 
                 // 2. Trigger standard death sequence
                 m_player->scale = { 0.0f, 0.0f, 0.0f }; // Hide 3D model
@@ -844,7 +844,7 @@ void CollisionManager::CheckNaviAllyProjectilesVsPlayer(const float elapsedTime)
             bullet->SetActive(false); // Destroy the bullet
 
             // --- Apply Damage ---
-            m_player->TakeDamage(NAVI_BULLET_DAMAGE);
+            m_player->TakeDamage(DamageInfo{ NAVI_BULLET_DAMAGE, currentPos });
 
             // --- Death Sequence Logic ---
             if (m_player->GetHP() <= 0)
@@ -1045,7 +1045,7 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
 
         if (distSq <= (totalRadius * totalRadius)) {
             // Player Kena Hit!
-            m_player->TakeDamage(bullet->GetDamage());
+            m_player->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos });
             bullet->SetActive(false); // Matikan peluru
 
             CameraController::Instance().AddTrauma(0.2f);

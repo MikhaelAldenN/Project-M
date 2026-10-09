@@ -3,6 +3,7 @@
 #include "Bullet.h"
 #include "CapeSimulator.h"
 #include "Character.h"
+#include "DamageTypes.h"
 #include "PlayerConstants.h"
 #include "Weapon.h"
 #include <array>
@@ -155,7 +156,9 @@ public:
     void ClearStateMoveTimeLimit() noexcept { m_isStateMoveTimed = false; }
 
 	// --- Health ---
-    void TakeDamage(float damage);
+    // Applies one hit, starts i-frames if they are enabled, and triggers the damage glitch.
+    // Returns `ignored` while invincible or already dead. The death state is set by the caller.
+    DamageResult TakeDamage(const DamageInfo& damage);
     void SetMaxHP(float maxHp) { m_maxHp = maxHp; m_hp = maxHp; } // [DIUBAH] Set batas maksimal & isi penuh
     void Heal(float amount);
     void Heal(int amount);

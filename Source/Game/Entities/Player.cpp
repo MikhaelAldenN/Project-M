@@ -951,11 +951,11 @@ void Player::StopAllVFX()
 // ============================================================
 // DAMAGE SYSTEM
 // ============================================================
-void Player::TakeDamage(float damage) 
+DamageResult Player::TakeDamage(const DamageInfo& damage)
 {
-    if (m_hp <= 0.0f || IsInvincible()) return;
+    if (m_hp <= 0.0f || IsInvincible()) return DamageResult::ignored;
 
-    m_hp -= damage;
+    m_hp -= static_cast<float>(damage.amount);
 
     if (m_enableIFrames) {
         TriggerInvincibility(m_iFrameDuration);
@@ -966,7 +966,9 @@ void Player::TakeDamage(float damage)
     {
         m_hp = 0.0f;
         StopAllVFX();
+        return DamageResult::killed;
     }
+    return DamageResult::damaged;
 }
 
 void Player::Heal(float amount) {
