@@ -38,7 +38,7 @@ public:
     void TriggerRain(const RainParams& params, RainMode mode, bool isPositiveSide, float sweepDir = 1.0f);
     bool HasRainActive() const { return m_rainAttack != nullptr && !m_rainAttack->IsFinished(); }
 
-    void OnBijuudamaParried(DirectX::XMFLOAT3 parryPos, Boss* boss);
+    Bullet* TryParryAttack(const DirectX::XMFLOAT3& parryPosition, Boss* boss);
 
     // ----- Boss HP -----
     DamageResult TakeDamage(const DamageInfo& damage) override;
@@ -54,14 +54,6 @@ public:
     Player* GetAITarget()     const override { return m_aiTarget; }
 
     // ----- Accessors -----
-    AttackUltimate* GetActiveUltimate() const {
-        for (auto& attack : m_activeAttacks) {
-            if (auto* ult = dynamic_cast<AttackUltimate*>(attack.get())) {
-                return ult;
-            }
-        }
-        return nullptr;
-    }
 
     BossAI_Phase01* GetAI() const { return m_ai.get(); }
     const std::vector<std::unique_ptr<IBossAttackPattern>>& GetActiveAttacks() const { return m_activeAttacks; }

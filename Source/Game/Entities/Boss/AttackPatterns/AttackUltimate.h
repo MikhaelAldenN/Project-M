@@ -67,21 +67,14 @@ public:
     bool IsFinished() const override;
     std::vector<Bullet*> GetActiveProjectiles() const override { return {}; }
 
-    // Called externally (e.g. collision system) when the ball is parried
-    void ShatterBijuudama(DirectX::XMFLOAT3 parryPos, Boss* boss);
-
-    // Phase movement target — read by BossPhase01 to update boss position
     [[nodiscard]] const BossMoveTarget* GetBossMoveTarget() const override { return &m_moveTarget; }
-
-    bool IsCharging()        const { return m_state == State::Charging; }
-    bool IsInParryWindow()   const;
-    float GetChargeTimer()   const { return m_chargeTimer; }
-    Bullet* GetBall()        const { return m_ball; }
+    Bullet* TryParry(const DirectX::XMFLOAT3& parryPosition, Boss* boss) override;
 
 private:
+    [[nodiscard]] bool IsInParryWindow() const;
+    void ShatterBijuudama(DirectX::XMFLOAT3 parryPos, Boss* boss);
     void LaunchBall(Boss* boss);
     void CancelCharge();
-
     enum class State { Moving, Charging, Fired, Recovering, Done };
 
     UltimateParams                        m_params;

@@ -982,33 +982,19 @@ bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float t
     }
 
     // =========================================================
-        // 2. DETEKSI BIJUUDAMA NAVI BOSS
-        // =========================================================
+    // 2. DETEKSI BIJUUDAMA NAVI BOSS
+    // =========================================================
     if (m_Boss)
     {
         auto* normalPhase = dynamic_cast<BossPhase01*>(m_Boss->GetCurrentPhase());
         if (normalPhase)
         {
-            // 1. Ambil serangan Bijuudama (Ultimate) yang sedang aktif
-            if (auto* ultAttack = normalPhase->GetActiveUltimate())
+            // The attack decides whether it can be parried now, and shatters itself if so.
+            if (Bullet* ball = normalPhase->TryParryAttack(playerPos, m_Boss))
             {
-                // 2. Cek apakah bola sedang di-charge dan berada di dalam waktu Parry
-                if (ultAttack->IsCharging() && ultAttack->IsInParryWindow())
-                {
-                    Bullet* ball = ultAttack->GetBall();
-                    if (ball && ball->IsActive())
-                    {
-                        ball->SetParryReturn(true);
-
-                        if (outBullet) *outBullet = ball;
-                        if (outNearestEnemy) *outNearestEnemy = nullptr;
-
-                        // 3. Langsung picu efek pecah (Shatter) Bijuudama ke arah player
-                        normalPhase->OnBijuudamaParried(playerPos, m_Boss);
-
-                        return true;
-                    }
-                }
+                if (outBullet) *outBullet = ball;
+                if (outNearestEnemy) *outNearestEnemy = nullptr;
+                return true;
             }
         }
     }

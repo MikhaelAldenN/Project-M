@@ -326,13 +326,11 @@ void BossPhase01::TriggerRain(const RainParams& params, RainMode mode, bool isPo
 //    m_rainAttack->StartPooled(m_bossRef, &m_bulletPool);
 //}
 
-void BossPhase01::OnBijuudamaParried(XMFLOAT3 parryPos, Boss* boss) {
+Bullet* BossPhase01::TryParryAttack(const XMFLOAT3& parryPosition, Boss* boss) {
     for (auto& attack : m_activeAttacks) {
-        if (auto* ultimate = dynamic_cast<AttackUltimate*>(attack.get())) {
-            ultimate->ShatterBijuudama(parryPos, boss);
-            return;
-        }
+        if (Bullet * parried{ attack->TryParry(parryPosition, boss) }) return parried;
     }
+    return nullptr;
 }
 
 DamageResult BossPhase01::TakeDamage(const DamageInfo& damage) {

@@ -42,6 +42,10 @@ public:
     virtual std::vector<Bullet*> GetActiveProjectiles() const = 0;
 
     // Non-null while the attack steers the boss; the phase then stops its idle hover.
-// The pointer stays valid until the attack is destroyed.
+    // The pointer stays valid until the attack is destroyed.
     [[nodiscard]] virtual const BossMoveTarget* GetBossMoveTarget() const { return nullptr; }
+
+    // The player parried at `parryPosition`. Returns the bullet that was parried, or null
+// when this attack has nothing to parry right now.
+    virtual Bullet* TryParry(const DirectX::XMFLOAT3& /*parryPosition*/, Boss* /*boss*/) { return nullptr; }
 };
