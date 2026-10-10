@@ -378,7 +378,6 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                 if (distToPath <= combinedRadius)
                 {
                     m_player->TakeDamage(DamageInfo{ m_damageConfig.enemyBulletToPlayer, currentPos });
-                    if (m_player->GetHP() <= 0) m_player->EnterDeathState();
 
                     // Destroy the bullet and prevent crashes
                     it = projectiles.erase(it);
@@ -443,9 +442,6 @@ void CollisionManager::CheckPlayerVsEnemies()
             {
                 // 1. Instantly nuke player HP
                 m_player->TakeDamage(DamageInfo{ 9999, ePos });
-
-                // 2. Trigger standard death sequence
-                m_player->EnterDeathState();
 
                 // 3. Kill the kamikaze enemy so it doesn't survive the explosion
                 enemy->TakeDamage(DamageInfo{ 9999, ePos });
@@ -807,11 +803,7 @@ void CollisionManager::CheckNaviAllyProjectilesVsPlayer(const float elapsedTime)
         {
             bullet->SetActive(false); // Destroy the bullet
 
-            // --- Apply Damage ---
             m_player->TakeDamage(DamageInfo{ m_damageConfig.naviBulletToPlayer, currentPos });
-
-            // --- Death Sequence Logic ---
-            if (m_player->GetHP() <= 0) m_player->EnterDeathState();
         }
     }
 }

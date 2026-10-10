@@ -966,6 +966,7 @@ DamageResult Player::TakeDamage(const DamageInfo& damage)
     {
         m_hp = 0.0f;
         StopAllVFX();
+        EnterDeathState();
         return DamageResult::killed;
     }
     return DamageResult::damaged;
