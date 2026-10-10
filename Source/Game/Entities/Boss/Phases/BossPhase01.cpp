@@ -182,7 +182,7 @@ void BossPhase01::Update(float dt, Boss* boss) {
             m_aiEnabled = true;
             if (m_aiTarget) m_aiTarget->SetInputEnabled(true);
 
-            float sfxVol = ParamManager::Instance().GetUltimateParams().sfxVolume;
+            float sfxVol = AttackParamManager::Instance().GetUltimateParams().sfxVolume;
             AudioManager::Instance().PlayMusic(
                 "Data/Sound/BGM_Boss_Phase_01.wav",
                 0.05f * sfxVol, true);

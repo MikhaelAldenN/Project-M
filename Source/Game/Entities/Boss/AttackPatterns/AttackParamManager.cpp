@@ -103,6 +103,7 @@ void AttackParamManager::ParseRainParams(const json& j, RainParams& out) {
     if (j.contains("activeDuration")) out.activeDuration = j["activeDuration"];
     if (j.contains("width")) out.width = j["width"];
     if (j.contains("depth")) out.depth = j["depth"];
+    if (j.contains("damagePerSecond")) out.damagePerSecond = j["damagePerSecond"];
     if (j.contains("sfxVolume")) out.sfxVolume = j["sfxVolume"];
 
     if (j.contains("triggerCount")) out.triggerCount = j["triggerCount"];
