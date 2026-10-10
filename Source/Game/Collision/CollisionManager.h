@@ -37,6 +37,17 @@ struct AABB
         (a.minPoint.z <= b.maxPoint.z && a.maxPoint.z >= b.minPoint.z);
 }
 
+// Damage dealt by collision pairs whose bullets do not carry their own damage value.
+// Boss bullets and player bullets against enemies or the boss use Bullet::GetDamage() instead.
+struct CollisionDamageConfig
+{
+    int enemyBulletToPlayer{ 10 };
+    int parriedBulletToEnemy{ 30 };
+    int naviBulletToEnemy{ 1 };
+    int naviBulletToPlayer{ 10 };
+    int playerBulletToNavi{ 10 };
+};
+
 class CollisionManager
 {
 public:
@@ -57,6 +68,9 @@ public:
     NaviAlly* GetNavi() const { return m_navi; }
     void SetBoss(Boss* Boss) { m_Boss = Boss; }
     Boss* GetBoss() const { return m_Boss; }
+
+    // Mutable on purpose: a debug panel can tune the values at runtime.
+    [[nodiscard]] CollisionDamageConfig& GetDamageConfig() { return m_damageConfig; }
 
 private:
     void CheckPlayerVsCheckpointLines();
@@ -82,6 +96,8 @@ private:
     ItemManager* m_itemManager = nullptr;
     NaviAlly* m_navi = nullptr;
     Boss* m_Boss = nullptr;
+
+    CollisionDamageConfig m_damageConfig{};
 
     // Reused every frame so collecting the boss bullets does not allocate a new buffer.
     std::vector<Bullet*> m_bossBulletScratch;

@@ -348,8 +348,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                 if (distSq < (combinedHitRadius * combinedHitRadius))
                 {
                     // ---> APPLY PARRY DAMAGE <---
-                    constexpr int PARRY_DAMAGE = 30;
-                    targetEnemy->TakeDamage(DamageInfo{ PARRY_DAMAGE, bPos });
+                    targetEnemy->TakeDamage(DamageInfo{ m_damageConfig.parriedBulletToEnemy, bPos });
 
                     // Destroy the bullet
                     it = projectiles.erase(it);
@@ -369,8 +368,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
             {
                 DirectX::XMFLOAT3 playerPos = m_player->GetMovement()->GetPosition();
 
-                constexpr int ENEMY_BULLET_DAMAGE = 10;
-                constexpr float PLAYER_HITBOX_RADIUS = 0.3f; 
+                constexpr float PLAYER_HITBOX_RADIUS = 0.3f;
 
                 float combinedRadius = PLAYER_HITBOX_RADIUS + bulletRadius;
 
@@ -379,7 +377,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
 
                 if (distToPath <= combinedRadius)
                 {
-                    m_player->TakeDamage(DamageInfo{ ENEMY_BULLET_DAMAGE, currentPos });
+                    m_player->TakeDamage(DamageInfo{ m_damageConfig.enemyBulletToPlayer, currentPos });
                     if (m_player->GetHP() <= 0) m_player->EnterDeathState();
 
                     // Destroy the bullet and prevent crashes
@@ -689,8 +687,8 @@ void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
     auto& projectiles = m_navi->GetProjectiles();
     auto& enemies = m_enemyManager->GetEnemies();
 
-    constexpr int NAVI_BULLET_DAMAGE = 1;
     constexpr float BULLET_HITBOX_RADIUS = 0.1f;
+
 
     for (auto& bullet : projectiles)
     {
@@ -730,7 +728,7 @@ void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
 
             if (distToPath <= exactHitDistance)
             {
-                enemy->TakeDamage(DamageInfo{ NAVI_BULLET_DAMAGE, currentPos });
+                enemy->TakeDamage(DamageInfo{ m_damageConfig.naviBulletToEnemy, currentPos });
                 bullet->SetActive(false); // Send back to Object Pool instantly
                 break; // Stop checking this bullet against other enemies
             }
@@ -748,7 +746,6 @@ void CollisionManager::CheckPlayerProjectilesVsNavi(const float elapsedTime)
     const DirectX::XMFLOAT3 naviPos{ m_navi->GetMovement()->GetPosition() };
 
     constexpr float NAVI_HITBOX_RADIUS_XZ{ 0.8f };
-    constexpr int PLAYER_BULLET_DAMAGE{ 10 };
 
     // CPU Optimization: Range-based for loop
     for (const auto& bullet : projectiles)
@@ -772,7 +769,7 @@ void CollisionManager::CheckPlayerProjectilesVsNavi(const float elapsedTime)
         // 2D Cylinder Collision: Completely ignore the Y-axis vertical distance
         if (distToPath <= NAVI_HITBOX_RADIUS_XZ)
         {
-            m_navi->TakeDamage(DamageInfo{ PLAYER_BULLET_DAMAGE, currentPos });
+            m_navi->TakeDamage(DamageInfo{ m_damageConfig.playerBulletToNavi, currentPos });
             EffectManager::Instance().Play("Data/Effect/Hit.efk", naviPos, 1.0f);
             bullet->SetActive(false); // Instantly recycle the bullet into the object pool
         }
@@ -789,7 +786,6 @@ void CollisionManager::CheckNaviAllyProjectilesVsPlayer(const float elapsedTime)
     const DirectX::XMFLOAT3 playerPos{ m_player->GetMovement()->GetPosition() };
 
     constexpr float PLAYER_HURTBOX_RADIUS{ 0.3f };
-    constexpr int NAVI_BULLET_DAMAGE{ 10 };
 
     for (const auto& bullet : projectiles)
     {
@@ -812,7 +808,7 @@ void CollisionManager::CheckNaviAllyProjectilesVsPlayer(const float elapsedTime)
             bullet->SetActive(false); // Destroy the bullet
 
             // --- Apply Damage ---
-            m_player->TakeDamage(DamageInfo{ NAVI_BULLET_DAMAGE, currentPos });
+            m_player->TakeDamage(DamageInfo{ m_damageConfig.naviBulletToPlayer, currentPos });
 
             // --- Death Sequence Logic ---
             if (m_player->GetHP() <= 0) m_player->EnterDeathState();
