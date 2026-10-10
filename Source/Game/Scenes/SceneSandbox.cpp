@@ -2,7 +2,7 @@
 
 #include "CameraController.h"
 #include "Framework.h"
-#include "System/CollisionManager.h"
+#include "Game/Collision/CollisionManager.h"
 #include "System/Graphics.h"
 #include "InputHelper.h"
 #include "Engine/Common/Constants.h"

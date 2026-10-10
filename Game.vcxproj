@@ -91,7 +91,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\Source;.\Source\Engine\Base;.\Source\Engine\Windowing;.\Source\Engine\Graphics;.\Source\Engine\UI;.\Source\Engine\VFX;.\Source\Game\Entities\Boss\Phases;.\Source\Game\Entities\Boss\AttackPatterns;.\Source\Game\Entities\Boss;.\Source\Game\Entities;.\Source\Game\States;.\Source\Game\Scenes;.\Source\Engine\Common;.\Source\Engine\Helpers;.\Source\Engine\Legacy;.\External\SDL3-3.4.0\include;.\External\imgui-docking;.\External\ImGuizmo;.\External\cereal\include;.\External\tinygltf;.\External\SphereCast\Include;.\External\DirectXTex;.\External\PhysX\physx\include;.\External\Effekseer170e\include\Effekseer;.\External\json;.\External\Effekseer170e\include\EffekseerRendererDX11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\Source;.\Source\Engine\Base;.\Source\Engine\Windowing;.\Source\Engine\Graphics;.\Source\Engine\UI;.\Source\Engine\VFX;.\Source\Game\Entities\Boss\Phases;.\Source\Game\Entities\Boss\AttackPatterns;.\Source\Game\Entities\Boss;.\Source\Game\Entities;.\Source\Game\States;.\Source\Game\Collision;.\Source\Game\Scenes;.\Source\Engine\Common;.\Source\Engine\Helpers;.\Source\Engine\Legacy;.\External\SDL3-3.4.0\include;.\External\imgui-docking;.\External\ImGuizmo;.\External\cereal\include;.\External\tinygltf;.\External\SphereCast\Include;.\External\DirectXTex;.\External\PhysX\physx\include;.\External\Effekseer170e\include\Effekseer;.\External\json;.\External\Effekseer170e\include\EffekseerRendererDX11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -174,6 +174,7 @@
     <ClInclude Include="Source\Engine\Windowing\WindowShatter.h" />
     <ClInclude Include="Source\Engine\Windowing\WindowSwarmRenderer.h" />
     <ClInclude Include="Source\Engine\Windowing\WindowTrackingSystem.h" />
+    <ClInclude Include="Source\Game\Collision\CollisionManager.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackDirect.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackMeteor.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.h" />
@@ -217,7 +218,6 @@
     <ClInclude Include="Source\Game\States\StateMachine.h" />
     <ClInclude Include="Source\System\AudioManager.h" />
     <ClInclude Include="Source\System\Collision.h" />
-    <ClInclude Include="Source\System\CollisionManager.h" />
     <ClInclude Include="Source\System\BasicShader.h" />
     <ClInclude Include="Source\System\Dialog.h" />
     <ClInclude Include="Source\System\GamePad.h" />
@@ -291,6 +291,7 @@
     <ClCompile Include="Source\Engine\Windowing\WindowShatter.cpp" />
     <ClCompile Include="Source\Engine\Windowing\WindowSwarmRenderer.cpp" />
     <ClCompile Include="Source\Engine\Windowing\WindowTrackingSystem.cpp" />
+    <ClCompile Include="Source\Game\Collision\CollisionManager.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackDirect.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackMeteor.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.cpp" />
@@ -328,7 +329,6 @@
     <ClCompile Include="Source\System\AudioManager.cpp" />
     <ClCompile Include="Source\System\BasicShader.cpp" />
     <ClCompile Include="Source\System\Collision.cpp" />
-    <ClCompile Include="Source\System\CollisionManager.cpp" />
     <ClCompile Include="Source\System\Dialog.cpp" />
     <ClCompile Include="Source\System\GamePad.cpp" />
     <ClCompile Include="Source\System\GLTFImporter.cpp" />

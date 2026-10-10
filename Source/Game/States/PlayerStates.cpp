@@ -7,7 +7,7 @@
 #include <memory>
 #include <cmath>
 
-#include "System/CollisionManager.h"
+#include "Game/Collision/CollisionManager.h"
 #include "Enemy.h"
 #include "Bullet.h"
 #include "Boss.h"

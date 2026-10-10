@@ -147,9 +147,6 @@
     <ClCompile Include="Source\System\Collision.cpp">
       <Filter>System</Filter>
     </ClCompile>
-    <ClCompile Include="Source\System\CollisionManager.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
     <ClCompile Include="Source\System\AudioManager.cpp">
       <Filter>System</Filter>
     </ClCompile>
@@ -366,6 +363,9 @@
     <ClCompile Include="Source\Engine\Windowing\WindowLayoutStore.cpp">
       <Filter>Source\Engine\Windowing</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Collision\CollisionManager.cpp">
+      <Filter>Source\Game\Collision</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\BasicShader.h">
@@ -480,9 +480,6 @@
       <Filter>External\ImGuizmo</Filter>
     </ClInclude>
     <ClInclude Include="Source\System\Collision.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\System\CollisionManager.h">
       <Filter>System</Filter>
     </ClInclude>
     <ClInclude Include="Source\System\AudioManager.h">
@@ -755,6 +752,9 @@
     <ClInclude Include="Source\Game\Entities\Player.h">
       <Filter>Source\Game\Entities</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Collision\CollisionManager.h">
+      <Filter>Source\Game\Collision</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader\Basic.hlsli">
@@ -857,6 +857,9 @@
     </Filter>
     <Filter Include="Source\Game\Entities\Boss\Phases">
       <UniqueIdentifier>{8b3db33b-7d37-4885-b836-a31cffc5e5ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Collision">
+      <UniqueIdentifier>{74af14ba-a86f-4af9-aea8-5ec9f8c29b08}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

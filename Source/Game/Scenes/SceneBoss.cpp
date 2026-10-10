@@ -11,7 +11,7 @@
 #ifdef NAVI_DEBUG_GUI
 #include <imgui.h>
 #endif
-#include "System/CollisionManager.h"
+#include "Game/Collision/CollisionManager.h"
 #include "EnemyManager.h"
 #include "ItemManager.h"
 #include "Stage.h"
