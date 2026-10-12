@@ -8,6 +8,7 @@
 #include "ResourceManager.h"
 #include "System/AudioManager.h"
 #include "Game/Collision/CollisionManager.h"
+#include "Game/Collision/LevelTriggerSystem.h"
 #include "System/Graphics.h"
 #include "InputHelper.h"
 #include "Engine/Common/Constants.h"
@@ -174,7 +175,10 @@ SceneGame::SceneGame()
     m_collisionManager->SetNavi(m_navi.get());
 
     m_player->SetCollisionManager(m_collisionManager.get());
-    m_collisionManager->SetOnEnableLineReachCallback([this](int lineIndex) {
+
+    m_levelTriggers = std::make_unique<LevelTriggerSystem>();
+    m_levelTriggers->Initialize(m_player.get(), m_stage.get());
+    m_levelTriggers->SetOnEnableLineReached([this](int lineIndex) {
         if (lineIndex == 0 && !m_bossCinematicTriggered)
         {
             if (AreTrackingEnemiesDead())
@@ -184,10 +188,10 @@ SceneGame::SceneGame()
         }
         });
 
-    m_collisionManager->SetOnCheckpointReachCallback([this](DirectX::XMFLOAT3 pos) {
+    m_levelTriggers->SetOnCheckpointReached([this](DirectX::XMFLOAT3 pos) {
         m_currentCheckpointPos = pos;
         m_hasCheckpoint = true;
-    });
+        });
 
     m_director = std::make_unique<CinematicDirector>();
 
@@ -353,6 +357,7 @@ void SceneGame::Update(const float elapsedTime)
             m_uberParams.intensity = FX_BLACK_INTENSITY;
             m_fadeAlpha = 1.0f;
             m_isNaviDefeatReadyForNextScene = true;
+            m_levelTriggers.reset();
             m_player.reset();
             m_navi.reset();
             m_enemyManager.reset();
@@ -500,6 +505,7 @@ void SceneGame::Update(const float elapsedTime)
 
     if (m_itemManager) m_itemManager->Update(elapsedTime, activeCam);
     if (m_collisionManager) m_collisionManager->Update(elapsedTime);
+    if (m_levelTriggers) m_levelTriggers->Update();
 
     // Furi style cinematic combat camera 
     static float targetZoom{ 0.0f };

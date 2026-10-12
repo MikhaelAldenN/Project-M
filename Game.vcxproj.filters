@@ -366,6 +366,9 @@
     <ClCompile Include="Source\Game\Collision\CollisionManager.cpp">
       <Filter>Source\Game\Collision</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Collision\LevelTriggerSystem.cpp">
+      <Filter>Source\Game\Collision</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\BasicShader.h">
@@ -753,6 +756,9 @@
       <Filter>Source\Game\Entities</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Collision\CollisionManager.h">
+      <Filter>Source\Game\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Collision\LevelTriggerSystem.h">
       <Filter>Source\Game\Collision</Filter>
     </ClInclude>
   </ItemGroup>

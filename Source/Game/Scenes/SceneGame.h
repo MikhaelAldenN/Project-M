@@ -33,6 +33,7 @@ class NaviAlly;
 class Player;
 class PostProcessManager;
 class Primitive;
+class LevelTriggerSystem;
 class Stage;
 class UIPause;
 
@@ -87,6 +88,7 @@ private:
     std::unique_ptr<Player> m_player{};
     std::unique_ptr<NaviAlly> m_navi{};
     std::unique_ptr<CollisionManager> m_collisionManager{};
+    std::unique_ptr<LevelTriggerSystem> m_levelTriggers{};
     std::unique_ptr<EnemyManager> m_enemyManager{};
     std::unique_ptr<ItemManager> m_itemManager{};
     std::unique_ptr<Stage> m_stage{};

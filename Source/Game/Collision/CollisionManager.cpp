@@ -44,20 +44,6 @@ static XMVECTOR TransformToEnemyLocal(const XMFLOAT3& worldPos, const Enemy* ene
     return XMVector3TransformNormal(vRelative, matInvRot);
 }
 
-static XMVECTOR TransformToLocalLine(const XMFLOAT3& worldPos, const DebugLineData& line)
-{
-    XMVECTOR vWorldPos = XMLoadFloat3(&worldPos);
-    XMVECTOR vLinePos = XMLoadFloat3(&line.Position);
-    XMVECTOR vRelPos = XMVectorSubtract(vWorldPos, vLinePos);
-    XMMATRIX matRot = XMMatrixRotationRollPitchYaw(
-        XMConvertToRadians(line.Rotation.x),
-        XMConvertToRadians(line.Rotation.y),
-        XMConvertToRadians(line.Rotation.z)
-    );
-    XMMATRIX matInvRot = XMMatrixTranspose(matRot);
-    return XMVector3TransformNormal(vRelPos, matInvRot);
-}
-
 static float RayCastOBB(XMVECTOR rayOrigin, XMVECTOR rayDir, float rayLength, float radius, const DebugWallData& wall, XMVECTOR& outNormal)
 {
     XMVECTOR vWallPos = XMLoadFloat3(&wall.Position);
@@ -194,10 +180,6 @@ void CollisionManager::Update(float elapsedTime)
     CheckPlayerProjectilesVsEnemies(elapsedTime);
     CheckPlayerProjectilesVsNavi(elapsedTime);
     CheckNaviAllyProjectilesVsPlayer(elapsedTime);
-    CheckPlayerVsEnemies();
-    CheckPlayerVsCheckpointLines();
-    CheckPlayerVsTriggerLines();
-    CheckPlayerVsVoidLines();
 
     if (m_itemManager)
     {
