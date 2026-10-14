@@ -110,10 +110,10 @@ namespace {
                 player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerSlash>());
 
                 // =========================================================
-                // THE FIX: EXECUTION SCALING
-                // Standard enemies take normal damage. Kamikazes take fatal 
-                // damage (9999) to ensure they cannot survive the counter-attack 
-                // and revenge-kill the player. Ternary evaluation ensures zero branching overhead.
+                // EXECUTION SCALING
+                // Standard enemies take normal damage. Kamikazes take fatal
+                // damage (9999) so they cannot survive the counter-attack
+                // and revenge-kill the player.
                 // =========================================================
                 constexpr int MELEE_DAMAGE{ 30 };
                 const bool isKamikaze{ slashTarget->GetAttackType() == AttackType::Tracking };
@@ -291,11 +291,11 @@ void PlayerDash::Enter(Player* player)
     DirectX::XMFLOAT3 pos = player->GetMovement()->GetPosition();
     pos.y += 1.0f; // Naikkan sedikit agar pas di tengah badan
 
-    // [MODIFIKASI] Simpan handle ke variabel class
+    // Keep the handle so the VFX can follow the player during the dash.
     m_dashGoVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Go.efk", pos, 0.2f);
 
     if (m_dashGoVfxHandle != -1) {
-        // [FIX] Tambahkan DirectX::XM_PI (180 derajat dalam radian) untuk membalik arahnya!
+        // Add XM_PI (180 degrees) to reverse the effect's direction.
         float yaw = atan2f(dashDir.x, dashDir.y) + DirectX::XM_PI;
 
         EffectManager::Instance().SetRotation(m_dashGoVfxHandle, { 0.0f, yaw, 0.0f });
@@ -324,7 +324,7 @@ void PlayerDash::Update(Player* player, float dt)
     if (player->IsInputEnabled() && IsDashInputTriggered()) m_isDashBuffered = true;
 
     // =========================================================
-    // [BARU] Terus seret VFX mengikuti posisi player selama Dash berjalan
+    // Keep the VFX on the player for the whole dash
     // =========================================================
     if (m_dashGoVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashGoVfxHandle))
     {
@@ -371,7 +371,7 @@ void PlayerSlash::Enter(Player* player)
         });
 
     // =========================================================
-    // THE FIX: MELEE ARMOR (I-FRAMES)
+    // MELEE ARMOR (I-FRAMES)
     // Grant brief invulnerability during the forward lunge.
     // If the Kamikaze explodes on contact, the player is immune.
     // =========================================================
