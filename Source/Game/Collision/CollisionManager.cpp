@@ -180,6 +180,7 @@ void CollisionManager::Update(float elapsedTime)
     CheckPlayerProjectilesVsEnemies(elapsedTime);
     CheckPlayerProjectilesVsNavi(elapsedTime);
     CheckNaviAllyProjectilesVsPlayer(elapsedTime);
+    CheckPlayerVsEnemies();
 
     if (m_itemManager)
     {
@@ -470,87 +471,6 @@ void CollisionManager::CheckPlayerVsEnemies()
         m_player->SetPosition(playerPos);
         m_player->GetMovement()->SetVelocity(playerVel);
     }
-}
-
-void CollisionManager::CheckPlayerVsCheckpointLines()
-{
-    if (!m_player || !m_stage || m_player->GetHP() <= 0) return;
-
-    const float TRIGGER_RANGE_Z = 2.0f;
-
-    for (const auto& line : m_stage->m_linesCheckpoint)
-    {
-        DirectX::XMVECTOR vLocalPos = TransformToLocalLine(m_player->GetMovement()->GetPosition(), line);
-        DirectX::XMFLOAT3 localPos;
-        DirectX::XMStoreFloat3(&localPos, vLocalPos);
-        float lineHalfLength = line.Scale.x * 0.5f;
-
-        // Check if player is between the left/right ends of the line
-        if (localPos.x < -lineHalfLength || localPos.x > lineHalfLength) continue;
-
-        // Check if player crosses the Z-depth of the line
-        if (localPos.z > -TRIGGER_RANGE_Z && localPos.z < TRIGGER_RANGE_Z)
-        {
-            if (m_onCheckpointReachCallback)
-            {
-                // line.Position is the exact center 
-                m_onCheckpointReachCallback(line.Position);
-            }
-        }
-    }
-}
-
-void CollisionManager::CheckPlayerVsTriggerLines()
-{
-    // Fast Fail: Guard against missing data or dead player
-    if (!m_player || !m_stage || m_player->GetHP() <= 0) return;
-
-    const float TRIGGER_RANGE_Z = 2.0f;
-
-    for (int i = 0; i < m_stage->m_linesEnable.size(); ++i)
-    {
-        const auto& line = m_stage->m_linesEnable[i];
-
-        // Transform player pos into the line's local space
-        DirectX::XMVECTOR vLocalPos = TransformToLocalLine(m_player->GetMovement()->GetPosition(), line);
-        DirectX::XMFLOAT3 localPos;
-        DirectX::XMStoreFloat3(&localPos, vLocalPos);
-
-        float lineHalfLength = line.Scale.x * 0.5f;
-
-        // Check if player is standing on the line
-        if (localPos.x >= -lineHalfLength && localPos.x <= lineHalfLength &&
-            localPos.z > -TRIGGER_RANGE_Z && localPos.z < TRIGGER_RANGE_Z)
-        {
-            if (m_onEnableLineReachCallback)
-            {
-                m_onEnableLineReachCallback(i);
-            }
-        }
-    }
-}
-
-void CollisionManager::CheckPlayerVsVoidLines()
-{
-    //if (!m_player || !m_stage) return;
-    //if (m_player->IsFalling()) return;
-
-    //const float FALL_THRESHOLD = 0.1f;
-    //const float TRIGGER_RANGE = 2.0f;
-
-    //for (const auto& line : m_stage->m_linesVoid)
-    //{
-    //    XMVECTOR vLocalPos = TransformToLocalLine(m_player->GetMovement()->GetPosition(), line);
-    //    XMFLOAT3 localPos;
-    //    XMStoreFloat3(&localPos, vLocalPos);
-    //    float lineHalfLength = line.Scale.x * 0.5f;
-
-    //    if (localPos.x < -lineHalfLength - 0.5f || localPos.x > lineHalfLength + 0.5f) continue;
-    //    if (localPos.z < -FALL_THRESHOLD && localPos.z > -TRIGGER_RANGE)
-    //    {
-    //        m_player->SetFalling(true);
-    //    }
-    //}
 }
 
 void CollisionManager::CheckPlayerVsItems()
