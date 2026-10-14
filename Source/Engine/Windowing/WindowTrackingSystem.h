@@ -45,7 +45,7 @@ struct TrackedWindowConfig
     float fpsLimit = 0.0f;
     bool isTransparent = false;
 
-    bool isAlwaysOnTop = false; // <--- TAMBAHKAN INI (Default: false)
+    bool isAlwaysOnTop = false;
 
     WindowRole role = WindowRole::TRACKED_ENTITY;
 };
@@ -79,7 +79,7 @@ public:
     void Update(float dt);
 
     // Management
-    void RegisterWindow(Beyond::Window* window, WindowRole role, std::shared_ptr<Camera> camera = nullptr); // <-- BARU
+    void RegisterWindow(Beyond::Window* window, WindowRole role, std::shared_ptr<Camera> camera = nullptr);
     void UpdateWindowBounds(int windowIndex, int width, int height);
 
     // Management

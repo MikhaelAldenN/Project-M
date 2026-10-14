@@ -59,7 +59,6 @@ void WindowShatter::Cleanup()
     }
 }
 
-// [TAMBAH] Implementasi Update yang hilang
 void WindowShatter::Update(float dt)
 {
     if (m_markedForDestroy) return;
@@ -100,7 +99,7 @@ void WindowShatter::UpdateNativeState(float dt)
     m_physics.velocity.y *= m_physics.deceleration;
 
     try {
-        // [WRAPPED] Protect SDL calls
+        // Guard the SDL calls below.
         const float desktopScale{ GetDesktopScale(GetArenaRect()) };
 
         int curX, curY;
@@ -141,7 +140,6 @@ void WindowShatter::UpdateNativeState(float dt)
     }
 }
 
-// [TAMBAH] Implementasi TransitionToNativeWindow yang hilang
 void WindowShatter::TransitionToNativeWindow()
 {
     float screenX, screenY;
@@ -286,7 +284,7 @@ void WindowShatterManager::Update(float dt)
         shatter->Update(dt);
     }
 
-    // 2. [BARU] Cleanup window SEBELUM erase
+    // 2. Clean up windows before erasing them
     for (auto& shatter : m_shatters)
     {
         if (shatter->ShouldDestroy())

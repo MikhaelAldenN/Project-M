@@ -113,7 +113,7 @@ bool WindowTrackingSystem::AddTrackedWindow(
     }
 
     // =========================================================
-    // [2] JIKA POOL KOSONG: BUAT BARU (Kode Lama Anda Lanjut Di Sini)
+    // [2] Pool is empty: create a new window
     // =========================================================
     // 1. Create Window via Singleton Manager
     Beyond::Window* window = WindowManager::Instance().CreateGameWindow(
@@ -143,7 +143,7 @@ bool WindowTrackingSystem::AddTrackedWindow(
 
     // 3. Setup Tracked Object
     auto tracked = std::make_unique<TrackedWindow>();
-    tracked->isTransparent = config.isTransparent; // [NEW] Catat jenisnya di sini
+    tracked->isTransparent = config.isTransparent;
     tracked->name = config.name;
     tracked->window = window;
     tracked->role = config.role;
@@ -269,7 +269,7 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
         int newY = static_cast<int>(roundf(tracked.state.targetY));
 
         // =========================================================
-        // [FIX MUTLAK] OS WINDOW SHAKE (GETARAN FISIK JENDELA)
+        // OS WINDOW SHAKE
         // =========================================================
         float trauma = CameraController::Instance().GetTrauma();
 
@@ -321,14 +321,14 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
         return;
     }
 
-    // 4. THE MAGIC FIX: Proyeksikan 3D menggunakan posisi OS Asli, BUKAN target.
+    // 4. Project the 3D view from the window's actual OS position, not its target position.
     UpdateOffCenterProjection(tracked.camera.get(), osX, osY, tracked.state.actualW, tracked.state.actualH, GetUnifiedCameraHeight());
 }
 
 void WindowTrackingSystem::UpdateOffCenterProjection(Camera* targetCam, int winX, int winY, int winW, int winH, float camHeight)
 {
-    // [FIX 3] Gunakan posisi kamera saat ini (yang sudah mengandung Shake dari CameraController)
-    // Jangan dipaksa ke (0, camHeight, 0) agar getarannya sinkron di semua jendela.
+    // Keep the camera's current position (it already contains the CameraController shake)
+    // instead of forcing (0, camHeight, 0), so the shake stays in sync across windows.
     DirectX::XMFLOAT3 currentPos = targetCam->GetPosition();
     targetCam->SetPosition(currentPos);
 

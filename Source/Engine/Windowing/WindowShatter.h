@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <vector>
-#include <string> // Tambahkan string
+#include <string>
 #include <DirectXMath.h>
 #include "BeyondWindow.h"
 #include "Camera.h"
@@ -39,11 +39,11 @@ public:
     [[nodiscard]] Beyond::Window* GetWindow() const { return m_window; }
     [[nodiscard]] Camera* GetCamera() const { return m_camera.get(); }
 
-    // [TAMBAH] Flag untuk safe destruction
+    // Marks the window as ready for safe destruction.
     void PrepareForDestruction() { m_preparedForDestroy = true; }
     [[nodiscard]] bool IsPreppedForDestroy() const { return m_preparedForDestroy; }
 
-    // [TAMBAH] Manual cleanup method
+    // Manual cleanup
     void Cleanup();
 
     void SetSleeping(bool sleep) { m_isSleeping = sleep; }
@@ -63,7 +63,7 @@ private:
     std::shared_ptr<Camera> m_camera;
     ShatterPhysics m_physics;
 
-    std::string m_title; // [FIX] Simpan title unik
+    std::string m_title; // Unique window title
 
     bool m_isNativeWindow = false;
     bool m_markedForDestroy = false;

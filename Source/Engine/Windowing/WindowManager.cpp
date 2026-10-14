@@ -56,9 +56,8 @@ void WindowManager::EnforceWindowPriorities()
         });
 
     // =========================================================
-    // [PENGGANTI WIN32] Gunakan SDL3 untuk mengatur Z-Order
-    // Kita menaikkan (Raise) window dari prioritas terendah ke tertinggi
-    // sehingga yang tertinggi akan menumpuk di paling depan.
+    // Set the Z-order with SDL3: raise windows from lowest to highest
+    // priority, so the highest-priority window ends up in front.
     // =========================================================
     for (Beyond::Window* win : sortedWindows)
     {

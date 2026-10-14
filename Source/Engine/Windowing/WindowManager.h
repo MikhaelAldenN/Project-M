@@ -38,7 +38,7 @@ public:
     Beyond::Window* GetDebugWindow() const { return debugWindow; }
 
     // --------------------------------------------------------
-    // [BARU] Tambahkan Helper Functions ini:
+    // Helper functions
     // --------------------------------------------------------
 
     // 1. Cek apakah ada window yang hidup (Dipakai di Main.cpp)
