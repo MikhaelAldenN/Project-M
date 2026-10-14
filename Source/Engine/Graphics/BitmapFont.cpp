@@ -156,7 +156,7 @@ void BitmapFont::Draw3D(const std::string& text, const Camera* camera,
     auto dc = Graphics::Instance().GetDeviceContext();
 
     // -------------------------------------------------------------
-    // [FIX BLENDING] AKTIFKAN TRANSPARANSI
+    // Render state: alpha-blended text
     // -------------------------------------------------------------
     auto rs = Graphics::Instance().GetRenderState();
 

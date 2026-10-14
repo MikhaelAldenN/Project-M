@@ -5,7 +5,7 @@
 #include <memory>
 #include <wrl/client.h>
 
-// Definisi Tipe Data (Agar kompatibel dengan kode lamamu)
+// Short aliases for the DirectXMath float types used by Primitive.
 using VECTOR2 = DirectX::XMFLOAT2;
 using VECTOR3 = DirectX::XMFLOAT3;
 using VECTOR4 = DirectX::XMFLOAT4;

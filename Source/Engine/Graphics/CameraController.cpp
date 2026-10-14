@@ -624,7 +624,7 @@ CameraController::SequenceTimeInfo CameraController::GetSequenceProgress() const
         info.CurrentIndex = m_currentKeyframeIdx;
         info.TotalShots = m_sequenceQueue.size();
 
-        // [BARU] Kirim tipe easing ke luar
+        // Expose the easing type of the current keyframe.
         info.CurrentEasing = m_sequenceQueue[m_currentKeyframeIdx].Easing;
     }
     else

@@ -1,9 +1,9 @@
 #include "Primitive.h"
 #include "Camera.h"
-#include <string>  // <--- TAMBAHKAN INI UNTUK std::wstring
+#include <string>  // std::wstring
 #include <cmath>
 #include <cassert>
-#include <vector>  // Tambahkan ini juga biar aman
+#include <vector>
 #include <cstdio>  // Untuk FILE*, fopen, dll
 
 // Utility untuk load shader (Sesuaikan jika kamu punya class ShaderLoader sendiri)

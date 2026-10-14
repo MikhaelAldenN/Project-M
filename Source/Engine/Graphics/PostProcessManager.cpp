@@ -42,9 +42,8 @@ void PostProcessManager::CreateBuffers(int width, int height)
     textureDesc.ArraySize = 1;
 
     // -------------------------------------------------------------
-    // ---> THE AAA HDR UPGRADE <---
-    // Changed from DXGI_FORMAT_R8G8B8A8_UNORM to R16G16B16A16_FLOAT
-    // This allows colors to exceed 1.0f (Pure White) and become physically emissive!
+    // HDR target: a 16-bit float format lets color values exceed 1.0,
+    // so emissive colors are not clamped to white.
     // -------------------------------------------------------------
     textureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 

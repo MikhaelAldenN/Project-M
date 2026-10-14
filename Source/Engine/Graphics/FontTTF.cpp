@@ -5,7 +5,7 @@
 #include "System/GpuResourceUtils.h"
 #include <fstream>
 
-// Struktur Vertex disamakan persis dengan Sprite::Vertex agar bisa menggunakan Shader bawaan engine-mu
+// Same layout as Sprite::Vertex so the engine's built-in sprite shader can be reused.
 struct FontVertex {
     DirectX::XMFLOAT3 position;
     DirectX::XMFLOAT4 color;
@@ -113,7 +113,7 @@ std::vector<uint32_t> FontTTF::GenerateDefaultGlyphList(const std::vector<uint32
     for (uint32_t cp = 32; cp <= 126; ++cp) list.push_back(cp);
 
     // =========================================================
-    // [NEW] CJK Symbols & Punctuation (Termasuk 〜, 。, 、, 「」)
+    // CJK symbols and punctuation (ideographic space, full stop, comma, corner brackets)
     // =========================================================
     for (uint32_t cp = 0x3000; cp <= 0x303F; ++cp) list.push_back(cp);
 

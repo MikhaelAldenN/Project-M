@@ -19,7 +19,7 @@ enum class EasingType {
     EaseOutCubic,
     SmoothStep,
     SequenceAutoCubic,
-    Step // <--- TAMBAHKAN INI (JUMP CUT)
+    Step // Jump cut: snap to the target, then hold for the keyframe duration
 };
 
 // Struct for Camera Waypoints
@@ -28,9 +28,8 @@ struct CameraKeyframe {
     DirectX::XMFLOAT3 TargetPosition;
     DirectX::XMFLOAT3 TargetRotation;
 
-    // [BARU] Start State (Optional / Explicit)
-    // Jika isJumpCut = true, animasi akan dimulai dari StartPosition ini,
-    // bukan dari posisi kamera terakhir.
+    // Optional explicit start state. When isJumpCut is true, the shot starts
+    // from StartPosition instead of the camera's last position.
     bool isJumpCut = false;
     DirectX::XMFLOAT3 StartPosition;
     DirectX::XMFLOAT3 StartRotation;
@@ -122,9 +121,8 @@ public:
     static float ApplyEasing(float t, EasingType type);
 
     void AddTrauma(float amount) {
-        // [FIX MUTLAK] Logika MAX, BUKAN Additive!
-        // Jika ada benturan baru, kita hanya mengambil nilai getaran yang paling besar.
-        // Benturan beruntun tidak akan pernah membuat getaran menjadi raksasa!
+        // Keep the strongest shake instead of adding, so back-to-back hits
+        // never stack into an oversized shake.
         m_trauma = (std::min)(1.0f, (std::max)(m_trauma, amount));
     }
 
