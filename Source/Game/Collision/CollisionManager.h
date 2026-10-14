@@ -22,21 +22,6 @@ class NaviAlly;
 class Boss;
 class Bullet;
 
-// Axis-Aligned Bounding Box for rapid broad-phase rejection
-struct AABB
-{
-    DirectX::XMFLOAT3 minPoint{};
-    DirectX::XMFLOAT3 maxPoint{};
-};
-
-// inline and noexcept allow the compiler to heavily optimize this (zero-cost abstraction).
-[[nodiscard]] inline bool CheckAABBIntersection(const AABB& a, const AABB& b) noexcept
-{
-    return (a.minPoint.x <= b.maxPoint.x && a.maxPoint.x >= b.minPoint.x) &&
-        (a.minPoint.y <= b.maxPoint.y && a.maxPoint.y >= b.minPoint.y) &&
-        (a.minPoint.z <= b.maxPoint.z && a.maxPoint.z >= b.minPoint.z);
-}
-
 // Damage dealt by collision pairs whose bullets do not carry their own damage value.
 // Boss bullets and player bullets against enemies or the boss use Bullet::GetDamage() instead.
 struct CollisionDamageConfig

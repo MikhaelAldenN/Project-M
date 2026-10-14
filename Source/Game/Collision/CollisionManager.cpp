@@ -1,162 +1,16 @@
 #include "CollisionManager.h"
 #include "Boss.h"
+#include "CollisionGeometry.h"
 #include "EffectManager.h"
 #include "TimeManager.h"
 #include <CameraController.h>
 
 using namespace DirectX;
-
-// =========================================================
-// HELPER FUNCTIONS 
-// =========================================================
-static XMVECTOR TransformToLocal(const XMFLOAT3& worldPos, const DebugWallData& wall)
-{
-    XMVECTOR vWorldPos = XMLoadFloat3(&worldPos);
-    XMVECTOR vWallPos = XMLoadFloat3(&wall.Position);
-    XMVECTOR vRelative = XMVectorSubtract(vWorldPos, vWallPos);
-    XMMATRIX matRot = XMMatrixRotationRollPitchYaw(
-        XMConvertToRadians(wall.Rotation.x),
-        XMConvertToRadians(wall.Rotation.y),
-        XMConvertToRadians(wall.Rotation.z)
-    );
-    XMMATRIX matInvRot = XMMatrixTranspose(matRot);
-    return XMVector3TransformNormal(vRelative, matInvRot);
-}
-
-static XMVECTOR TransformNormalToWorld(const XMVECTOR& localNorm, const DebugWallData& wall)
-{
-    XMMATRIX matRot = XMMatrixRotationRollPitchYaw(
-        XMConvertToRadians(wall.Rotation.x),
-        XMConvertToRadians(wall.Rotation.y),
-        XMConvertToRadians(wall.Rotation.z)
-    );
-    return XMVector3TransformNormal(localNorm, matRot);
-}
-
-static XMVECTOR TransformToEnemyLocal(const XMFLOAT3& worldPos, const Enemy* enemy)
-{
-    XMVECTOR vWorldPos = XMLoadFloat3(&worldPos);
-    XMVECTOR vEnemyPos = XMLoadFloat3(&enemy->GetPosition());
-    XMVECTOR vRelative = XMVectorSubtract(vWorldPos, vEnemyPos);
-    XMFLOAT3 rot = enemy->GetRotation();
-    XMMATRIX matRot = XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z);
-    XMMATRIX matInvRot = XMMatrixTranspose(matRot);
-    return XMVector3TransformNormal(vRelative, matInvRot);
-}
-
-static float RayCastOBB(XMVECTOR rayOrigin, XMVECTOR rayDir, float rayLength, float radius, const DebugWallData& wall, XMVECTOR& outNormal)
-{
-    XMVECTOR vWallPos = XMLoadFloat3(&wall.Position);
-    XMMATRIX matRot = XMMatrixRotationRollPitchYaw(
-        XMConvertToRadians(wall.Rotation.x),
-        XMConvertToRadians(wall.Rotation.y),
-        XMConvertToRadians(wall.Rotation.z)
-    );
-    XMMATRIX matInvRot = XMMatrixTranspose(matRot);
-
-    XMVECTOR vRelOrigin = XMVectorSubtract(rayOrigin, vWallPos);
-    XMVECTOR vLocalOrigin = XMVector3TransformNormal(vRelOrigin, matInvRot);
-    XMVECTOR vLocalDir = XMVector3TransformNormal(rayDir, matInvRot);
-
-    float r = radius;
-    float minX = -wall.Scale.x - r; float maxX = wall.Scale.x + r;
-    float minZ = -wall.Scale.z - r; float maxZ = wall.Scale.z + r;
-
-    float tMin = 0.0f;
-    float tMax = rayLength;
-
-    XMFLOAT3 start, dir;
-    XMStoreFloat3(&start, vLocalOrigin);
-    XMStoreFloat3(&dir, vLocalDir);
-
-    if (abs(dir.x) < 1e-6f) {
-        if (start.x < minX || start.x > maxX) return -1.0f;
-    }
-    else {
-        float invD = 1.0f / dir.x;
-        float t1 = (minX - start.x) * invD;
-        float t2 = (maxX - start.x) * invD;
-        if (t1 > t2) std::swap(t1, t2);
-        tMin = (std::max)(tMin, t1);
-        tMax = (std::min)(tMax, t2);
-        if (tMin > tMax) return -1.0f;
-    }
-
-    if (abs(dir.z) < 1e-6f) {
-        if (start.z < minZ || start.z > maxZ) return -1.0f;
-    }
-    else {
-        float invD = 1.0f / dir.z;
-        float t1 = (minZ - start.z) * invD;
-        float t2 = (maxZ - start.z) * invD;
-        if (t1 > t2) std::swap(t1, t2);
-        tMin = (std::max)(tMin, t1);
-        tMax = (std::min)(tMax, t2);
-        if (tMin > tMax) return -1.0f;
-    }
-
-    XMFLOAT3 hitPoint;
-    XMStoreFloat3(&hitPoint, vLocalOrigin + vLocalDir * tMin);
-
-    float distMinX = abs(hitPoint.x - minX);
-    float distMaxX = abs(hitPoint.x - maxX);
-    float distMinZ = abs(hitPoint.z - minZ);
-    float distMaxZ = abs(hitPoint.z - maxZ);
-
-    float bestDist = distMinX;
-    XMVECTOR localNormal = XMVectorSet(-1, 0, 0, 0);
-
-    if (distMaxX < bestDist) { bestDist = distMaxX; localNormal = XMVectorSet(1, 0, 0, 0); }
-    if (distMinZ < bestDist) { bestDist = distMinZ; localNormal = XMVectorSet(0, 0, -1, 0); }
-    if (distMaxZ < bestDist) { bestDist = distMaxZ; localNormal = XMVectorSet(0, 0, 1, 0); }
-
-    outNormal = XMVector3TransformNormal(localNormal, matRot);
-
-    return tMin;
-}
-
-static float DistancePointToLineSegment2D(const DirectX::XMFLOAT3& A, const DirectX::XMFLOAT3& B, const DirectX::XMFLOAT3& P)
-{
-    float lineX = B.x - A.x;
-    float lineZ = B.z - A.z;
-    float px = P.x - A.x;
-    float pz = P.z - A.z;
-
-    float lineLengthSq = (lineX * lineX) + (lineZ * lineZ);
-
-    // If the bullet didn't move this frame, just do a normal sphere check
-    if (lineLengthSq == 0.0f) return std::sqrt((px * px) + (pz * pz));
-
-    // Dot product to project the target's position onto the bullet's path line
-    float t = ((px * lineX) + (pz * lineZ)) / lineLengthSq;
-
-    // Clamp 't' between 0.0f and 1.0f 
-    t = (std::max)(0.0f, (std::min)(1.0f, t));
-
-    // Find the closest point on the line
-    float closestX = A.x + t * lineX;
-    float closestZ = A.z + t * lineZ;
-
-    float dx = P.x - closestX;
-    float dz = P.z - closestZ;
-
-    return std::sqrt((dx * dx) + (dz * dz));
-}
-
-[[nodiscard]] inline AABB CreateSweptAABB(const DirectX::XMFLOAT3& startPos,
-    const DirectX::XMFLOAT3& endPos,
-    const float radius) noexcept
-{
-    return AABB{
-        { (std::min)(startPos.x, endPos.x) - radius,
-          (std::min)(startPos.y, endPos.y) - radius,
-          (std::min)(startPos.z, endPos.z) - radius },
-
-        { (std::max)(startPos.x, endPos.x) + radius,
-          (std::max)(startPos.y, endPos.y) + radius,
-          (std::max)(startPos.z, endPos.z) + radius }
-    };
-}
+using CollisionGeometry::AABB;
+using CollisionGeometry::CheckAABBIntersection;
+using CollisionGeometry::CreateSweptAABB;
+using CollisionGeometry::DistancePointToLineSegment2D;
+using CollisionGeometry::RayCastOBB;
 
 // =========================================================
 // INITIALIZATION OVERLOADS
