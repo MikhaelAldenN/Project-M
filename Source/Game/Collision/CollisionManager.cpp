@@ -150,7 +150,6 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
             {
                 Enemy* targetEnemy = static_cast<Enemy*>(bullet->GetHomingTarget());
 
-                // ---> BUG PREVENTION: The Dangling Pointer Guard <---
                 // Verify the target wasn't deleted from memory by a different attack (like a Slash)
                 bool isTargetAlive = false;
                 for (auto& activeEnemy : m_enemyManager->GetEnemies()) {
@@ -173,7 +172,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                 float dz = bPos.z - targetPos.z;
                 float distSq = dx * dx + dz * dz;
 
-                // ---> DYNAMIC HITBOX MATH <---
+                // Hit radius scales with the enemy's visual scale.
                 float enemyScale = targetEnemy->GetScale().x;
                 float hitRadius = 1.0f * enemyScale;
 
@@ -184,7 +183,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
 
                 if (distSq < (combinedHitRadius * combinedHitRadius))
                 {
-                    // ---> APPLY PARRY DAMAGE <---
+                    // The parried bullet damages the enemy.
                     targetEnemy->TakeDamage(DamageInfo{ m_damageConfig.parriedBulletToEnemy, bPos });
 
                     // Destroy the bullet
@@ -449,7 +448,7 @@ void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
         DirectX::XMFLOAT3 currentPos = bullet->GetMovement()->GetPosition();
         DirectX::XMFLOAT3 vel = bullet->GetVelocity();
 
-        // ---> CCD MATH: Calculate exactly where the bullet was last frame! <---
+        // Reconstruct last frame's position for the swept check.
         DirectX::XMFLOAT3 prevPos = {
             currentPos.x - (vel.x * elapsedTime),
             currentPos.y - (vel.y * elapsedTime), 
@@ -462,8 +461,7 @@ void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
 
             DirectX::XMFLOAT3 ePos = enemy->GetPosition();
 
-            // ---> DYNAMIC HITBOXES <---
-            // Fetch the visual scale of the enemy so the hitbox matches the 3D model perfectly
+            // Scale the hitbox with the enemy's visual scale so it matches the model.
             float enemyScale = enemy->GetScale().x;
             float enemyRadius = 1.0f * enemyScale; // Default Ball
 
@@ -473,9 +471,8 @@ void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
             // Combine the enemy's size with the bullet's size
             float exactHitDistance = enemyRadius + BULLET_HITBOX_RADIUS;
 
-            // ---> THE ANTI-TUNNELING CHECK <---
-            // Draws an invisible math line from prevPos to currentPos.
-            // If the enemy touches ANY part of that line, it's a guaranteed hit!
+            // Swept check: hit if the enemy is within range of the segment from
+            // prevPos to currentPos, so fast bullets cannot tunnel through.
             float distToPath = DistancePointToLineSegment2D(prevPos, currentPos, ePos);
 
             if (distToPath <= exactHitDistance)
@@ -505,7 +502,6 @@ void CollisionManager::CheckPlayerProjectilesVsNavi(const float elapsedTime)
         // Null and active state guard
         if (!bullet || !bullet->IsActive()) continue;
 
-        // Brace initialization for zero-cost abstraction and preventing narrowing conversions
         const DirectX::XMFLOAT3 currentPos{ bullet->GetMovement()->GetPosition() };
         const DirectX::XMFLOAT3 vel{ bullet->GetVelocity() };
 
@@ -708,14 +704,14 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
     auto checkBulletHit = [&](Bullet* bullet) {
         if (!bullet || !bullet->IsActive()) return;
 
-        // [PENTING] Jika peluru ini adalah hasil PARRY (mengarah balik ke bos), jangan lukai player!
+        // A parried bullet (heading back to the boss) never hurts the player.
         if (bullet->GetBossTarget() != nullptr) return;
 
         DirectX::XMFLOAT3 pPos = m_player->GetPosition();
         DirectX::XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
 
-        // [FIX MUTLAK] Gunakan pengecekan 3D Penuh (X, Y, Z) 
-        // Wajib agar serangan "Rain" dan "Bijuudama" yang melayang tinggi tidak mengenai player di bawahnya!
+        // Full 3D distance (X, Y, Z), so attacks high above the player such as
+        // Rain and Bijuudama do not hit the player below them.
         float dx = pPos.x - bPos.x;
         float dy = pPos.y - bPos.y;
         float dz = pPos.z - bPos.z;
@@ -767,9 +763,8 @@ void CollisionManager::CheckBossProjectilesVsBoss(float elapsedTime)
             DirectX::XMFLOAT3 bossPos = m_Boss->GetPosition();
 
             // =========================================================
-            // [FIX 1] DETEKSI 3D PENUH
-            // Tambahkan sumbu Y agar pecahan parabola tidak meledak di udara
-            // saat melintas tepat di atas kepala bos.
+            // Full 3D check: include Y so parabolic shards passing right
+            // above the boss's head do not explode in mid-air.
             // =========================================================
             float dx = bPos.x - bossPos.x;
             float dy = bPos.y - bossPos.y;
@@ -783,9 +778,8 @@ void CollisionManager::CheckBossProjectilesVsBoss(float elapsedTime)
                 bullet->SetActive(false);
 
                 // =========================================================
-                // [FIX 2] ROUTING DAMAGE YANG BENAR
-                // Panggil TakeDamage langsung ke Fase-nya agar sinkron 
-                // dengan UI Bar, Efek Suara, dan Flash Damage!
+                // Route damage directly to the phase so the HP bar,
+                // sound, and damage flash stay in sync.
                 // =========================================================
                 phase->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos });
 
