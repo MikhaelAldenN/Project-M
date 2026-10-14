@@ -107,7 +107,7 @@ namespace {
                 player->GetMovement()->SetRotationY(DirectX::XMConvertToDegrees(std::atan2(aimDir.x, aimDir.z)));
                 player->SetAimLocked(true);
 
-                player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerSlash>());
+                player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerSlash>(true));
 
                 // =========================================================
                 // EXECUTION SCALING
@@ -181,6 +181,13 @@ namespace {
                 player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerParry>());
                 return true;
             }
+        }
+
+        // Nothing to hit or parry: the melee button still answers with a slash.
+        if (isMeleeTriggered)
+        {
+            player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerSlash>(false));
+            return true;
         }
 
         // --- Default: Shoot ---
@@ -361,6 +368,10 @@ void PlayerSlash::Enter(Player* player)
     player->SetActiveWeapon(Player::WeaponType::Sword);
     player->GetAnimator()->PlayUpper("Parry", false);
 
+    // Why return early: the state velocity stays zero, so Player keeps applying walk input
+    // during a slash without a target.
+    if (!m_hasTarget) return;
+
     // Brace initialization to prevent narrowing conversions
     const float yawRad{ DirectX::XMConvertToRadians(player->GetMovement()->GetRotation().y) };
 
@@ -381,7 +392,7 @@ void PlayerSlash::Enter(Player* player)
 
 void PlayerSlash::Update(Player* player, float dt)
 {
-    timer -= dt;
+    m_timer -= dt;
 
     // Decelerate lunge over time
     XMFLOAT3 vel = player->GetMovement()->GetVelocity();
@@ -389,7 +400,7 @@ void PlayerSlash::Update(Player* player, float dt)
     vel.z *= PlayerConst::SlashDrag;
     player->GetMovement()->SetVelocity(vel);
 
-    if (timer <= 0.0f)
+    if (m_timer <= 0.0f)
     {
         if (player->IsMoving())
             player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerMoving>());

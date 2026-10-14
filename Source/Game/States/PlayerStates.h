@@ -43,11 +43,16 @@ private:
 class PlayerSlash : public PlayerState
 {
 public:
+    // `hasTarget`: an enemy was in the slash cone on the press frame. Only then does the
+    // slash lunge and grant melee armor; a slash without a target leaves movement alone.
+    explicit PlayerSlash(bool hasTarget) : m_hasTarget{ hasTarget } {}
+
     void Enter(Player* player) override;
     void Update(Player* player, float dt) override;
     void Exit(Player* player) override;
 private:
-    float timer = PlayerConst::SlashDuration;
+    float m_timer{ PlayerConst::SlashDuration };
+    bool m_hasTarget{ false };
 };
 
 class PlayerParry : public PlayerState
