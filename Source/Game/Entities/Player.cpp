@@ -1115,6 +1115,15 @@ void Player::DrawDebugGUI()
     }
     ImGui::PopID();
 
+    ImGui::PushID("Slash");
+    if (ImGui::CollapsingHeader("Slash", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        DebugProperty::DragFloat("Lunge distance", m_slashLungeDistance, 0.05f, 0.0f, 10.0f, "%.2f");
+        // Capped at the slash duration: the state ends the lunge when the slash ends.
+        DebugProperty::DragFloat("Lunge duration", m_slashLungeDuration, 0.01f, 0.01f, PlayerConst::SlashDuration, "%.2f s");
+    }
+    ImGui::PopID();
+
     ImGui::PushID("Health");
     if (ImGui::CollapsingHeader("Health"))
     {

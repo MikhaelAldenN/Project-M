@@ -373,13 +373,20 @@ void PlayerSlash::Enter(Player* player)
     if (!m_hasTarget) return;
 
     // Brace initialization to prevent narrowing conversions
+    // Brace initialization to prevent narrowing conversions
     const float yawRad{ DirectX::XMConvertToRadians(player->GetMovement()->GetRotation().y) };
 
+    // Why constant speed with a time limit: distance = speed x duration at any frame rate,
+    // the same rule PlayerDash uses.
+    const float lungeDuration{ (std::max)(player->GetSlashLungeDuration(), 0.01f) };
+    const float lungeSpeed{ player->GetSlashLungeDistance() / lungeDuration };
+
     player->GetMovement()->SetVelocity({
-        std::sin(yawRad) * PlayerConst::SlashLungeForce,
+        std::sin(yawRad) * lungeSpeed,
         0.0f,
-        std::cos(yawRad) * PlayerConst::SlashLungeForce
+        std::cos(yawRad) * lungeSpeed
         });
+    player->SetStateMoveTimeLimit(lungeDuration);
 
     // =========================================================
     // MELEE ARMOR (I-FRAMES)
@@ -394,12 +401,6 @@ void PlayerSlash::Update(Player* player, float dt)
 {
     m_timer -= dt;
 
-    // Decelerate lunge over time
-    XMFLOAT3 vel = player->GetMovement()->GetVelocity();
-    vel.x *= PlayerConst::SlashDrag;
-    vel.z *= PlayerConst::SlashDrag;
-    player->GetMovement()->SetVelocity(vel);
-
     if (m_timer <= 0.0f)
     {
         if (player->IsMoving())
@@ -412,6 +413,7 @@ void PlayerSlash::Update(Player* player, float dt)
 void PlayerSlash::Exit(Player* player)
 {
     player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f });
+    player->ClearStateMoveTimeLimit();
 }
 
 // ============================================================

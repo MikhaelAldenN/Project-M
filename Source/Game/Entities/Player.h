@@ -141,6 +141,8 @@ public:
     float GetBaseSpeed()    const { return baseSpeed; }
     float GetDashSpeed()    const { return dashSpeed; }
     float GetDashDuration() const { return dashDuration; }
+    [[nodiscard]] float GetSlashLungeDistance() const { return m_slashLungeDistance; }
+    [[nodiscard]] float GetSlashLungeDuration() const { return m_slashLungeDuration; }
     DirectX::XMFLOAT2 GetLastValidInput() const { return lastValidInput; }
 
     // Called by PlayerDash on enter. Spends one dash charge, which also grants the dash
@@ -240,6 +242,10 @@ private:
     int   m_maxDashCharges{ PlayerConst::DashCharges };
     float m_dashRecoveryTime{ PlayerConst::DashRecoveryTime };
     float m_dashPenaltyScale{ PlayerConst::DashPenaltyScale }; // USULAN DESAIN: tuned from the Player panel
+
+    // --- Slash params ---
+    float m_slashLungeDistance{ PlayerConst::SlashLungeDistance };
+    float m_slashLungeDuration{ PlayerConst::SlashLungeDuration };
 
     // --- Dash state ---
     int   m_dashCharges{ PlayerConst::DashCharges }; // full dashes left

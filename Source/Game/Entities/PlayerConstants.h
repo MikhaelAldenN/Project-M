@@ -31,8 +31,8 @@ namespace PlayerConst
     inline constexpr float DashPenaltyScale = 0.5f;   // USULAN DESAIN: speed multiplier of a penalized dash
     
     // --- Slash ---
-    inline constexpr float SlashLungeForce = 40.0f;  // Initial velocity burst on slash enter
-    inline constexpr float SlashDrag = 0.7f;   // Velocity multiplier applied per frame during slash
+    inline constexpr float SlashLungeDistance = 2.1f;   // USULAN DESAIN: lunge length toward a target (units)
+    inline constexpr float SlashLungeDuration = 0.07f;  // USULAN DESAIN: time to cover it (s), kept below SlashDuration
     inline constexpr float SlashDuration = 0.15f;  // State timer (s)
 
     // --- Parry ---
