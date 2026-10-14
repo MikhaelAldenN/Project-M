@@ -372,7 +372,7 @@ void SceneGame::Update(const float elapsedTime)
             m_scene.reset();
             m_dispatcher.reset();
             m_physics.reset();
-            m_foundation.reset(); // <-- This frees PxFoundation for SceneBoss!
+            m_foundation.reset(); // Releases PxFoundation so SceneBoss can create its own
 
             // Clear the camera so SceneBoss can claim it without it getting overridden
             CameraController::Instance().ClearCamera();
@@ -424,7 +424,7 @@ void SceneGame::Update(const float elapsedTime)
 
             if (t >= 1.0f)
             {
-                ResetLevel(); // Perform the zero-cost reset
+                ResetLevel();
                 m_isDying = false;
                 m_respawnTimer = RESPAWN_FADE_DURATION;
 

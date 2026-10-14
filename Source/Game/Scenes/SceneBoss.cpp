@@ -78,7 +78,6 @@ SceneBoss::SceneBoss()
 
     m_player->SetPosition(0.0f, 0.0f, -8.0f);
 
-    //// --- TAMBAHKAN INISIALISASI MANAGER DI SINI ---
     //auto device = Graphics::Instance().GetDevice();
 
     // --- Primitive Renderers ---
@@ -98,8 +97,6 @@ SceneBoss::SceneBoss()
     //m_itemManager = std::make_unique<ItemManager>();
     //m_itemManager->Initialize(device);
 
-    // Jika Anda sudah memiliki inisialisasi Boss, panggil di sini
-    // m_boss = std::make_unique<Boss>(); 
 
     m_collisionManager = std::make_unique<CollisionManager>();
 
@@ -228,8 +225,8 @@ void SceneBoss::InitializeSubWindows()
     if (!m_windowSystem || !m_player) return;
 
     // =========================================================
-    // [FIX MUTLAK] Jangan pernah spawn window "player" jika 
-    // bos sedang berada di Fase Windowkill!
+    // Never spawn the "player" window while the boss
+    // is in the Windowkill phase.
     // =========================================================
     const bool isWindowkillPhase{ m_navi && IsWindowkill(m_navi->GetCurrentPhase()) };
 
@@ -437,7 +434,7 @@ void SceneBoss::Update(float elapsedTime)
     m_windowSystem->SetArenaRect(Framework::Instance()->GetGameImageRect());
 
     // =========================================================
-    // [FIX] UPDATE KAMERA & CAMERA SHAKE (GABUNGAN)
+    // CAMERA AND CAMERA SHAKE UPDATE
     // =========================================================
     // Deklarasi hanya dilakukan SATU KALI di sini!
     float newUnifiedHeight = m_windowSystem->GetUnifiedCameraHeight();
@@ -450,7 +447,7 @@ void SceneBoss::Update(float elapsedTime)
     camCtrl.SetFixedSetting(DirectX::XMFLOAT3(shake.x, newUnifiedHeight + shake.y, shake.z));
     camCtrl.SetTarget({ shake.x, shake.y, shake.z });
 
-    // [PENTING] Update kamera menggunakan waktu murni (elapsedTime) agar tetap bergetar saat Hit Stop!
+    // Update the camera with unscaled time (elapsedTime) so it keeps shaking during hit stop.
     camCtrl.Update(elapsedTime);
     // =========================================================
 
@@ -624,7 +621,7 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
     }
 
     // =========================================================
-    // [NEW] OVERRIDE CLEAR COLOR UNTUK JENDELA NON-TRANSPARAN
+    // CLEAR COLOR OVERRIDE FOR NON-TRANSPARENT WINDOWS
     // =========================================================
     if (!isTransparentWindow)
     {
@@ -850,7 +847,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
         if (shouldRenderHere) {
             const XMFLOAT3 pPos = m_player->GetPosition();
 
-            // [MODIFIKASI] Bypass pengecekan Sphere jika sedang dikurung!
+            // The sphere check is bypassed while the player is caged (below).
             bool isInView = camera->CheckSphere(pPos.x, pPos.y, pPos.z, 1.5f);
 
             auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase());
@@ -886,7 +883,6 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
     void SceneBoss::DrawGUI()
     {
-/*        return;*/ // Add this — skips all ImGui rendering for release
 
         if (m_isPendingSceneChange) return;
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);

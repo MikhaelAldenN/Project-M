@@ -318,7 +318,7 @@ void SceneTitle::Render(float dt, Camera* targetCamera)
     // RENDER MENU 
     if (m_menuAlpha > 0.0f)
     {
-        // Outsource processing to our highly optimized sub-render routine
+        // Menu options are drawn by a separate routine.
         RenderMenuOptions(dc);
 
         // Render Cursor smoothly using the Primitive class
@@ -374,7 +374,6 @@ void SceneTitle::RenderMenuOptions(ID3D11DeviceContext* dc)
     static constexpr ColorRGB unselectedColor{ 0.75f, 0.75f, 0.75f }; // Soft crisp silver white
     static constexpr ColorRGB selectedColor{ 1.0f, 1.0f, 1.0f };     // Glowing direct white
 
-    // Zero-overhead local matrix mappings utilizing reference wrappers
     const std::array<MenuItem, 3> items{ {
         { m_newGameSprite.get(), Y_NEW_GAME, 173.0f, 25.0f, m_optionWeights[0] },
         { m_optionSprite.get(),  Y_OPTION,   118.0f, 32.0f, m_optionWeights[1] },
@@ -474,9 +473,7 @@ void SceneTitle::ExecuteMenuSelection() noexcept
         break;
 
     case MenuOption::Exit:
-        // Zero-cost exit trigger. Since your Framework uses SDL beneath the hood, 
-        // pushing an SDL_QUIT event is the safest, standard way to cleanly 
-        // shut down the window and break the main loop without memory leaks.
+        // Push SDL_QUIT so the main loop exits through its normal shutdown path.
         if (!m_isExiting)
         {
             SDL_Event quitEvent{}; // Brace initialization guarantees zeroed memory

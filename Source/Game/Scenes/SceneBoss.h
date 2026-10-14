@@ -139,7 +139,7 @@ private:
 
     ImVec2    m_debugPanelSize = { 450.0f, 750.0f };
 
-    bool      m_showHitboxes = true; // <--- TAMBAHKAN INI (Default True)
+    bool      m_showHitboxes = true;
 
     // =========================================================
     // CAMERA COMBAT ZOOM (Furi Style)
