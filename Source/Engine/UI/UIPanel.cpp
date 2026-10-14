@@ -97,7 +97,7 @@ void UIPanel::Render(ID3D11DeviceContext* dc)
         style.colorBg.x, style.colorBg.y, style.colorBg.z, style.colorBg.w);
 
     // =========================================================
-    // 2. HEADER BLOCKER (INI YANG HILANG KEMARIN)
+    // 2. HEADER BLOCKER
     // =========================================================
     // Fungsinya: Menimpa garis border kuning di tempat Judul berada
 

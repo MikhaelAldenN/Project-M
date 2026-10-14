@@ -4,8 +4,8 @@
 
 CursorBlock::CursorBlock(ID3D11Device* device)
 {
-    // [PERBAIKAN] Ganti dari INVERT ke STANDARD ALPHA BLEND
-    // Ini menjamin warna kursor tetap AMBER TERANG di atas background apapun.
+    // Standard alpha blend (not invert), so the cursor stays bright amber
+    // on any background.
 
     D3D11_BLEND_DESC blendDesc = {};
     blendDesc.AlphaToCoverageEnable = FALSE;
@@ -65,7 +65,7 @@ void CursorBlock::SetColor(float r, float g, float b, float a)
     m_color[0] = r; m_color[1] = g; m_color[2] = b; m_color[3] = a;
 }
 
-// [BARU] Logika utama dipindah ke sini
+// Main update: takes the raw cursor position.
 void CursorBlock::Update(float dt, float rawX, float rawY)
 {
     // 1. Logic Snapping
@@ -98,7 +98,7 @@ void CursorBlock::Update(float dt, float rawX, float rawY)
     }
 }
 
-// [MODIFIED] Fungsi lama sekarang cuma jadi wrapper
+// Convenience overload: reads the position from the mouse and forwards it.
 void CursorBlock::Update(float dt, Mouse& mouse)
 {
     float mx = static_cast<float>(mouse.GetPositionX());

@@ -17,7 +17,7 @@ public:
     // Setup ukuran kursor
     void Initialize(float width, float height);
 
-    // [UPDATED] Menggunakan Reference (Mouse&) agar cocok dengan Input.h
+    // Reads the cursor position from Input's Mouse.
     void Update(float dt, Mouse& mouse);
     void Update(float dt, float rawX, float rawY);
 

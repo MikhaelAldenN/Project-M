@@ -49,7 +49,7 @@ public:
 private:
     void AdvanceDialogue();
 
-    // --- AAA Inline Glyph Rendering Helpers ---
+    // --- Inline glyph rendering helpers ---
     // Parses a raw string containing {ATK} and {DASH} tags into a renderable string
     [[nodiscard]] std::string ParseDialogueTags(const std::string& rawLine);
 

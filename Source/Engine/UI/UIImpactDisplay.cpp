@@ -122,8 +122,6 @@ void UIImpactDisplay::Update(float elapsedTime)
     }
 }
 
-// === FUNGSI YANG HILANG (PENYEBAB ERROR) ADA DI BAWAH INI ===
-
 void UIImpactDisplay::Render(ID3D11DeviceContext* dc)
 {
     if (!m_anim.isActive) return;

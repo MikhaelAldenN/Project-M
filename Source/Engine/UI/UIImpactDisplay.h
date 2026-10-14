@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <deque> // [BARU] Untuk antrian
+#include <deque>
 #include <DirectXMath.h>
 #include "System/Sprite.h"
 #include "Primitive.h"
@@ -16,14 +16,14 @@ enum class ImpactType {
     MashSpace,
     Ready,
     Go,
-    Nigero, // [BARU] Tambah tipe baru
+    Nigero,
     SpaceKeyJP,  // Untuk "Sprite_Text_SPACEKEY_jp.png"
     RendaSeyo,
     Bougyo,
     Kougeki
 };
 
-// [BARU] Struct untuk menyimpan data sequence
+// One step of an impact sequence.
 struct ImpactEvent {
     ImpactType type;
     float duration;
@@ -40,7 +40,7 @@ public:
     // Fungsi Show biasa (single)
     void Show(ImpactType type, float duration = 1.5f);
 
-    // [BARU] Fungsi untuk memicu urutan (sequence)
+    // Plays the events in order.
     void ShowSequence(const std::vector<ImpactEvent>& sequence);
 
     void Update(float elapsedTime);
@@ -69,7 +69,7 @@ private:
     std::unique_ptr<Primitive> m_primitive;
     AnimationState m_anim;
 
-    // [BARU] Variable Antrian
+    // Pending events of the current sequence.
     std::deque<ImpactEvent> m_eventQueue;
 
     float m_screenW = 1920.0f;

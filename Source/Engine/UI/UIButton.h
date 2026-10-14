@@ -60,7 +60,7 @@ public:
         }
     }
 
-    // --- NEW HELPERS ---
+    // --- Selection and click callback ---
     void SetSelected(bool value) { isSelected = value; }
     bool IsSelected() const { return isSelected; }
     void SetOnClick(OnClickCallback cb) { callback = cb; }

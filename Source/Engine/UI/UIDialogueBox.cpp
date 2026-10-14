@@ -56,8 +56,7 @@ std::string UIDialogueBox::ParseDialogueTags(const std::string& rawLine)
         if (rawLine.compare(i, 6, "{DASH}") == 0)
         {
             if (m_lockedDeviceForLine == InputDevice::Gamepad) {
-                // FIX 1: Perfect Integer Scaling (14x7 * 4.0 = 56x28)
-                // Prevents DirectX from blurring the pixel art!
+                // Integer scaling keeps the pixel-art glyph from being blurred.
                 constexpr float w = 42.0f;
                 constexpr float h = 37.0f;
                 constexpr float LB_Y_OFFSET = 7.0f;
@@ -70,9 +69,8 @@ std::string UIDialogueBox::ParseDialogueTags(const std::string& rawLine)
                     cursorX - LB_X_OFFSET, cursorY + LB_Y_OFFSET, w, h
                     });
 
-                // FIX 2: Only use Full-Width Japanese spaces (U+3000). 
-                // Normal spaces ' ' have unpredictable widths in TTF, causing text overlap!
-                // 2 Full Spaces = Exactly 64px gap.
+                // Use full-width spaces (U+3000) only: ASCII spaces have unpredictable
+                // widths in TTF and make the text overlap. Two full-width spaces give a 64 px gap.
                 processedLine += u8"   ";
                 cursorX += (FULL_WIDTH * 2.0f);
             }
@@ -168,7 +166,6 @@ void UIDialogueBox::Update(float dt)
 {
     if (m_state == State::Hidden) return;
 
-    // Zero-overhead reference binding
     auto& input = Input::Instance();
     auto& keyboard = input.GetKeyboard();
     auto& gamepad = input.GetGamePad();
@@ -330,7 +327,7 @@ void UIDialogueBox::RenderToWindow(ID3D11DeviceContext* dc, float windowW, float
     constexpr float FONT_BASELINE_SHIFT = -32.0f;
     constexpr float OPTICAL_Y_TWEAK = -2.0f;
 
-    // AAA Inline Sprite Injection
+    // Inline sprites embedded in the dialogue text
     for (const auto& inlineIcon : m_activeInlineSprites)
     {
         if (m_charIndex >= inlineIcon.triggerByteIndex && inlineIcon.sprite)
