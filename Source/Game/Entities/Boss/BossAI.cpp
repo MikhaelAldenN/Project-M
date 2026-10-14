@@ -20,7 +20,7 @@
 BossAI_Phase01::BossAI_Phase01(BossPhase01* phase, Player* target)
     : m_phase(phase), m_target(target) {}
 
-// [DIUBAH] Mesin Pengatur Giliran Selang-Seling (Tactician Mode)
+// Tactician Mode: alternates main attacks with the filler.
 BossAI_Phase01::AttackSequence BossAI_Phase01::GetNextTacticianAttack() {
     AttackSequence nextAttack;
 
@@ -35,7 +35,7 @@ BossAI_Phase01::AttackSequence BossAI_Phase01::GetNextTacticianAttack() {
         m_mainAttackIndex = (m_mainAttackIndex + 1) % 4; // Ulangi ke 0 jika mencapai 4
     }
     else {
-        // [DIUBAH] Filler kini selalu Radial (Direct & Fan dipensiunkan dari rotasi filler)
+        // The filler is always Radial; Direct and Fan are out of the filler rotation.
         nextAttack = AttackSequence::Radial;
     }
 
@@ -57,7 +57,7 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
         float hpPercent = static_cast<float>(m_phase->GetHP()) / static_cast<float>(m_phase->GetMaxHP());
         bool isEnraged = (hpPercent <= 0.5f);
 
-        // [BARU] Transisi mulus saat boss masuk Chaos Mode (HP < 50%)
+        // One-time transition when the boss enters Chaos Mode (HP <= 50%)
         if (isEnraged && !m_isEnraged) {
             m_isEnraged = true;
             m_currentAttack = AttackSequence::Phalanx; // Memulai combo pertama dari Phalanx
@@ -71,10 +71,9 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
 
             // ========================================================
             // FILLER ATTACK (Tactician Mode)
-            // [DIUBAH] Direct & Fan dipensiunkan dari rotasi filler aktif.
-            // Case di bawah dipertahankan (bukan dihapus) untuk kemungkinan
-            // dipakai sebagai layer tambahan di kombinasi Fase 2 nanti.
-            // Tidak lagi reachable dari GetNextTacticianAttack() atau default state.
+            // Direct and Fan are out of the active filler rotation and are not
+            // reachable from GetNextTacticianAttack() or the default state.
+            // The cases are kept as possible layers for Phase 2 combinations.
             // ========================================================
         case AttackSequence::Direct:
             m_phase->AddAttack(std::make_unique<AttackDirect>(AttackParamManager::Instance().GetDirectParams(), m_target));

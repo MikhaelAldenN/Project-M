@@ -62,10 +62,10 @@ void AttackUltimate::Update(float dt, Boss* boss) {
         if ((dx * dx + dz * dz) <= 1.0f) {
             m_state = State::Charging;
             m_chargeTimer = 0.0f;
-            if (m_ball) m_ball->SetActive(true); // [FIX] Pastikan bola menyala saat mulai charge!
+            if (m_ball) m_ball->SetActive(true); // The ball is visible from the start of the charge
         }
         else {
-            // [FIX] Jangan pernah menonaktifkan (SetActive(false)) bola di sini!
+            // Never deactivate the ball here.
             return;
         }
     }
@@ -88,7 +88,7 @@ void AttackUltimate::Update(float dt, Boss* boss) {
         m_chargeTimer += dt;
 
         // Position and grow ball while stationary
-        if (m_ball) { // [FIX] Syarat IsActive() DIHAPUS agar kode di bawahnya bisa berjalan!
+        if (m_ball) {
             if (!m_ball->IsActive()) m_ball->SetActive(true); // Nyalakan jika terlanjur mati
 
             XMFLOAT3 vel = m_ball->GetVelocity();

@@ -46,7 +46,7 @@ private:
     DirectParams                          m_params;
     std::vector<std::unique_ptr<Bullet>>* m_pool = nullptr;
     Boss* m_boss = nullptr;
-    Player* m_target = nullptr; // <--- Butuh Player untuk Tracking
+    Player* m_target = nullptr; // Tracking target
 
     bool  m_active = false;
     int   m_spawnedCount = 0;

@@ -156,7 +156,7 @@ private:
     // HUD Renderer — dirender ke FX window
     std::unique_ptr<HUDRenderer> m_hudRenderer;
 
-    // [BARU] Overdrive Sprite
+    // Overdrive sprite
     std::unique_ptr<Sprite> m_overdriveSprite;
     float m_overdriveSpriteScale = 0.02f;
     float m_overdriveAlpha = 0.0f;

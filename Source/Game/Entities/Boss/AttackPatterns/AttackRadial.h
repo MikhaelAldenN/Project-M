@@ -27,7 +27,7 @@ public:
     explicit AttackRadial(const RadialParams& params);
     ~AttackRadial() override = default;
 
-    // --- TAMBAHKAN FUNGSI INI UNTUK COMBO AI ---
+    // Used by the combo AI to override the parameters.
     void SetParams(const RadialParams& newParams) { m_params = newParams; }
 
     void Start(Boss* boss, BossBulletPool* pool) override;

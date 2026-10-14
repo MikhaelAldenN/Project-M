@@ -15,7 +15,7 @@ struct MeteorParams {
     int   count = 5;
     float spawnDelay = 0.4f;
     float speed = 35.0f;
-    float speedVariance = 10.0f; // <--- TAMBAHKAN INI (Rentang acak kecepatan)
+    float speedVariance = 10.0f; // Random speed range
     float radius = 0.8f;
     float visualScale = 3.0f;
 

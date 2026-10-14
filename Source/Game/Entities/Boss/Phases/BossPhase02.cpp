@@ -104,7 +104,7 @@ void BossPhase02::Enter(Boss* boss) {
     m_aiEnabled = false;
 
     // =========================================================
-    // [BARU] INISIALISASI FSM (OTAK AI)
+    // AI STATE MACHINE
     // =========================================================
     m_ai = std::make_unique<BossAI_Phase02>(this, m_aiTarget);
 
@@ -113,7 +113,7 @@ void BossPhase02::Enter(Boss* boss) {
     }
 
     // =========================================================
-    // [BARU] INISIALISASI KANDANG PEMAIN
+    // PLAYER CAGE
     // =========================================================
     if (m_aiTarget) {
         m_isPlayerCaged = true;
@@ -152,7 +152,7 @@ void BossPhase02::Enter(Boss* boss) {
     m_overdriveAlpha = 0.0f;
 
     // =========================================================
-    // [BARU] OPENING DIALOGUE — TRACKING WINDOW
+    // OPENING DIALOGUE: TRACKING WINDOW
     // =========================================================
     {
         float p2u = windowSystem->GetPixelToUnitRatio();
@@ -206,7 +206,7 @@ void BossPhase02::Enter(Boss* boss) {
     m_overdriveDialogueTriggered = false;
 
     // =========================================================
-    // [BARU] INVISIBLE CLICK BLOCKER WINDOW
+    // INVISIBLE CLICK BLOCKER WINDOW
     // =========================================================
     // Window ini selebar layar untuk menangkap klik nyasar ke OS
     TrackedWindowConfig blockerCfg;
@@ -247,7 +247,7 @@ void BossPhase02::Exit(Boss* boss) {
         boss->GetWindowSystem()->RemoveTrackedWindow(m_cageWindowName);
     }
 
-    // 2. [BARU] BERSIH-BERSIH ATTACK PATTERNS SECARA OTOMATIS
+    // 2. Stop all attack patterns
     for (auto& attack : m_activeAttacks) {
         attack->Stop(boss);
     }
@@ -285,7 +285,7 @@ void BossPhase02::Exit(Boss* boss) {
         boss->GetWindowSystem()->RemoveTrackedWindow("navi_fx");
         boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
         boss->GetWindowSystem()->RemoveTrackedWindow(m_cageWindowName);
-        boss->GetWindowSystem()->RemoveTrackedWindow("click_blocker"); // <-- [BARU] Hapus Blocker
+        boss->GetWindowSystem()->RemoveTrackedWindow("click_blocker");
     }
 }
 
@@ -590,7 +590,7 @@ void BossPhase02::Update(float dt, Boss* boss) {
     }
 
     // =========================================================
-    // [BARU] UPDATE AI DECISIONS (THE BRAIN)
+    // UPDATE AI DECISIONS
     // =========================================================
     if (m_ai) {
         m_ai->SetEnabled(m_aiEnabled);
@@ -598,7 +598,7 @@ void BossPhase02::Update(float dt, Boss* boss) {
     }
 
     // =========================================================
-    // [BARU] UPDATE ACTIVE ATTACK PATTERNS (THE MUSCLE)
+    // UPDATE ACTIVE ATTACK PATTERNS
     // =========================================================
     for (auto it = m_activeAttacks.begin(); it != m_activeAttacks.end(); ) {
         (*it)->Update(dt, boss);
@@ -706,7 +706,7 @@ void BossPhase02::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
     }
 
     // =========================================================
-    // [BARU] DELEGASI RENDER KE ATTACK PATTERNS
+    // RENDER ATTACK PATTERNS
     // =========================================================
     for (auto& attack : m_activeAttacks) {
         attack->Render(context, currentCamera, boss);

@@ -109,7 +109,7 @@ void AttackMeteor::FireMeteor() {
 
             // 4. Set Titik Spawn final untuk meteor ini
             DirectX::XMFLOAT3 spawnPos = {
-                m_params.startX + (perpX * currentOffset) + randomOffsetX,  // <--- Ditambah jitter X
+                m_params.startX + (perpX * currentOffset) + randomOffsetX,  // X jitter
                 1.0f,
                 m_params.startZ + (perpZ * currentOffset)
             };
@@ -134,7 +134,7 @@ void AttackMeteor::FireMeteor() {
             bullet->SetTurnSpeed(8.0f);
             bullet->SetDamage(m_params.damage);
 
-            // [PERBAIKAN] Gunakan finalSpeed, bukan m_params.speed
+            // finalSpeed includes the random speed offset.
             bullet->Fire(spawnPos, direction, finalSpeed);
             break;
         }

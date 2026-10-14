@@ -50,14 +50,13 @@ private:
     bool         m_enabled = false;
 
     // ========================================================
-    // [DIUBAH] Tracker untuk Tactician Mode (HP > 50%)
+    // Tactician Mode tracker (HP > 50%)
     // ========================================================
     int  m_mainAttackIndex = 0;     // 0: Wave, 1: Phalanx, 2: Meteor, 3: Rain (Targeted)
     bool m_isNextMainAttack = true; // Karena dimulai dari Radial (Filler), next = Main Attack
-    // [DIUBAH] Filler kini hanya Radial; m_fillerAttackIndex & rotasi Direct/Fan dihapus dari pemakaian aktif
 
     // ========================================================
-    // [BARU] Tracker untuk Chaos Mode (HP <= 50%)
+    // Chaos Mode tracker (HP <= 50%)
     // ========================================================
     bool m_isEnraged = false;       // Flag untuk mendeteksi awal transisi Phase 2
     int  m_enragedMainIndex = 1;    // 0: Phalanx, 1: Wave, 2: Meteor, 3: Ultimate
@@ -86,8 +85,6 @@ public:
     void SetEnabled(bool enabled) { m_enabled = enabled; }
     bool IsEnabled() const { return m_enabled; }
     void SetTarget(Player* target) { m_target = target; }
-
-    // CATATAN: Semua fungsi Get...Params() DIHAPUS karena sudah pindah ke ParamManager
 
 private:
     BossPhase02* m_phase = nullptr;
