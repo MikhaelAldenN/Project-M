@@ -45,7 +45,7 @@ public:
     }
     Boss* GetBossTarget() const { return m_bossTarget; }
 
-    // [BARU] Fungsi setup untuk Kurva Parabola
+    // Parabolic path setup
     void SetParabolic(bool val) { m_isParabolic = val; }
     void SetParabolaParams(const DirectX::XMFLOAT3& startPos, const DirectX::XMFLOAT3& ctrl, float duration) {
         m_parabolaStart = startPos;
@@ -84,7 +84,7 @@ private:
 
     int m_damage = 10;
     int m_vfxHandle = -1;
-    float m_vfxScaleMultiplier = 1.0f; // <--- [BARU] Tambahkan ini
+    float m_vfxScaleMultiplier = 1.0f;
     float m_vfxForwardOffsetMult = 0.0f;
     float m_lifeTime = 0.0f;
 

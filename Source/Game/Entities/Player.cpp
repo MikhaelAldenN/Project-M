@@ -107,7 +107,7 @@ Player::~Player()
         EffectManager::Instance().Stop(m_dashStandbyVfxHandle);
     }
 
-    // [BARU] Bersihkan efek overdrive
+    // Stop the overdrive effect
     if (m_overdriveVfxHandle != -1) {
         EffectManager::Instance().Stop(m_overdriveVfxHandle);
     }
@@ -168,7 +168,7 @@ void Player::Update(float elapsedTime, Camera* camera)
     UpdateHorizontalMovement(elapsedTime);
 
     // -------------------------------------------------------------
-    // ---> DEBUG: BYPASS THE STATE MACHINE FOR WEAPON TUNING <---
+    // DEBUG: BYPASS THE STATE MACHINE FOR WEAPON TUNING
     // -------------------------------------------------------------
     if (m_debugState.forceAnimation)
     {
@@ -190,7 +190,7 @@ void Player::Update(float elapsedTime, Camera* camera)
     if (animator) animator->Update(elapsedTime);
 
     // -------------------------------------------------------------
-    // ---> NEW: THE WEAPON STATE MANAGER (Auto-Sheathe) <---
+    // WEAPON STATE MANAGER (AUTO-SHEATHE)
     // -------------------------------------------------------------
     // If the player is holding the Sword, but the upper-body attack 
     // animation has officially finished, automatically revert to the Crossbow.
@@ -209,7 +209,7 @@ void Player::Update(float elapsedTime, Camera* camera)
     UpdateFootRotation(elapsedTime, smoothedYaw);
     UpdateAimConstraint(elapsedTime, smoothedYaw, shouldAim, relativeAngle);
 
-    // ---> DEBUG: DISABLE SPINE TWIST <---
+    // DEBUG: disable spine twist
     if (m_debugState.disableAimConstraint)
     {
         shouldAim = false;
@@ -220,7 +220,7 @@ void Player::Update(float elapsedTime, Camera* camera)
     UpdateProjectiles(elapsedTime, camera);
 
     // =========================================================
-    // [BARU] Update posisi VFX Dash Ready agar menempel ke Player
+    // Keep the Dash Ready VFX attached to the player
     // =========================================================
     if (m_dashReadyVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashReadyVfxHandle))
     {
@@ -271,8 +271,8 @@ void Player::Update(float elapsedTime, Camera* camera)
     }
 
     // =========================================================
-        // [BARU] Update posisi VFX Dash Ready agar menempel ke Player
-        // =========================================================
+    // Keep the Dash Ready VFX attached to the player
+    // =========================================================
     if (m_dashReadyVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashReadyVfxHandle))
     {
         DirectX::XMFLOAT3 vfxPos = movement->GetPosition();
@@ -428,7 +428,7 @@ void Player::HandleMovementInput(float dt)
     const float sqLength{ (targetX * targetX) + (targetZ * targetZ) };
     if (sqLength > 1.0f)
     {
-        // Clamp magnitude to 1.0f using reciprocal multiplication (Optimized for compiler fast-math)
+        // Clamp magnitude to 1.0 by multiplying with the reciprocal length.
         const float invLength{ 1.0f / std::sqrt(sqLength) };
         targetX *= invLength;
         targetZ *= invLength;
@@ -465,7 +465,7 @@ void Player::HandleAimInput(Camera* camera)
     // Anticipate Nullptr Bug: If no camera is provided, we cannot calculate 3D aim.
     if (!camera) return;
 
-    // Zero-Cost Branching: Only execute the math for the currently active device.
+    // Only run the math for the active input device.
     const InputDevice activeDevice{ Input::Instance().GetLastUsedDevice() };
 
     if (activeDevice == InputDevice::Gamepad)
@@ -636,13 +636,13 @@ void Player::UpdateFootRotation(float dt, float& outSmoothedYaw)
         {
             diff = XM_PI - diff;
             targetYaw = aimYaw + diff;
-            m_isBackpedaling = true; // <-- NEW: We are backpedaling!
+            m_isBackpedaling = true;
         }
         else if (diff < -XM_PIDIV2)
         {
             diff = -XM_PI - diff;
             targetYaw = aimYaw + diff;
-            m_isBackpedaling = true; // <-- NEW: We are backpedaling!
+            m_isBackpedaling = true;
         }
 
         while (targetYaw > XM_PI) targetYaw -= XM_2PI;
@@ -680,7 +680,7 @@ void Player::UpdateAimConstraint(float dt, float& inOutSmoothedYaw, bool& outSho
     while (relativeAngle < -DirectX::XM_PI) relativeAngle += DirectX::XM_2PI;
 
     // -----------------------------------------------------------------
-    // ---> THE FIX: SMOOTH FOOT DRAG (Zero Duplication Math) <---
+    // SMOOTH FOOT DRAG
     // -----------------------------------------------------------------
     // Clamp torso to ±MaxTorsoAngle; if clamped, PULL feet smoothly to compensate
     if (std::abs(relativeAngle) > PlayerConst::MaxTorsoAngle)
@@ -810,7 +810,7 @@ void Player::UpdateProjectiles(float dt, Camera* camera)
 
         bullet->Update(dt, camera);
 
-        // ---> BUG PREVENTION: The Infinite Flight Guard <---
+        // Despawn bullets that fly too far from the player.
         DirectX::XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
         float dx = myPos.x - bPos.x;
         float dz = myPos.z - bPos.z;
@@ -983,13 +983,13 @@ void Player::EnterDeathState()
 void Player::Heal(float amount) {
     if (amount <= 0.0f || m_hp <= 0.0f) return;
     m_hp += amount;
-    if (m_hp > m_maxHp) m_hp = m_maxHp; // FIXED
+    if (m_hp > m_maxHp) m_hp = m_maxHp;
 }
 
 void Player::Heal(int amount) {
     if (amount <= 0 || m_hp <= 0) return;
     m_hp += static_cast<float>(amount);
-    if (m_hp > m_maxHp) m_hp = m_maxHp; // FIXED
+    if (m_hp > m_maxHp) m_hp = m_maxHp;
 
 }
 // ============================================================

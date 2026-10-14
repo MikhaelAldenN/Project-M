@@ -132,7 +132,7 @@ void NaviAlly::UpdateHoverLogic(float elapsedTime)
         const std::shared_ptr<Model> pModel{ m_targetPlayer->GetModel() };
         if (!pMovement || !pModel) return;
 
-        // 1. EXTRACT BONE POSITION (Zero-Cost Animation Sync)
+        // 1. EXTRACT BONE POSITION
         // By pulling translation directly from the "body" matrix, Navi will naturally 
         // sway with the player's idle breathing and run cycles!
         DirectX::XMFLOAT3 anchorPos{ pMovement->GetPosition() }; // Safe fallback

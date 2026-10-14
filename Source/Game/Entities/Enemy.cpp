@@ -121,7 +121,7 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
     // Out of range? Exit early. Zero CPU wasted.
     if (distSq > activationDistSq)
     {
-        // ---> MOMENTUM RESET GUARD <---
+        // Momentum reset
         // If the player escapes the radius, reset the timer. 
         // This forces the enemy to do the slow "creep" phase again next time!
         if (m_attackType == AttackType::Tracking) m_aggroTimer = 0.0f;
@@ -224,7 +224,7 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
                         myPos.z + (dirZ * 1.0f)
                     };
 
-                    // Implement zero-cost Object Pool for Burst
+                    // Reuse an inactive bullet; allocate only when none is free.
                     bool bulletRecycled{ false };
                     for (auto& bullet : m_projectiles)
                     {
@@ -246,7 +246,7 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
             }
             else
             {
-                // ---> THE FIX: Aim EXACTLY at the player for both Tracking AND Static <---
+                // Aim exactly at the player for both Tracking and Static.
                 DirectX::XMFLOAT3 fwd{ 0.0f, 0.0f, 1.0f }; // Safe default
 
                 // Calculate exact 3D trajectory
@@ -274,8 +274,7 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
                     myPos.z + (fwd.z * SPAWN_OFFSET_FWD)
                 };
 
-                // ---> OPTIMIZATION: ZERO RUNTIME ALLOCATION POOL <---
-                // Recycle old bullets instead of 'new/delete' thrashing the CPU memory heap.
+                // Reuse an inactive bullet; allocate only when none is free.
                 bool bulletRecycled{ false };
                 for (auto& bullet : m_projectiles)
                 {
@@ -301,7 +300,7 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
             }
         }
     }
-    // 5. UPDATE IN-FLIGHT PROJECTILES (Zero-cost Despawn)
+    // 5. UPDATE IN-FLIGHT PROJECTILES (despawn by distance)
     const float despawnDistSq{ m_despawnDistance * m_despawnDistance };
 
     for (auto& bullet : m_projectiles)
@@ -379,7 +378,7 @@ void Enemy::Reinitialize(ID3D11Device* device, const char* filePath, const Direc
 
 void Enemy::UpdateProjectiles(float elapsedTime, Camera* camera)
 {
-    // UPDATE IN-FLIGHT PROJECTILES (Zero-cost Despawn)
+    // UPDATE IN-FLIGHT PROJECTILES (despawn by distance)
     const float despawnDistSq{ m_despawnDistance * m_despawnDistance };
 
     for (auto& bullet : m_projectiles)

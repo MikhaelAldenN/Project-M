@@ -60,7 +60,7 @@ public:
 
     // --- Input & camera ---
     void SetInputEnabled(bool enable) { isInputEnabled = enable; }
-    [[nodiscard]] bool IsInputEnabled() const { return isInputEnabled; } // [TAMBAHKAN BARIS INI]
+    [[nodiscard]] bool IsInputEnabled() const { return isInputEnabled; }
     void SetCamera(Camera* cam) { activeCamera = cam; }
 
     // --- Position helpers ---
@@ -161,17 +161,17 @@ public:
     // death state, so every damage source shares one death path.
     DamageResult TakeDamage(const DamageInfo& damage);
 
-    void SetMaxHP(float maxHp) { m_maxHp = maxHp; m_hp = maxHp; } // [DIUBAH] Set batas maksimal & isi penuh
+    void SetMaxHP(float maxHp) { m_maxHp = maxHp; m_hp = maxHp; } // Sets the cap and refills HP
     void Heal(float amount);
     void Heal(int amount);
-    [[nodiscard]] float GetHP() const { return m_hp; }      // [DIUBAH]
-    [[nodiscard]] float GetMaxHP() const { return m_maxHp; } // [BARU]
+    [[nodiscard]] float GetHP() const { return m_hp; }
+    [[nodiscard]] float GetMaxHP() const { return m_maxHp; }
 
 	// --- Invincibility (used by PlayerDash and PlayerHit states) ---
     void TriggerInvincibility(float duration) { m_invincibilityTimer = duration; }
     [[nodiscard]] bool IsInvincible() const { return m_invincibilityTimer > 0.0f; }
 
-    // ---> 追加：パリィとエイムロック用のセッター <---
+    // --- Parry and aim-lock setters ---
     void SetLastValidInput(DirectX::XMFLOAT2 dir) { lastValidInput = dir; }
     void SetAimLocked(bool locked) { m_aimLocked = locked; }
     void ForceAimTarget(const DirectX::XMFLOAT3& target) { m_aimTarget = target; }
@@ -246,8 +246,8 @@ private:
     float m_dashRecoveryTimer{ 0.0f };
 
     // --- Health ---
-    float m_hp = 30.0f;      // [DIUBAH]
-    float m_maxHp = 30.0f;   // [BARU] Menyimpan kapasitas asli
+    float m_hp = 30.0f;
+    float m_maxHp = 30.0f;
 
 	// --- Invincibility timer (counts down when active, prevents damage) ---
     float m_invincibilityTimer = 0.0f;
@@ -260,7 +260,7 @@ private:
     // --- Aim target (set by RotateModelToPoint) ---
     DirectX::XMFLOAT3 m_aimTarget = { 0.0f, 0.0f, 0.0f };
 
-    // ---> 追加：エイムロック用のフラグ <---
+    // --- Aim lock ---
     bool m_aimLocked = false;
 
     // --- Projectile pool ---
@@ -275,10 +275,8 @@ private:
     float m_shootDelay = PlayerConst::ShootDuration;
     float m_stickShootThreshold{ 0.5f }; // USULAN DESAIN: starting value, tuned from the Player panel
 
-    // [BARU] Tambahkan ini untuk menyimpan damage peluru player
+    // Player bullet damage
     int m_bulletDamage = 5;
-
-    // [BARU] Tambahkan ini agar kecepatan peluru bisa diatur via GUI
 
     CollisionManager* m_collisionManager = nullptr;
 
@@ -293,7 +291,7 @@ private:
     float m_uncapMoveSpeed = 30.0f;
     float m_uncapDashSpeed = 80.0f;
     float m_uncapHealthRegenPerSecond = 3.0f;
-    float m_uncapMaxRegenHP = 50.0f; // [DIUBAH] Jadi float agar sejajar dengan m_hp
+    float m_uncapMaxRegenHP = 50.0f;
     float m_uncapRegenAccumulator = 0.0f;
     DirectX::XMFLOAT4 m_uncapColor = { 1.5f, 1.5f, 1.5f, 1.0f };
 
@@ -304,11 +302,11 @@ private:
     bool m_enableIFrames = false;
     float m_iFrameDuration = 1.0f;
 
-    // [BARU] Handle & Offset untuk efek Dash
+    // Dash Ready VFX handle and Y offset
     int m_dashReadyVfxHandle = -1;
     float m_dashReadyOffsetY = 0.0f;
 
-    // [BARU] Timer untuk efek standby berulang
+    // Dash standby VFX handle
     int m_dashStandbyVfxHandle = -1;
 
     int m_overdriveVfxHandle = -1;

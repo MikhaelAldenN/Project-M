@@ -35,7 +35,7 @@ void Bullet::Update(float elapsedTime, Camera* camera)
 
     m_lifeTime += elapsedTime;
     // =========================================================
-    // [BARU] LOGIKA KURVA BEZIER (PARABOLA SEMPURNA)
+    // BEZIER CURVE (PARABOLIC PATH)
     // =========================================================
     if (m_isParabolic && m_bossTarget) {
         m_parabolaTime += elapsedTime;
@@ -125,8 +125,8 @@ void Bullet::Update(float elapsedTime, Camera* camera)
     SyncData();
 
     // =========================================================
-        // [BARU] UPDATE POSISI, SKALA & ARAH HADAP VFX
-        // =========================================================
+    // VFX POSITION, SCALE, AND FACING
+    // =========================================================
     if (m_vfxHandle != -1 && EffectManager::Instance().IsPlaying(m_vfxHandle))
     {
         DirectX::XMFLOAT3 vfxPos = pos;
@@ -147,7 +147,7 @@ void Bullet::Update(float elapsedTime, Camera* camera)
             yaw = std::atan2(velocity.x, velocity.z);
             pitch = std::atan2(-velocity.y, horizontalDist);
 
-            // [FIX] Kalikan arah maju (velocity/speed) dengan actualOffset!
+            // Offset along the forward direction (velocity / speed).
             vfxPos.x += (velocity.x / speed) * actualOffset;
             vfxPos.y += (velocity.y / speed) * actualOffset;
             vfxPos.z += (velocity.z / speed) * actualOffset;
@@ -157,7 +157,7 @@ void Bullet::Update(float elapsedTime, Camera* camera)
             yaw = DirectX::XMConvertToRadians(movement->GetRotation().y);
             pitch = DirectX::XMConvertToRadians(movement->GetRotation().x);
 
-            // [FIX] Kalikan juga arah maju saat diam dengan actualOffset!
+            // While stationary, offset along the facing direction.
             vfxPos.x += std::sin(yaw) * actualOffset;
             vfxPos.z += std::cos(yaw) * actualOffset;
         }

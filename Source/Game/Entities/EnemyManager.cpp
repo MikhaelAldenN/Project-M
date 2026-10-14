@@ -21,7 +21,7 @@ void EnemyManager::SpawnEnemy(const EnemySpawnConfig& config)
     const char* modelPath{ nullptr };
     DirectX::XMFLOAT3 finalScale{ config.Scale };
 
-    // ---> Behavior-Driven Model Selection <---
+    // Model selection by behavior type
     switch (config.Type)
     {
     case EnemyType::MushroomNone:
@@ -147,7 +147,7 @@ void EnemyManager::Render(ModelRenderer* renderer, Camera* camera)
         {
             DirectX::XMFLOAT3 pos = enemy->GetPosition();
 
-            // [PERBAIKAN] Ambil Scale musuh
+            // Enemy scale
             DirectX::XMFLOAT3 scale = enemy->GetScale();
 
             // Cari nilai scale terbesar (misal kalau X=2, Y=1, Z=2 -> ambil 2)

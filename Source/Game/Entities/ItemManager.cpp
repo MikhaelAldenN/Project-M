@@ -97,7 +97,6 @@ void ItemManager::RenderDebug(ShapeRenderer* renderer)
             boxSize.y = (item->scale.y * 0.5f) + 0.05f;
             boxSize.z = (item->scale.z * 0.5f) + 0.05f;
 
-            // [FIXED] Pass 'boxSize', not 'scale'
             renderer->DrawBox(pos, item->GetRotation(), boxSize, { 1.0f, 1.0f, 0.0f, 1.0f });
         }
     }
