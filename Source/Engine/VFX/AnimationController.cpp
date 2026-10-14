@@ -42,7 +42,7 @@ void AnimationController::Play(const std::string& name, bool loop, float blendTi
             isBlending = false;
         }
 
-        // --- RESET STATE BARU ---
+        // --- Reset state for the new animation ---
         currentAnimIndex = newIndex;
         timer = 0.0f;
         isLooping = loop;
@@ -58,14 +58,14 @@ void AnimationController::Update(float dt)
     const auto& anims = ownerModel->GetAnimations();
     float duration = anims.at(currentAnimIndex).secondsLength;
 
-    // ---> THE FIX: Guard against Division by Zero <---
+    // Guard against division by zero for zero-length clips.
     if (duration > 0.0f)
     {
         timer += dt * m_playbackSpeed;
 
         if (isLooping)
         {
-            // ---> THE FIX: AAA Safe Time Wrapping (No fmod crashes!) <---
+            // Wrap the time into [0, duration) without fmod.
             while (timer < 0.0f) timer += duration;
             while (timer >= duration) timer -= duration;
         }
@@ -103,8 +103,7 @@ void AnimationController::Update(float dt)
         size_t count = nodePoses.size();
         for (size_t i = 0; i < count; ++i)
         {
-            // [FIX] Menggunakan .position (bukan .translation) sesuai Model.h
-            // Ambil data dari Pose Lama (Snapshot)
+            // Read from the previous pose snapshot.
             XMVECTOR s0 = XMLoadFloat3(&prevNodePoses[i].scale);
             XMVECTOR r0 = XMLoadFloat4(&prevNodePoses[i].rotation);
             XMVECTOR t0 = XMLoadFloat3(&prevNodePoses[i].position);

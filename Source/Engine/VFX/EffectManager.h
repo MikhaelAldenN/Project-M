@@ -48,7 +48,7 @@ public:
 
     // Transform Updates (Only applies if the handle is still actively playing!)
     void SetPosition(Effekseer::Handle handle, const DirectX::XMFLOAT3& pos);
-    void SetTargetPosition(Effekseer::Handle handle, const DirectX::XMFLOAT3& pos); // [NEW] Fix untuk partikel nyasar!
+    void SetTargetPosition(Effekseer::Handle handle, const DirectX::XMFLOAT3& pos);
     void SetRotation(Effekseer::Handle handle, const DirectX::XMFLOAT3& rotationEuler);
     void SetScale(Effekseer::Handle handle, const DirectX::XMFLOAT3& scale);
 

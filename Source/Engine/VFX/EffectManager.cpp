@@ -9,7 +9,7 @@ using namespace DirectX;
 
 void EffectManager::Initialize(ID3D11Device* device, ID3D11DeviceContext* context)
 {
-    // 1. Create Renderer (Max 2048 sprites is a safe standard for AAA)
+    // 1. Create the renderer (sprite capacity: 2048)
     m_renderer = EffekseerRendererDX11::Renderer::Create(device, context, 2048);
 
     // 2. Create Manager
@@ -154,7 +154,7 @@ void EffectManager::StopAll()
 
 void EffectManager::SetPosition(Effekseer::Handle handle, const XMFLOAT3& pos)
 {
-    // ---> BUG PREVENTION: The Dangling Handle Guard <---
+    // Skip handles that have finished, so a stale handle is never used.
     if (IsPlaying(handle)) m_manager->SetLocation(handle, pos.x, pos.y, pos.z);
 }
 

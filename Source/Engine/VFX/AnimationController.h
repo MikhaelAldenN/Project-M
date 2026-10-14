@@ -26,10 +26,10 @@ public:
     // Fungsi untuk memutar animasi atas
     void PlayUpper(const std::string& name, bool loop = false);
 
-    // Tambahkan fungsi pengecekan ini di bawah GetCurrentTime():
+    // True while an upper-body animation is playing.
     bool IsUpperPlaying() const { return upperAnimIndex != -1; }
 
-    // Tambahkan variabel ini di bagian private (di bawah upperTimer):
+    // Whether the current upper-body animation loops.
     bool upperIsLooping = false;
 
 private:
