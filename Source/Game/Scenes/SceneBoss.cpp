@@ -3,6 +3,7 @@
 #include "System/Input.h"
 #include "WindowManager.h"
 #include "Framework.h"
+#include "SceneTitle.h"
 #include "InputHelper.h"
 #include "PerformanceLogger.h"
 #include <algorithm>
@@ -410,8 +411,8 @@ void SceneBoss::Update(float elapsedTime)
 
             // ONLY change scene if the White Fade is complete!
             if (m_whiteAlpha >= 1.0f && !m_isPendingSceneChange) {
-                m_isPendingSceneChange = true;
-                return; // Now it is safe to return/change scene
+                RequestReturnToTitle();
+                return;
             }
         }
     }
@@ -512,7 +513,7 @@ void SceneBoss::Update(float elapsedTime)
         // Why fetched here: Boss::Update can swap the phase, so an earlier pointer may be stale.
         const INaviPhase* updatedPhase{ m_navi->GetCurrentPhase() };
         if (updatedPhase && !m_isPendingSceneChange && updatedPhase->IsReadyToChangeScene()) {
-            m_isPendingSceneChange = true;
+            RequestReturnToTitle();
             return;
         }
 
@@ -1743,7 +1744,13 @@ void SceneBoss::SpawnTransparentWindow(float bgAlpha, const std::string& typeSuf
     AddLog("Spawned " + typeSuffix + " window (alpha: " + std::to_string(bgAlpha) + ")");
 }
 
-void SceneBoss::CloseSubWindowBySDLID(Uint32 sdlWindowID)
+void SceneBoss::RequestReturnToTitle()
+{
+    m_isPendingSceneChange = true;
+    Framework::Instance()->ChangeScene(std::make_unique<SceneTitle>());
+}
+
+void SceneBoss::OnSubWindowClosed(std::uint32_t sdlWindowID)
 {
     if (!m_windowSystem) return;
 

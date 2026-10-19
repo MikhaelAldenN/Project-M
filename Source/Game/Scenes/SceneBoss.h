@@ -52,11 +52,13 @@ public:
 
     [[nodiscard]] Camera* GetMainCamera() const { return m_mainCamera.get(); }
     [[nodiscard]] Player* GetPlayer()     const { return m_player.get(); }
-    bool IsPendingSceneChange() const { return m_isPendingSceneChange; }
 
-    void CloseSubWindowBySDLID(Uint32 sdlWindowID);
+    // Stops tracking the closed window so the scene does not use it again.
+    void OnSubWindowClosed(std::uint32_t sdlWindowID) override;
 
 private:
+    // Queues SceneTitle and stops the rest of this scene's update logic.
+    void RequestReturnToTitle();
     // --- Render Pipeline ---
     void RenderScene(float elapsedTime, Camera* camera, bool isTransparentWindow);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 // ÉVÅ[ÉìäÓíÍ
 class Scene
 {
@@ -28,4 +30,8 @@ public:
 	virtual void DrawGUI() {}
 
 	[[nodiscard]] virtual Kind GetKind() const = 0;
+
+	// Called when the user closes an OS window other than the main window.
+	// sdlWindowID is SDL's ID of that window. Scenes that spawn no windows ignore it.
+	virtual void OnSubWindowClosed(std::uint32_t /*sdlWindowID*/) {}
 };

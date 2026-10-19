@@ -345,11 +345,6 @@ Beyond::PixelRect Framework::GetGameImageRect() const
 
 void Framework::Render(float elapsedTime)
 {
-    // SceneBoss is the one scene that skips the canvas: its main window covers the
-    // monitor and it treats the desktop as the world.
-    const bool isSceneBoss{ dynamic_cast<SceneBoss*>(scene.get()) != nullptr };
-    const GameCanvas* canvas{ isSceneBoss ? nullptr : m_gameCanvas.get() };
-
     // Why not elapsedTime: render-side animation (post-process time) must stop
     // and scale together with the scene.
     WindowManager::Instance().RenderAll(m_sceneDeltaTime, scene.get(), GetActiveCanvas());
@@ -428,13 +423,6 @@ void Framework::Update(float elapsedTime)
 #endif
 
     if (scene && shouldUpdateScene) scene->Update(m_sceneDeltaTime);
-
-    if (auto* boss = dynamic_cast<SceneBoss*>(scene.get())) {
-        if (boss->IsPendingSceneChange()) {
-            ChangeScene(std::make_unique<SceneTitle>());
-            return;
-        }
-    }
 }
 
 void Framework::ForceUpdateRender()
@@ -513,13 +501,10 @@ LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LP
     }
     return 0;
 }
+
 void Framework::OnSubWindowClosed(Uint32 sdlWindowID)
 {
-    // Casting ke SceneBoss untuk mengakses fungsi spesifiknya
-    SceneBoss* boss = dynamic_cast<SceneBoss*>(scene.get());
-    if (boss) {
-        boss->CloseSubWindowBySDLID(sdlWindowID);
-    }
+    if (scene) scene->OnSubWindowClosed(sdlWindowID);
 }
 
 bool Framework::HandleDebugHostEvent([[maybe_unused]] const SDL_Event& event)
