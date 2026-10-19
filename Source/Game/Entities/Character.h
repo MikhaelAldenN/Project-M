@@ -25,6 +25,11 @@ public:
     // Returns raw pointer for read access — ownership stays here
     CharacterMovement* GetMovement() const { return movement.get(); }
 
+    // Whether the character currently takes part in the game. What an inactive
+    // character skips is decided by the subclass and by whoever owns it.
+    [[nodiscard]] bool IsActive() const { return m_isActive; }
+    void SetActive(bool active) { m_isActive = active; }
+
     DirectX::XMFLOAT3 scale = { 1.0f, 1.0f, 1.0f };
 
 protected:
@@ -34,4 +39,7 @@ protected:
 protected:
     std::unique_ptr<CharacterMovement> movement;
     std::shared_ptr<Model>             model;
+
+private:
+    bool m_isActive{ true };
 };

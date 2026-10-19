@@ -14,10 +14,8 @@ public:
     void Render(ModelRenderer* renderer);
 
     // --- Getters / Setters ---
-    bool     IsActive()  const { return isActive; }
     ItemType GetType()   const { return m_type; }
 
-    void SetActive(bool active) { isActive = active; }
     void ResetAnimation() { animTime = 0.0f; }
 
     void SetType(ItemType type)
@@ -45,7 +43,6 @@ public:
 
 private:
     ItemType m_type;
-    bool     isActive = true;
 
     float originalY = 0.0f;
     float animTime = 0.0f;

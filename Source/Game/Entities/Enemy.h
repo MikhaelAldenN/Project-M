@@ -32,7 +32,6 @@ public:
     void Update(float elapsedTime, Camera* camera) override;
     void UpdateTracking(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos, bool allowAttack = true);
     void UpdateProjectiles(float elapsedTime, Camera* camera);
-    void SetActive(bool active) { m_isActive = active; }
     void SetHighlight(bool highlight) { m_isHighlighted = highlight; }
     void UpdateOriginalTransform(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& rot);
     void SetBaseMoveSpeed(float speed) { m_baseMoveSpeed = speed; }
@@ -62,7 +61,6 @@ public:
     AttackType GetAttackType() const { return m_attackType; }
     std::deque<std::unique_ptr<Bullet>>& GetProjectiles() { return m_projectiles; }
 
-    bool IsActive() const { return m_isActive; }
     bool IsHighlighted() const { return m_isHighlighted; }
 
     float GetMinX() const { return m_patrolMinX - originalPosition.x; }
@@ -119,7 +117,6 @@ private:
     static constexpr float SPAWN_OFFSET_FWD = 0.6f;
     static constexpr float SPAWN_OFFSET_Y = 0.0f;
 
-    bool m_isActive = false;
     MoveDir m_moveDir;
 
     bool m_isInvincible = false;

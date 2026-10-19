@@ -19,7 +19,7 @@ Item::Item(ID3D11Device* device, const DirectX::XMFLOAT3& position, ItemType typ
 
 void Item::Update(float elapsedTime, Camera* camera)
 {
-    if (!isActive) return;
+    if (!IsActive()) return;
 
     animTime += elapsedTime;
 
@@ -36,7 +36,7 @@ void Item::Update(float elapsedTime, Camera* camera)
 
 void Item::Render(ModelRenderer* renderer)
 {
-    if (!isActive) return;
+    if (!IsActive()) return;
 
     Character::scale = scale;
     renderer->Draw(ShaderId::Phong, model, color);

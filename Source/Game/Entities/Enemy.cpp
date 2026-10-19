@@ -373,7 +373,7 @@ void Enemy::Reinitialize(ID3D11Device* device, const char* filePath, const Direc
     m_lifeTime = 0.0f;
     m_hp = 30; // Or whatever default/config HP you want
     m_isHighlighted = false;
-    m_isActive = true;
+    SetActive(true);
 }
 
 void Enemy::UpdateProjectiles(float elapsedTime, Camera* camera)
@@ -498,7 +498,7 @@ void Enemy::UpdateOriginalTransform(const DirectX::XMFLOAT3& pos, const DirectX:
     originalPosition = pos;
     originalRotation = rot;
 
-    if (!m_isActive)
+    if (!IsActive())
     {
         m_patrolMinX = pos.x; m_patrolMaxX = pos.x;
         m_patrolMinZ = pos.z; m_patrolMaxZ = pos.z;
@@ -508,7 +508,7 @@ void Enemy::UpdateOriginalTransform(const DirectX::XMFLOAT3& pos, const DirectX:
 DamageResult Enemy::TakeDamage(const DamageInfo& damage)
 {
     // Guard Clause: If invincible OR inactive, ignore the hit entirely.
-    if (m_isInvincible || !m_isActive || m_hp <= 0) return DamageResult::ignored;
+    if (m_isInvincible || !IsActive() || m_hp <= 0) return DamageResult::ignored;
 
     m_hp -= damage.amount;
     m_blinkTimer = BLINK_DURATION; // Trigger blink effect
