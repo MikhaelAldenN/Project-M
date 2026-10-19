@@ -563,11 +563,11 @@ void Framework::RegisterDebugMenuBar()
         {
             if (ImGui::BeginMenu("Scene"))
             {
-                const DebugScene current{ IdentifyDebugScene() };
+                const Scene::Kind current{ GetCurrentSceneKind() };
 
                 // Why only store the request: a scene constructor registers a panel,
                 // which is not allowed while panel callbacks are running.
-                const auto sceneItem{ [this, current](const char* label, DebugScene target)
+                const auto sceneItem{ [this, current](const char* label, Scene::Kind target)
                     {
                         if (ImGui::MenuItem(label, nullptr, current == target))
                         {
@@ -575,14 +575,14 @@ void Framework::RegisterDebugMenuBar()
                         }
                     } };
 
-                sceneItem("Intro", DebugScene::intro);
-                sceneItem("Title", DebugScene::title);
-                sceneItem("Game", DebugScene::game);
-                sceneItem("Sandbox", DebugScene::sandbox);
-                sceneItem("Boss", DebugScene::boss);
+                sceneItem("Intro", Scene::Kind::intro);
+                sceneItem("Title", Scene::Kind::title);
+                sceneItem("Game", Scene::Kind::game);
+                sceneItem("Sandbox", Scene::Kind::sandbox);
+                sceneItem("Boss", Scene::Kind::boss);
 
                 ImGui::Separator();
-                if (ImGui::MenuItem("Reload", nullptr, false, current != DebugScene::none))
+                if (ImGui::MenuItem("Reload", nullptr, false, current != Scene::Kind::none))
                 {
                     m_debugSceneRequest = current;
                 }
@@ -667,38 +667,32 @@ void Framework::RegisterDebugTimePanel()
         });
 }
 
-Framework::DebugScene Framework::IdentifyDebugScene() const
+Scene::Kind Framework::GetCurrentSceneKind() const
 {
-    const Scene* const current{ scene.get() };
-    if (dynamic_cast<const SceneIntro*>(current)) return DebugScene::intro;
-    if (dynamic_cast<const SceneTitle*>(current)) return DebugScene::title;
-    if (dynamic_cast<const SceneGame*>(current)) return DebugScene::game;
-    if (dynamic_cast<const SceneSandbox*>(current)) return DebugScene::sandbox;
-    if (dynamic_cast<const SceneBoss*>(current)) return DebugScene::boss;
-    return DebugScene::none;
+    return scene ? scene->GetKind() : Scene::Kind::none;
 }
 
 const char* Framework::GetDebugLayoutScope() const
 {
     // Why fixed strings: they are part of the keys saved in imgui.ini.
-    switch (IdentifyDebugScene())
+    switch (GetCurrentSceneKind())
     {
-    case DebugScene::intro:   return "intro";
-    case DebugScene::title:   return "title";
-    case DebugScene::game:    return "game";
-    case DebugScene::sandbox: return "sandbox";
-    case DebugScene::boss:    return "boss";
-    case DebugScene::none:    break;
+    case Scene::Kind::intro:   return "intro";
+    case Scene::Kind::title:   return "title";
+    case Scene::Kind::game:    return "game";
+    case Scene::Kind::sandbox: return "sandbox";
+    case Scene::Kind::boss:    return "boss";
+    case Scene::Kind::none:    break;
     }
     return "none";
 }
 
 void Framework::ProcessDebugSceneRequest()
 {
-    if (m_debugSceneRequest == DebugScene::none) return;
+    if (m_debugSceneRequest == Scene::Kind::none) return;
 
-    const DebugScene request{ m_debugSceneRequest };
-    m_debugSceneRequest = DebugScene::none;
+    const Scene::Kind request{ m_debugSceneRequest };
+    m_debugSceneRequest = Scene::Kind::none;
 
     // Why destroy first: scenes own OS windows and drive singletons (WindowManager,
     // audio, effects); the old one must release them before the new one claims them.
@@ -716,12 +710,12 @@ void Framework::ProcessDebugSceneRequest()
 
     switch (request)
     {
-    case DebugScene::intro:   scene = std::make_unique<SceneIntro>(); break;
-    case DebugScene::title:   scene = std::make_unique<SceneTitle>(); break;
-    case DebugScene::game:    scene = std::make_unique<SceneGame>(); break;
-    case DebugScene::sandbox: scene = std::make_unique<SceneSandbox>(); break;
-    case DebugScene::boss:    scene = std::make_unique<SceneBoss>(); break;
-    case DebugScene::none:    break;
+    case Scene::Kind::intro:   scene = std::make_unique<SceneIntro>(); break;
+    case Scene::Kind::title:   scene = std::make_unique<SceneTitle>(); break;
+    case Scene::Kind::game:    scene = std::make_unique<SceneGame>(); break;
+    case Scene::Kind::sandbox: scene = std::make_unique<SceneSandbox>(); break;
+    case Scene::Kind::boss:    scene = std::make_unique<SceneBoss>(); break;
+    case Scene::Kind::none:    break;
     }
 }
 #endif

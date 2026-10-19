@@ -4,6 +4,18 @@
 class Scene
 {
 public:
+	// Identifies the concrete scene without a cast. none means "no scene";
+	// no scene returns it from GetKind.
+	enum class Kind
+	{
+		none,
+		intro,
+		title,
+		game,
+		sandbox,
+		boss,
+	};
+
 	Scene() = default;
 	virtual ~Scene() = default;
 
@@ -14,4 +26,6 @@ public:
 	virtual void Render(float dt, class Camera* camera = nullptr) = 0;
 	// GUI•`‰æˆ—
 	virtual void DrawGUI() {}
+
+	[[nodiscard]] virtual Kind GetKind() const = 0;
 };

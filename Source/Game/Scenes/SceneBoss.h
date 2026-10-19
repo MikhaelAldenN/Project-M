@@ -48,6 +48,7 @@ public:
     void Shutdown();
     void Render(float elapsedTime, Camera* camera = nullptr) override;
     void DrawGUI() override;
+    [[nodiscard]] Kind GetKind() const override { return Kind::boss; }
 
     [[nodiscard]] Camera* GetMainCamera() const { return m_mainCamera.get(); }
     [[nodiscard]] Player* GetPlayer()     const { return m_player.get(); }

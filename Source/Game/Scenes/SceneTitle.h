@@ -38,6 +38,7 @@ public:
 
     // Debug / Tools
     void DrawGUI() override;
+    [[nodiscard]] Kind GetKind() const override { return Kind::title; }
     Camera* GetCamera() const { return camera.get(); }
 
 private:

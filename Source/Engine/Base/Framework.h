@@ -83,25 +83,14 @@ private:
     void CalculateFrameStats(float dt);
 
 #if defined(_DEBUG)
-    // Scenes the debug window's Scene menu can load.
-    enum class DebugScene
-    {
-        none, // no request pending / scene type not recognised
-        intro,
-        title,
-        game,
-        sandbox,
-        boss,
-    };
-
     // Registers Framework's part of the debug window's menu bar.
     void RegisterDebugMenuBar();
 
     // Registers the "Time" panel that drives the simulation clock.
     void RegisterDebugTimePanel();
 
-    // Which DebugScene the current scene is; none if there is no scene.
-    [[nodiscard]] DebugScene IdentifyDebugScene() const;
+    // Kind of the current scene; Scene::Kind::none if there is no scene.
+    [[nodiscard]] Scene::Kind GetCurrentSceneKind() const;
 
     // Name of the current scene for DebugUI::Draw; the dock layout is kept per name.
     [[nodiscard]] const char* GetDebugLayoutScope() const;
@@ -157,7 +146,8 @@ private:
     std::unique_ptr<DebugHostWindow> m_debugHost;
 
     // Set by the Scene menu, consumed at the start of the next Update.
-    DebugScene m_debugSceneRequest{ DebugScene::none };
+    // Scene::Kind::none means no request is pending.
+    Scene::Kind m_debugSceneRequest{ Scene::Kind::none };
 
     // Declared last: unregistered before anything its callback could read is destroyed.
     DebugPanelHandle m_menuBarPanel;

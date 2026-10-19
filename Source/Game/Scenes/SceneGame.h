@@ -54,6 +54,7 @@ public:
     void Update(float elapsedTime) override;
     void Render(float elapsedTime, Camera* camera = nullptr) override;
     void DrawGUI() override;
+    [[nodiscard]] Kind GetKind() const override { return Kind::game; }
 
     Camera* GetMainCamera() const { return m_mainCamera.get(); }
 
