@@ -60,7 +60,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\Source;.\Source\Engine\Base;.\Source\Engine\Windowing;.\Source\Engine\Graphics;.\Source\Engine\UI;.\Source\Engine\VFX;.\Source\Game\Entities\Boss\Phases;.\Source\Game\Entities\Boss\AttackPatterns;.\Source\Game\Entities\Boss;.\Source\Game\Entities;.\Source\Game\States;.\Source\Game\Scenes;.\Source\Engine\Common;.\Source\Engine\Helpers;.\External\SDL3-3.4.0\include;.\External\imgui-docking;.\External\ImGuizmo;.\External\cereal\include;.\External\tinygltf;.\External\SphereCast\Include;.\External\DirectXTex;.\External\Effekseer170e\include\Effekseer;.\External\json;.\External\Effekseer170e\include\EffekseerRendererDX11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\Source;.\Source\Engine\Base;.\Source\Engine\Windowing;.\Source\Engine\Graphics;.\Source\Engine\UI;.\Source\Engine\VFX;.\Source\Game\Entities\Boss\Phases;.\Source\Game\Entities\Boss\AttackPatterns;.\Source\Game\Entities\Boss;.\Source\Game\Entities;.\Source\Game\States;.\Source\Game\Scenes;.\Source\Engine\Common;.\Source\Engine\Helpers;.\External\SDL3-3.4.0\include;.\External\imgui-docking;.\External\ImGuizmo;.\External\cereal\include;.\External\tinygltf;.\External\DirectXTex;.\External\Effekseer170e\include\Effekseer;.\External\json;.\External\Effekseer170e\include\EffekseerRendererDX11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -69,8 +69,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;SphereCast.lib;SDL3.lib;Effekseer.lib;EffekseerRendererDX11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>.\External\SDL3-3.4.0\lib\x64;.\External\SphereCast\lib\vs2022\$(PlatformTarget)\MT\$(Configuration);.\External\Effekseer170e\lib\vs2022\MT\$(PlatformTarget)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;SDL3.lib;Effekseer.lib;EffekseerRendererDX11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\External\SDL3-3.4.0\lib\x64;.\External\Effekseer170e\lib\vs2022\MT\$(PlatformTarget)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <FxCompile>
@@ -91,7 +91,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\Source;.\Source\Engine\Base;.\Source\Engine\Windowing;.\Source\Engine\Graphics;.\Source\Engine\UI;.\Source\Engine\VFX;.\Source\Game\Entities\Boss\Phases;.\Source\Game\Entities\Boss\AttackPatterns;.\Source\Game\Entities\Boss;.\Source\Game\Entities;.\Source\Game\States;.\Source\Game\Scenes;.\Source\Engine\Common;.\Source\Engine\Helpers;.\External\SDL3-3.4.0\include;.\External\imgui-docking;.\External\ImGuizmo;.\External\cereal\include;.\External\tinygltf;.\External\SphereCast\Include;.\External\DirectXTex;.\External\Effekseer170e\include\Effekseer;.\External\json;.\External\Effekseer170e\include\EffekseerRendererDX11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\Source;.\Source\Engine\Base;.\Source\Engine\Windowing;.\Source\Engine\Graphics;.\Source\Engine\UI;.\Source\Engine\VFX;.\Source\Game\Entities\Boss\Phases;.\Source\Game\Entities\Boss\AttackPatterns;.\Source\Game\Entities\Boss;.\Source\Game\Entities;.\Source\Game\States;.\Source\Game\Scenes;.\Source\Engine\Common;.\Source\Engine\Helpers;.\External\SDL3-3.4.0\include;.\External\imgui-docking;.\External\ImGuizmo;.\External\cereal\include;.\External\tinygltf;.\External\DirectXTex;.\External\Effekseer170e\include\Effekseer;.\External\json;.\External\Effekseer170e\include\EffekseerRendererDX11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -102,8 +102,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;SphereCast.lib;SDL3.lib;Effekseer.lib;EffekseerRendererDX11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>.\External\SDL3-3.4.0\lib\x64;.\External\SphereCast\lib\vs2022\$(PlatformTarget)\MT\$(Configuration);.\External\Effekseer170e\lib\vs2022\MT\$(PlatformTarget)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;SDL3.lib;Effekseer.lib;EffekseerRendererDX11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\External\SDL3-3.4.0\lib\x64;.\External\Effekseer170e\lib\vs2022\MT\$(PlatformTarget)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <FxCompile>
@@ -127,7 +127,6 @@
     <ClInclude Include="External\ImGuizmo\ImGradient.h" />
     <ClInclude Include="External\ImGuizmo\ImGuizmo.h" />
     <ClInclude Include="External\ImGuizmo\ImSequencer.h" />
-    <ClInclude Include="External\SphereCast\Include\SphereCast.h" />
     <ClInclude Include="Source\Engine\Base\Framework.h" />
     <ClInclude Include="Source\Engine\Base\MathUtils.h" />
     <ClInclude Include="Source\Engine\Base\ResourceManager.h" />

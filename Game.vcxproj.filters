@@ -443,9 +443,6 @@
     <ClInclude Include="Source\System\ShapeRenderer.h">
       <Filter>System</Filter>
     </ClInclude>
-    <ClInclude Include="External\SphereCast\Include\SphereCast.h">
-      <Filter>System</Filter>
-    </ClInclude>
     <ClInclude Include="Source\System\Sprite.h">
       <Filter>System</Filter>
     </ClInclude>

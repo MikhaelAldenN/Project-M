@@ -15,7 +15,7 @@ class StageCollider
 public:
     struct SweepHit
     {
-        DirectX::XMFLOAT3 position{};  // Contact point on the hit triangle
+        DirectX::XMFLOAT3 position{};  // Point of the hit triangle the sphere touches
         DirectX::XMFLOAT3 normal{};    // Normal of the hit triangle
         float distance{ 0.0f };        // Distance from the cast origin to the sphere center at first contact
     };
@@ -35,6 +35,7 @@ public:
 
     // Sweeps a sphere of radius from origin along direction (unit length) for up to distance.
     // Returns the closest hit; false when the path is clear or nothing has been built.
+    // Triangles are one-sided: only the face cross(b - a, c - a) points to is solid.
     [[nodiscard]] bool SphereCast(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction,
         float radius, float distance, SweepHit& outHit);
 

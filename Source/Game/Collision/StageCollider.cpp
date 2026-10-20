@@ -4,10 +4,192 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
-#include <SphereCast.h>
 #include "System/Model.h"
 
 using namespace DirectX;
+
+namespace
+{
+    // Closest point on triangle abc to point p (Ericson, Real-Time Collision Detection, 5.1.5).
+    XMVECTOR ClosestPointOnTriangle(const XMVECTOR p, const XMVECTOR a, const XMVECTOR b, const XMVECTOR c)
+    {
+        const XMVECTOR ab{ XMVectorSubtract(b, a) };
+        const XMVECTOR ac{ XMVectorSubtract(c, a) };
+        const XMVECTOR ap{ XMVectorSubtract(p, a) };
+        const float d1{ XMVectorGetX(XMVector3Dot(ab, ap)) };
+        const float d2{ XMVectorGetX(XMVector3Dot(ac, ap)) };
+        if (d1 <= 0.0f && d2 <= 0.0f) return a;
+
+        const XMVECTOR bp{ XMVectorSubtract(p, b) };
+        const float d3{ XMVectorGetX(XMVector3Dot(ab, bp)) };
+        const float d4{ XMVectorGetX(XMVector3Dot(ac, bp)) };
+        if (d3 >= 0.0f && d4 <= d3) return b;
+
+        const float vc{ d1 * d4 - d3 * d2 };
+        if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f)
+        {
+            return XMVectorAdd(a, XMVectorScale(ab, d1 / (d1 - d3)));
+        }
+
+        const XMVECTOR cp{ XMVectorSubtract(p, c) };
+        const float d5{ XMVectorGetX(XMVector3Dot(ab, cp)) };
+        const float d6{ XMVectorGetX(XMVector3Dot(ac, cp)) };
+        if (d6 >= 0.0f && d5 <= d6) return c;
+
+        const float vb{ d5 * d2 - d1 * d6 };
+        if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f)
+        {
+            return XMVectorAdd(a, XMVectorScale(ac, d2 / (d2 - d6)));
+        }
+
+        const float va{ d3 * d6 - d5 * d4 };
+        if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f)
+        {
+            return XMVectorAdd(b, XMVectorScale(XMVectorSubtract(c, b), (d4 - d3) / ((d4 - d3) + (d5 - d6))));
+        }
+
+        const float denominator{ 1.0f / (va + vb + vc) };
+        return XMVectorAdd(a, XMVectorAdd(XMVectorScale(ab, vb * denominator), XMVectorScale(ac, vc * denominator)));
+    }
+
+    // Whether p, lying on the plane of triangle abc with unit normal, is inside the triangle.
+    // Points within k_insideTolerance of an edge count as inside, so a touch on the edge shared
+    // by two triangles is not lost to rounding in both.
+    bool IsInsideTriangle(const XMVECTOR p, const XMVECTOR a, const XMVECTOR b, const XMVECTOR c, const XMVECTOR normal)
+    {
+        constexpr float k_insideTolerance{ 1.0e-4f };
+        const XMVECTOR corners[3]{ a, b, c };
+        for (int i = 0; i < 3; ++i)
+        {
+            const XMVECTOR edge{ XMVectorSubtract(corners[(i + 1) % 3], corners[i]) };
+            const XMVECTOR toPoint{ XMVectorSubtract(p, corners[i]) };
+            // The cross product's length along the normal is the edge length times the signed
+            // distance of p from the edge, positive on the inner side.
+            const float side{ XMVectorGetX(XMVector3Dot(XMVector3Cross(edge, toPoint), normal)) };
+            if (side < -k_insideTolerance * XMVectorGetX(XMVector3Length(edge))) return false;
+        }
+        return true;
+    }
+
+    // Earliest t in [0, maxT] at which a point moving from start along unit direction comes
+    // within radius of center; false when it never does.
+    bool RayVsSphere(const XMVECTOR start, const XMVECTOR direction, const XMVECTOR center,
+        float radius, float maxT, float& outT)
+    {
+        const XMVECTOR m{ XMVectorSubtract(start, center) };
+        const float b{ XMVectorGetX(XMVector3Dot(m, direction)) };
+        const float c{ XMVectorGetX(XMVector3Dot(m, m)) - radius * radius };
+        if (c > 0.0f && b > 0.0f) return false;
+
+        const float discriminant{ b * b - c };
+        if (discriminant < 0.0f) return false;
+
+        const float t{ (std::max)(-b - std::sqrt(discriminant), 0.0f) };
+        if (t > maxT) return false;
+        outT = t;
+        return true;
+    }
+
+    // Earliest t in [0, maxT] at which a point moving from start along unit direction comes
+    // within radius of the inside of segment pq, ignoring its end caps (the vertex tests cover them).
+    bool RayVsEdgeCylinder(const XMVECTOR start, const XMVECTOR direction, const XMVECTOR p,
+        const XMVECTOR q, float radius, float maxT, float& outT)
+    {
+        const XMVECTOR edge{ XMVectorSubtract(q, p) };
+        const XMVECTOR m{ XMVectorSubtract(start, p) };
+        const float edgeLengthSq{ XMVectorGetX(XMVector3Dot(edge, edge)) };
+        const float md{ XMVectorGetX(XMVector3Dot(m, edge)) };
+        const float nd{ XMVectorGetX(XMVector3Dot(direction, edge)) };
+        const float mn{ XMVectorGetX(XMVector3Dot(m, direction)) };
+
+        // Solve |(m + t d) - edge * s(t)|^2 = r^2, where s(t) projects onto the edge's line.
+        const float a{ edgeLengthSq - nd * nd };
+        if (a < 1.0e-8f * edgeLengthSq) return false;  // Moving along the edge: only the caps can be hit
+
+        const float k{ XMVectorGetX(XMVector3Dot(m, m)) - radius * radius };
+        const float b{ edgeLengthSq * mn - nd * md };
+        const float c{ edgeLengthSq * k - md * md };
+        const float discriminant{ b * b - a * c };
+        if (discriminant < 0.0f) return false;
+
+        const float t{ (-b - std::sqrt(discriminant)) / a };
+        if (t < 0.0f || t > maxT) return false;
+
+        const float alongEdge{ md + t * nd };
+        if (alongEdge < 0.0f || alongEdge > edgeLengthSq) return false;
+        outT = t;
+        return true;
+    }
+
+    // Sweeps a sphere of radius from start along unit direction for up to maxDistance against
+    // triangle abc. Only the front face is solid: the side cross(b - a, c - a) points to.
+    // Reports the distance the center travels before touching, and the triangle's front normal.
+    bool SweepSphereVsTriangle(const XMVECTOR start, const XMVECTOR direction, float maxDistance, float radius,
+        const XMVECTOR a, const XMVECTOR b, const XMVECTOR c, float& outDistance, XMVECTOR& outNormal)
+    {
+        const XMVECTOR normal{ XMVector3Normalize(XMVector3Cross(XMVectorSubtract(b, a), XMVectorSubtract(c, a))) };
+        const float approach{ XMVectorGetX(XMVector3Dot(direction, normal)) };
+        const float startHeight{ XMVectorGetX(XMVector3Dot(XMVectorSubtract(start, a), normal)) };
+
+        // Moving parallel to or away from the front face, or starting behind it: never a hit.
+        if (approach >= 0.0f || startHeight < 0.0f) return false;
+
+        // Already touching: stop at once so the caller cannot slide further into the face.
+        const XMVECTOR closestAtStart{ ClosestPointOnTriangle(start, a, b, c) };
+        if (XMVectorGetX(XMVector3LengthSq(XMVectorSubtract(start, closestAtStart))) <= radius * radius)
+        {
+            outDistance = 0.0f;
+            outNormal = normal;
+            return true;
+        }
+
+        // Face interior first: if the sphere meets the plane inside the triangle, nothing touches earlier.
+        if (startHeight > radius)
+        {
+            const float tPlane{ (startHeight - radius) / -approach };
+            if (tPlane > maxDistance) return false;
+
+            const XMVECTOR centerAtPlane{ XMVectorMultiplyAdd(direction, XMVectorReplicate(tPlane), start) };
+            const XMVECTOR touch{ XMVectorSubtract(centerAtPlane, XMVectorScale(normal, radius)) };
+            if (IsInsideTriangle(touch, a, b, c, normal))
+            {
+                outDistance = tPlane;
+                outNormal = normal;
+                return true;
+            }
+        }
+
+        // Otherwise the first contact is on an edge or a corner. A contact made while the center
+        // is already behind the plane comes from the back side, which is not solid.
+        const auto inFront = [&](float t)
+            {
+                return startHeight + approach * t >= 0.0f;
+            };
+
+        float earliest{ maxDistance };
+        bool hit{ false };
+        const XMVECTOR corners[3]{ a, b, c };
+        for (int i = 0; i < 3; ++i)
+        {
+            float t{ 0.0f };
+            if (RayVsSphere(start, direction, corners[i], radius, earliest, t) && inFront(t))
+            {
+                earliest = t;
+                hit = true;
+            }
+            if (RayVsEdgeCylinder(start, direction, corners[i], corners[(i + 1) % 3], radius, earliest, t) && inFront(t))
+            {
+                earliest = t;
+                hit = true;
+            }
+        }
+
+        if (!hit) return false;
+        outDistance = earliest;
+        outNormal = normal;
+        return true;
+    }
+}
 
 void StageCollider::Build(const Model& model, const std::vector<WallBox>& walls)
 {
@@ -104,7 +286,8 @@ bool StageCollider::SphereCast(const XMFLOAT3& origin, const XMFLOAT3& direction
     if (m_triangles.empty() || distance <= 0.0f) return false;
 
     const XMVECTOR start{ XMLoadFloat3(&origin) };
-    const XMVECTOR end{ XMVectorMultiplyAdd(XMLoadFloat3(&direction), XMVectorReplicate(distance), start) };
+    const XMVECTOR castDirection{ XMVector3Normalize(XMLoadFloat3(&direction)) };
+    const XMVECTOR end{ XMVectorMultiplyAdd(castDirection, XMVectorReplicate(distance), start) };
     XMFLOAT3 endPoint{};
     XMStoreFloat3(&endPoint, end);
 
@@ -124,14 +307,16 @@ bool StageCollider::SphereCast(const XMFLOAT3& origin, const XMFLOAT3& direction
             XMLoadFloat3(&triangle[2])
         };
 
-        SphereCastResult result{};
-        if (!IntersectSphereCastVsTriangle(start, end, radius, corners, &result)) continue;
-        if (result.distance >= closestDistance) continue;
+        float hitDistance{ 0.0f };
+        XMVECTOR hitNormal{};
+        if (!SweepSphereVsTriangle(start, castDirection, distance, radius, corners[0], corners[1], corners[2], hitDistance, hitNormal)) continue;
+        if (hitDistance >= closestDistance) continue;
 
-        closestDistance = result.distance;
-        XMStoreFloat3(&outHit.position, result.position);
-        XMStoreFloat3(&outHit.normal, result.normal);
-        outHit.distance = result.distance;
+        closestDistance = hitDistance;
+        const XMVECTOR centerAtContact{ XMVectorMultiplyAdd(castDirection, XMVectorReplicate(hitDistance), start) };
+        XMStoreFloat3(&outHit.position, ClosestPointOnTriangle(centerAtContact, corners[0], corners[1], corners[2]));
+        XMStoreFloat3(&outHit.normal, hitNormal);
+        outHit.distance = hitDistance;
         hasHit = true;
     }
 
