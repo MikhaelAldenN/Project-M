@@ -10,6 +10,7 @@
 #include <array>
 #include <ctime>
 #include "Game/Collision/CollisionManager.h"
+#include "ProjectilePool.h"
 #include "EnemyManager.h"
 #include "ItemManager.h"
 #include "Stage.h"
@@ -648,6 +649,17 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
                 if (!bullet || !bullet->IsActive()) continue;
                 if (isWindowkill) shapeRenderer->DrawSphere(bullet->GetPosition(), bullet->GetRadius(), { 0.0f, 1.0f, 0.0f, 1.0f });
                 else              shapeRenderer->DrawSphere(bullet->GetPosition(), bullet->GetRadius(), { 1.0f, 0.0f, 0.0f, 1.0f });
+            }
+
+            if (const ProjectilePool * pool{ phase->GetProjectilePool() })
+            {
+                const DirectX::XMFLOAT4 color{ isWindowkill
+                    ? DirectX::XMFLOAT4{ 0.0f, 1.0f, 0.0f, 1.0f }
+                    : DirectX::XMFLOAT4{ 1.0f, 0.0f, 0.0f, 1.0f } };
+                for (const Projectile& projectile : pool->Slots())
+                {
+                    if (projectile.isActive) shapeRenderer->DrawSphere(projectile.position, projectile.radius, color);
+                }
             }
         }
     }

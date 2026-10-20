@@ -12,6 +12,7 @@ class Boss;
 class Bullet;
 class Camera;
 class Player;
+class ProjectilePool;
 
 // Which part of the boss fight a phase implements. Callers use it for decisions that
 // depend on the fight's stage (main window hidden, post-process), not on one feature.
@@ -62,6 +63,11 @@ public:
     // Appends the bullets that are active right now. `out` is not cleared, so one buffer
     // can be reused. Pointers are borrowed and valid until the phase's next Update.
     virtual void AppendActiveProjectiles(std::vector<Bullet*>& out) const = 0;
+
+    // The phase's plain-data projectile pool, or null when the phase has none.
+    // Borrowed: the pool lives as long as the phase.
+    [[nodiscard]] virtual ProjectilePool* GetProjectilePool() { return nullptr; }
+    [[nodiscard]] virtual const ProjectilePool* GetProjectilePool() const { return nullptr; }
 
     // Takes ownership of `attack` and starts it. A null `attack` is ignored.
     virtual void AddAttack(std::unique_ptr<IBossAttackPattern> attack) = 0;

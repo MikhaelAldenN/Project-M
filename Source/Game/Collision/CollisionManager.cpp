@@ -1,6 +1,7 @@
 #include "CollisionManager.h"
 #include "Boss.h"
 #include "CollisionGeometry.h"
+#include "ProjectilePool.h"
 #include "EffectManager.h"
 #include "TimeManager.h"
 #include <CameraController.h>
@@ -698,49 +699,65 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
 {
     if (!m_player || !m_Boss || m_player->GetHP() <= 0) return;
 
-    // Radius standar hitbox player untuk peluru boss
-    float playerHitboxRadius = 0.3f;
+    INaviPhase* phase{ m_Boss->GetCurrentPhase() };
+    if (!phase) return;
 
-    // Fungsi helper (Lambda) untuk mengecek tabrakan 1 peluru vs Player
-    auto checkBulletHit = [&](Bullet* bullet) {
-        if (!bullet || !bullet->IsActive()) return;
+    // Player hitbox radius against boss projectiles.
+    constexpr float k_playerHitboxRadius{ 0.3f };
 
-        // A parried bullet (heading back to the boss) never hurts the player.
-        if (bullet->GetBossTarget() != nullptr) return;
-
-        DirectX::XMFLOAT3 pPos = m_player->GetPosition();
-        DirectX::XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
+    // Damages the player when a projectile at `position` touches them.
+    // Returns true when the projectile is used up.
+    auto hitPlayer = [&](const DirectX::XMFLOAT3& position, float radius, int damage) {
+        const DirectX::XMFLOAT3 pPos{ m_player->GetPosition() };
 
         // Full 3D distance (X, Y, Z), so attacks high above the player such as
         // Rain and Bijuudama do not hit the player below them.
-        float dx = pPos.x - bPos.x;
-        float dy = pPos.y - bPos.y;
-        float dz = pPos.z - bPos.z;
-        float distSq = (dx * dx) + (dy * dy) + (dz * dz);
+        const float dx{ pPos.x - position.x };
+        const float dy{ pPos.y - position.y };
+        const float dz{ pPos.z - position.z };
+        const float distSq{ (dx * dx) + (dy * dy) + (dz * dz) };
+        const float totalRadius{ radius + k_playerHitboxRadius };
+        if (distSq > (totalRadius * totalRadius)) return false;
 
-        // Radius gabungan peluru dan player
-        float totalRadius = bullet->GetRadius() + playerHitboxRadius;
+        const DamageResult result{ m_player->TakeDamage(DamageInfo{ damage, position }) };
+        // Why: an invincible player (dash) passes through. The projectile stays alive and
+        // there is no hit feedback, the same as enemy and Navi bullets.
+        if (result == DamageResult::ignored) return false;
 
-        if (distSq <= (totalRadius * totalRadius)) {
-            const DamageResult result{ m_player->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos }) };
-            // Why: an invincible player (dash) passes through. The bullet stays alive and
-            // there is no hit feedback, the same as enemy and Navi bullets.
-            if (result == DamageResult::ignored) return;
-
-            bullet->SetActive(false);
-            CameraController::Instance().AddTrauma(0.2f);
-            AudioManager::Instance().PlaySFX("Data/Sound/SE_Damage.wav", 0.3f);
-        }
+        CameraController::Instance().AddTrauma(0.2f);
+        AudioManager::Instance().PlaySFX("Data/Sound/SE_Damage.wav", 0.3f);
+        return true;
         };
-
-    INaviPhase* phase{ m_Boss->GetCurrentPhase() };
-    if (!phase) return;
 
     m_bossBulletScratch.clear();
     phase->AppendActiveProjectiles(m_bossBulletScratch);
     for (Bullet* bullet : m_bossBulletScratch)
     {
-        checkBulletHit(bullet);
+        if (!bullet || !bullet->IsActive()) continue;
+        // A parried bullet (heading back to the boss) never hurts the player.
+        if (bullet->GetBossTarget() != nullptr) continue;
+
+        if (hitPlayer(bullet->GetMovement()->GetPosition(), bullet->GetRadius(), bullet->GetDamage()))
+        {
+            bullet->SetActive(false);
+        }
+    }
+
+    if (ProjectilePool * pool{ phase->GetProjectilePool() })
+    {
+        const std::vector<Projectile>& slots{ pool->Slots() };
+        for (std::size_t i{ 0 }; i < slots.size(); ++i)
+        {
+            const Projectile& projectile{ slots[i] };
+            if (!projectile.isActive) continue;
+            // A projectile heading back to the boss never hurts the player.
+            if (projectile.target == ProjectileTarget::boss) continue;
+
+            if (hitPlayer(projectile.position, projectile.radius, projectile.damage))
+            {
+                pool->Despawn(i);
+            }
+        }
     }
 }
 
@@ -751,42 +768,54 @@ void CollisionManager::CheckBossProjectilesVsBoss(float elapsedTime)
     // Why bullet hell only: the parry that sends bullets back (GetParryableProjectile) exists only there.
     if (!phase || phase->GetKind() != BossPhaseKind::bulletHell) return;
 
+    // Boss hitbox radius for projectiles sent back by a parry.
+    constexpr float k_bossHitboxRadius{ 4.0f };
+
+    // Full 3D check: include Y so parabolic shards passing right above the boss's head
+    // do not explode in mid-air.
+    auto reachesBoss = [&](const DirectX::XMFLOAT3& position) {
+        const DirectX::XMFLOAT3 bossPos{ m_Boss->GetPosition() };
+        const float dx{ position.x - bossPos.x };
+        const float dy{ position.y - bossPos.y };
+        const float dz{ position.z - bossPos.z };
+        return ((dx * dx) + (dy * dy) + (dz * dz)) <= (k_bossHitboxRadius * k_bossHitboxRadius);
+        };
+
+    // Routes damage through the phase so the HP bar, sound, and damage flash stay in sync,
+    // with a small shake for every fragment that lands.
+    auto damageBoss = [&](const DirectX::XMFLOAT3& position, int damage) {
+        phase->TakeDamage(DamageInfo{ damage, position });
+        CameraController::Instance().AddTrauma(0.15f);
+        };
+
     m_bossBulletScratch.clear();
     phase->AppendActiveProjectiles(m_bossBulletScratch);
     for (Bullet* bullet : m_bossBulletScratch)
     {
-        if (!bullet->IsActive()) continue;
+        if (!bullet->IsActive() || bullet->GetBossTarget() != m_Boss) continue;
 
-        // Bandingkan BossTarget dengan m_Boss
-        if (bullet->GetBossTarget() == m_Boss)
+        const DirectX::XMFLOAT3 bPos{ bullet->GetMovement()->GetPosition() };
+        if (!reachesBoss(bPos)) continue;
+
+        // Deactivated before the damage, so one fragment cannot hit twice.
+        bullet->SetActive(false);
+        damageBoss(bPos, bullet->GetDamage());
+    }
+
+    if (ProjectilePool * pool{ phase->GetProjectilePool() })
+    {
+        const std::vector<Projectile>& slots{ pool->Slots() };
+        for (std::size_t i{ 0 }; i < slots.size(); ++i)
         {
-            DirectX::XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
-            DirectX::XMFLOAT3 bossPos = m_Boss->GetPosition();
+            const Projectile& projectile{ slots[i] };
+            if (!projectile.isActive || projectile.target != ProjectileTarget::boss) continue;
+            if (!reachesBoss(projectile.position)) continue;
 
-            // =========================================================
-            // Full 3D check: include Y so parabolic shards passing right
-            // above the boss's head do not explode in mid-air.
-            // =========================================================
-            float dx = bPos.x - bossPos.x;
-            float dy = bPos.y - bossPos.y;
-            float dz = bPos.z - bossPos.z;
-            float distSq = (dx * dx) + (dy * dy) + (dz * dz);
-
-            // Hitbox Boss untuk serangan ini (radius 4.0f -> Kuadrat = 16.0f)
-            if (distSq <= 16.0f)
-            {
-                // 1. Matikan kepingan peluru agar tidak hit berkali-kali
-                bullet->SetActive(false);
-
-                // =========================================================
-                // Route damage directly to the phase so the HP bar,
-                // sound, and damage flash stay in sync.
-                // =========================================================
-                phase->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos });
-
-                // 3. [JUICE] Berikan micro-shake untuk SETIAP kepingan yang menabrak
-                CameraController::Instance().AddTrauma(0.15f);
-            }
+            const DirectX::XMFLOAT3 position{ projectile.position };
+            const int damage{ projectile.damage };
+            // Despawned before the damage, so one fragment cannot hit twice.
+            pool->Despawn(i);
+            damageBoss(position, damage);
         }
     }
 }
