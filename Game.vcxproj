@@ -176,6 +176,7 @@
     <ClInclude Include="Source\Engine\Windowing\WindowTrackingSystem.h" />
     <ClInclude Include="Source\Game\Collision\CollisionGeometry.h" />
     <ClInclude Include="Source\Game\Collision\CollisionManager.h" />
+    <ClInclude Include="Source\Game\Collision\KinematicMover.h" />
     <ClInclude Include="Source\Game\Collision\LevelTriggerSystem.h" />
     <ClInclude Include="Source\Game\Collision\StageCollider.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackDirect.h" />
@@ -296,6 +297,7 @@
     <ClCompile Include="Source\Engine\Windowing\WindowTrackingSystem.cpp" />
     <ClCompile Include="Source\Game\Collision\CollisionGeometry.cpp" />
     <ClCompile Include="Source\Game\Collision\CollisionManager.cpp" />
+    <ClCompile Include="Source\Game\Collision\KinematicMover.cpp" />
     <ClCompile Include="Source\Game\Collision\LevelTriggerSystem.cpp" />
     <ClCompile Include="Source\Game\Collision\StageCollider.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackDirect.cpp" />
