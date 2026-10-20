@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
         // ==========================================
         // KONFIGURASI FPS CAP
         // ==========================================
-        const double targetFPS = 60.0; // Silakan ganti ke 30, 90, atau 120
+        const double targetFPS = 10000; // Silakan ganti ke 30, 90, atau 120
         const Uint64 targetTicksPerFrame = frequency / targetFPS;
         const Uint64 yieldThreshold = frequency / 500; // Batas aman 2ms untuk CPU napas
 
