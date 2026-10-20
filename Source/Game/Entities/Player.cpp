@@ -137,9 +137,14 @@ void Player::InitPhysics(physx::PxControllerManager* manager, physx::PxMaterial*
 void Player::SetStageCollider(StageCollider* collider)
 {
     m_stageCollider = collider;
+    StandOnGround();
+}
+
+void Player::StandOnGround()
+{
     if (!m_stageCollider || !movement) return;
 
-    // Why the search starts stepOffset higher: a spawn point lying exactly on the floor
+    // Why the search starts stepOffset higher: a point lying exactly on the floor
     // would start the probe inside it, and the one-sided cast would miss.
     XMFLOAT3 feet{ movement->GetPosition() };
     const XMFLOAT3 probeStart{ feet.x, feet.y + PlayerConst::StepOffset, feet.z };
@@ -1049,6 +1054,7 @@ void Player::SetPosition(const DirectX::XMFLOAT3& pos)
 {
     // Update komponen movement logical
     if (movement) movement->SetPosition(pos);
+    StandOnGround();
 
     // PENTING: Update juga komponen fisika PhysX
     if (m_physxController)

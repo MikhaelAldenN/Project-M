@@ -149,8 +149,8 @@ namespace StageConfig
     // =========================================================
     static const std::vector<DebugLineData> DEBUG_LINES_VOID =
     {
-        // Line Void 1
-        { {-2.5,0.7,0.8}, {0,43.1,0}, {17.1,0,0} },
+        // Line Void 1: along the edge of the flat floor, keeping the player off the beach slope
+        { {5.25,0.7,2.25}, {0,45.0,0}, {19.1,0,0} },
 
         // Line Void 2
         { {8.2,1.2,-4.4}, {0,0,0}, {8.1,0,0} },

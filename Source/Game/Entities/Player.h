@@ -78,8 +78,8 @@ public:
         float spawnY = 15.0f);
 
     // Moves the player against collider on the XZ plane with Y fixed, and stands it on the
-    // floor below its current position. The collider is borrowed: its owner (the scene's Stage)
-    // must outlive the player. nullptr keeps the PhysX path.
+    // floor below its current position; SetPosition does the same from then on. The collider is
+    // borrowed: its owner (the scene's Stage) must outlive the player. nullptr keeps the PhysX path.
     void SetStageCollider(StageCollider* collider);
 
 	// --- Weapon ---
@@ -201,6 +201,9 @@ private:
     // Hides the model, locks input, stops movement and enters PlayerDead.
     // Only TakeDamage calls this, when a hit brings HP to zero.
     void EnterDeathState();
+
+    // Puts the feet on the stage floor below the current position. Needs m_stageCollider.
+    void StandOnGround();
 
     // --- Update pipeline (called in order from Update()) ---
     void UpdateDashRecovery(float dt);

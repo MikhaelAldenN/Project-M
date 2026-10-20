@@ -124,36 +124,10 @@ SceneGame::SceneGame()
 
     m_stage = std::make_unique<Stage>(Graphics::Instance().GetDevice());
 
-    m_foundation.reset(PxCreateFoundation(PX_PHYSICS_VERSION, m_allocator, m_errorCallback));
-    assert(m_foundation != nullptr && "CRITICAL ERROR: PxCreateFoundation failed!");
-
-    m_physics.reset(PxCreatePhysics(PX_PHYSICS_VERSION, *m_foundation, physx::PxTolerancesScale(), true, nullptr));
-    assert(m_physics != nullptr && "CRITICAL ERROR: PxCreatePhysics failed!");
-
-    physx::PxSceneDesc sceneDesc(m_physics->getTolerancesScale());
-    sceneDesc.gravity = physx::PxVec3(0.0f, Config::GRAVITY, 0.0f);
-
-    m_dispatcher.reset(physx::PxDefaultCpuDispatcherCreate(2));
-    sceneDesc.cpuDispatcher = m_dispatcher.get();
-    sceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
-
-    m_scene.reset(m_physics->createScene(sceneDesc));
-    assert(m_scene != nullptr && "CRITICAL ERROR: createScene failed!");
-
-    m_controllerManager.reset(PxCreateControllerManager(*m_scene));
-    assert(m_controllerManager != nullptr && "CRITICAL ERROR: PxCreateControllerManager failed!");
-
-    m_defaultMaterial.reset(m_physics->createMaterial(0.5f, 0.5f, 0.1f));
-    assert(m_defaultMaterial != nullptr && "CRITICAL ERROR: createMaterial failed!");
-
-    m_groundPlane.reset(physx::PxCreatePlane(*m_physics, physx::PxPlane(0, 1, 0, 0), *m_defaultMaterial));
-    m_scene->addActor(*m_groundPlane);
-
     m_player = std::make_unique<Player>();
 
     m_player->SetPosition(m_playerSpawnPos);
-    m_player->InitPhysics(m_controllerManager.get(), m_defaultMaterial.get());
-    m_stage->InitPhysics(m_physics.get(), m_scene.get(), m_defaultMaterial.get());
+    m_player->SetStageCollider(&m_stage->GetCollider());
 
     m_player->SetMaxHP(100);
 
@@ -362,15 +336,6 @@ void SceneGame::Update(const float elapsedTime)
             m_stage.reset();
             m_collisionManager.reset();
 
-            // Destroy PhysX core components in reverse order of creation
-            m_groundPlane.reset();
-            m_defaultMaterial.reset();
-            m_controllerManager.reset();
-            m_scene.reset();
-            m_dispatcher.reset();
-            m_physics.reset();
-            m_foundation.reset(); // Releases PxFoundation so SceneBoss can create its own
-
             // Clear the camera so SceneBoss can claim it without it getting overridden
             CameraController::Instance().ClearCamera();
             Framework::Instance()->ChangeScene(std::make_unique<SceneBoss>());
@@ -479,13 +444,7 @@ void SceneGame::Update(const float elapsedTime)
         m_dialogueBox->Update(elapsedTime);
     }
 
-    if (m_scene) {
-        m_scene->simulate(elapsedTime);
-        m_scene->fetchResults(true);
-    }
-
     Camera* activeCam{ CameraController::Instance().GetActiveCamera().get() };
-
     if (m_player) {
         m_player->Update(elapsedTime, activeCam);
         if (m_navi) m_navi->Update(elapsedTime, activeCam);

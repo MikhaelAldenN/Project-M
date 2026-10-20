@@ -5,13 +5,11 @@
 #include <string>
 #include <DirectXMath.h>
 #include <wrl/client.h> 
-#include <PxPhysicsAPI.h> 
 #include <SDL3/SDL.h>
 #include <imgui.h>
 #include <cstdio>
 #include <vector>
 #include "BeyondWindow.h"
-#include "PhysXUtils.h"
 #include "Scene.h"
 #include "System/Light.h"
 #include "System/Sprite.h"
@@ -61,7 +59,6 @@ public:
 private:
     struct Config {
         static constexpr float TIME_LOOP_MAX{ 1000.0f };
-        static constexpr float GRAVITY{ -9.81f };
         static constexpr float CAM_FOV{ 45.0f };
         static constexpr float CAM_NEAR{ 0.1f };
         static constexpr float CAM_FAR{ 1000.0f };
@@ -116,16 +113,6 @@ private:
 
     std::unique_ptr<CinematicDirector> m_director{};
 
-    physx::PxDefaultAllocator m_allocator{};
-    physx::PxDefaultErrorCallback m_errorCallback{};
-    std::unique_ptr<physx::PxFoundation, PhysXDeleter> m_foundation{};
-    std::unique_ptr<physx::PxPhysics, PhysXDeleter> m_physics{};
-    std::unique_ptr<physx::PxDefaultCpuDispatcher, PhysXDeleter> m_dispatcher{};
-    std::unique_ptr<physx::PxScene, PhysXDeleter> m_scene{};
-    std::unique_ptr<physx::PxControllerManager, PhysXDeleter> m_controllerManager{};
-    std::unique_ptr<physx::PxMaterial, PhysXDeleter> m_defaultMaterial{};
-    std::unique_ptr<physx::PxRigidStatic, PhysXDeleter> m_groundPlane{};
-
     // SYSTEM STATE
     bool m_isPaused{ false };
     bool m_isExitingToTitle{ false };
@@ -172,7 +159,8 @@ private:
     static constexpr float FX_BLACK_SMOOTHNESS{ 7.0f };
     static constexpr float FX_BLACK_INTENSITY{ 5.0f };
 
-    const DirectX::XMFLOAT3 m_playerSpawnPos{ 0.0f, 2.0f, 0.0f };
+    // On the flat floor beside the beach; Y is replaced by the floor height below.
+    const DirectX::XMFLOAT3 m_playerSpawnPos{ 9.0f, 2.0f, 1.0f };
 
     void StartPlayerDeathSequence();
     void StartNaviDefeatSequence();
