@@ -375,6 +375,9 @@
     <ClCompile Include="Source\Game\Collision\KinematicMover.cpp">
       <Filter>Source\Game\Collision</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Entities\ProjectilePool.cpp">
+      <Filter>Source\Game\Entities</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\BasicShader.h">
@@ -768,6 +771,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Collision\KinematicMover.h">
       <Filter>Source\Game\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Entities\ProjectilePool.h">
+      <Filter>Source\Game\Entities</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
