@@ -9,7 +9,7 @@
 class Model;
 
 // Static triangles of a stage model in world space, bucketed on the XZ plane,
-// answering sphere casts. Replaces the PhysX triangle-mesh actor of the stage.
+// answering sphere casts.
 class StageCollider
 {
 public:

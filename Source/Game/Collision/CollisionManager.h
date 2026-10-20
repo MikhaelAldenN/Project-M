@@ -6,7 +6,6 @@
 #include <functional>
 #include <vector>
 #include "System/AudioManager.h"
-#include "System/Collision.h"
 #include "System/Input.h"
 #include "Enemy.h"
 #include "Player.h"

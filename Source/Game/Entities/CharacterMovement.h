@@ -2,7 +2,7 @@
 #include <DirectXMath.h>
 
 // Pure data container for character transform state.
-// Physics simulation is handled externally by PhysX.
+// Collision against the stage is resolved by the owner (Player uses KinematicMover).
 class CharacterMovement
 {
 public:

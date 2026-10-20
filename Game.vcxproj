@@ -60,7 +60,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\Source;.\Source\Engine\Base;.\Source\Engine\Windowing;.\Source\Engine\Graphics;.\Source\Engine\UI;.\Source\Engine\VFX;.\Source\Game\Entities\Boss\Phases;.\Source\Game\Entities\Boss\AttackPatterns;.\Source\Game\Entities\Boss;.\Source\Game\Entities;.\Source\Game\States;.\Source\Game\Scenes;.\Source\Engine\Common;.\Source\Engine\Helpers;.\External\SDL3-3.4.0\include;.\External\imgui-docking;.\External\ImGuizmo;.\External\cereal\include;.\External\tinygltf;.\External\SphereCast\Include;.\External\DirectXTex;.\External\PhysX\physx\include;.\External\Effekseer170e\include\Effekseer;.\External\json;.\External\Effekseer170e\include\EffekseerRendererDX11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\Source;.\Source\Engine\Base;.\Source\Engine\Windowing;.\Source\Engine\Graphics;.\Source\Engine\UI;.\Source\Engine\VFX;.\Source\Game\Entities\Boss\Phases;.\Source\Game\Entities\Boss\AttackPatterns;.\Source\Game\Entities\Boss;.\Source\Game\Entities;.\Source\Game\States;.\Source\Game\Scenes;.\Source\Engine\Common;.\Source\Engine\Helpers;.\External\SDL3-3.4.0\include;.\External\imgui-docking;.\External\ImGuizmo;.\External\cereal\include;.\External\tinygltf;.\External\SphereCast\Include;.\External\DirectXTex;.\External\Effekseer170e\include\Effekseer;.\External\json;.\External\Effekseer170e\include\EffekseerRendererDX11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -69,8 +69,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;SphereCast.lib;SDL3.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXCharacterKinematic_static_64.lib;Effekseer.lib;EffekseerRendererDX11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>.\External\SDL3-3.4.0\lib\x64;.\External\SphereCast\lib\vs2022\$(PlatformTarget)\MT\$(Configuration);.\External\Effekseer170e\lib\vs2022\MT\$(PlatformTarget)\$(Configuration);.\External\PhysX\physx\bin\win.x86_64.vc143.mt\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;SphereCast.lib;SDL3.lib;Effekseer.lib;EffekseerRendererDX11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\External\SDL3-3.4.0\lib\x64;.\External\SphereCast\lib\vs2022\$(PlatformTarget)\MT\$(Configuration);.\External\Effekseer170e\lib\vs2022\MT\$(PlatformTarget)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <FxCompile>
@@ -91,7 +91,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\Source;.\Source\Engine\Base;.\Source\Engine\Windowing;.\Source\Engine\Graphics;.\Source\Engine\UI;.\Source\Engine\VFX;.\Source\Game\Entities\Boss\Phases;.\Source\Game\Entities\Boss\AttackPatterns;.\Source\Game\Entities\Boss;.\Source\Game\Entities;.\Source\Game\States;.\Source\Game\Scenes;.\Source\Engine\Common;.\Source\Engine\Helpers;.\External\SDL3-3.4.0\include;.\External\imgui-docking;.\External\ImGuizmo;.\External\cereal\include;.\External\tinygltf;.\External\SphereCast\Include;.\External\DirectXTex;.\External\PhysX\physx\include;.\External\Effekseer170e\include\Effekseer;.\External\json;.\External\Effekseer170e\include\EffekseerRendererDX11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\Source;.\Source\Engine\Base;.\Source\Engine\Windowing;.\Source\Engine\Graphics;.\Source\Engine\UI;.\Source\Engine\VFX;.\Source\Game\Entities\Boss\Phases;.\Source\Game\Entities\Boss\AttackPatterns;.\Source\Game\Entities\Boss;.\Source\Game\Entities;.\Source\Game\States;.\Source\Game\Scenes;.\Source\Engine\Common;.\Source\Engine\Helpers;.\External\SDL3-3.4.0\include;.\External\imgui-docking;.\External\ImGuizmo;.\External\cereal\include;.\External\tinygltf;.\External\SphereCast\Include;.\External\DirectXTex;.\External\Effekseer170e\include\Effekseer;.\External\json;.\External\Effekseer170e\include\EffekseerRendererDX11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -102,8 +102,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;SphereCast.lib;SDL3.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXCharacterKinematic_static_64.lib;Effekseer.lib;EffekseerRendererDX11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>.\External\SDL3-3.4.0\lib\x64;.\External\SphereCast\lib\vs2022\$(PlatformTarget)\MT\$(Configuration);.\External\Effekseer170e\lib\vs2022\MT\$(PlatformTarget)\$(Configuration);.\External\PhysX\physx\bin\win.x86_64.vc143.mt\checked;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;xinput.lib;xaudio2.lib;winmm.lib;SphereCast.lib;SDL3.lib;Effekseer.lib;EffekseerRendererDX11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>.\External\SDL3-3.4.0\lib\x64;.\External\SphereCast\lib\vs2022\$(PlatformTarget)\MT\$(Configuration);.\External\Effekseer170e\lib\vs2022\MT\$(PlatformTarget)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <FxCompile>
@@ -146,7 +146,6 @@
     <ClInclude Include="Source\Engine\Helpers\CapeSimulator.h" />
     <ClInclude Include="Source\Engine\Helpers\InputHelper.h" />
     <ClInclude Include="Source\Engine\Helpers\PerformanceLogger.h" />
-    <ClInclude Include="Source\Engine\Helpers\PhysXutils.h" />
     <ClInclude Include="Source\Engine\Helpers\TimeManager.h" />
     <ClInclude Include="Source\Engine\UI\ButtonManager.h" />
     <ClInclude Include="Source\Engine\UI\CursorBlock.h" />
@@ -221,7 +220,6 @@
     <ClInclude Include="Source\Game\States\PlayerStates.h" />
     <ClInclude Include="Source\Game\States\StateMachine.h" />
     <ClInclude Include="Source\System\AudioManager.h" />
-    <ClInclude Include="Source\System\Collision.h" />
     <ClInclude Include="Source\System\BasicShader.h" />
     <ClInclude Include="Source\System\Dialog.h" />
     <ClInclude Include="Source\System\GamePad.h" />
@@ -336,7 +334,6 @@
     <ClCompile Include="Source\Game\States\PlayerStates.cpp" />
     <ClCompile Include="Source\System\AudioManager.cpp" />
     <ClCompile Include="Source\System\BasicShader.cpp" />
-    <ClCompile Include="Source\System\Collision.cpp" />
     <ClCompile Include="Source\System\Dialog.cpp" />
     <ClCompile Include="Source\System\GamePad.cpp" />
     <ClCompile Include="Source\System\GLTFImporter.cpp" />

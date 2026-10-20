@@ -8,17 +8,10 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <PxPhysicsAPI.h>
-#include <cooking/PxCooking.h>
-#include <geometry/PxTriangleMesh.h>
-#include <geometry/PxTriangleMeshGeometry.h>
 #include "System/ModelRenderer.h"
 #include "System/ShapeRenderer.h" 
 #include "System/PrimitiveRenderer.h"
 #include "Game/Collision/StageCollider.h"
-#pragma comment(lib, "PhysXCooking_64.lib") 
-#pragma comment(lib, "PhysXCommon_64.lib")
-#pragma comment(lib, "PhysXFoundation_64.lib")
 
 
 // ==========================================
@@ -195,7 +188,6 @@ public:
     // (SceneGame, SceneBoss) gak kena efek. Scene lain (misal SceneSandbox)
     // bisa lempar path stage percobaan sendiri.
     Stage(ID3D11Device* device, const std::string& modelPath = StageConfig::MODEL_PATH);
-    ~Stage();
 
     void UpdateTransform();
     void Render(ModelRenderer* renderer);
@@ -209,11 +201,8 @@ public:
     void ClearLineHighlight() { m_highlightState.index = -1; }
     void ClearWallHighlight() { m_highlightWallIndex = -1; }
 
-    // Physics Engine Hooks
-    void InitPhysics(physx::PxPhysics* physics, physx::PxScene* scene, physx::PxMaterial* material);
-    void RebuildPhysics();
-
-    // Rebuilds the stage collider from the model at the current position, rotation, and scale.
+    // Rebuilds the stage collider from the model at the current position, rotation, and scale,
+    // and from the void lines as invisible walls.
     void RebuildCollider();
     StageCollider& GetCollider() noexcept { return m_collider; }
     float GetColliderBuildMs() const noexcept { return m_colliderBuildMs; }
@@ -245,13 +234,6 @@ private:
 
     SpatialHashGrid m_spatialGrid;
     std::shared_ptr<Model> model;
-
-    physx::PxPhysics* m_physics{ nullptr };
-    physx::PxScene* m_scene{ nullptr };
-    physx::PxMaterial* m_material{ nullptr };
-    physx::PxRigidStatic* m_physxActor{ nullptr };
-
-    std::vector<physx::PxTriangleMesh*> m_collisionMeshes;
 
     StageCollider m_collider{};
     float m_colliderBuildMs{ 0.0f };
