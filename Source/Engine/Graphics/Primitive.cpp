@@ -72,10 +72,10 @@ Primitive::~Primitive() {}
 
 void Primitive::Rect(float x, float y, float w, float h, float cx, float cy, float angle, float r, float g, float b, float a)
 {
-    Rect(VECTOR2{ x, y }, VECTOR2{ w, h }, VECTOR2{ cx, cy }, angle, VECTOR4{ r, g, b, a });
+    Rect(DirectX::XMFLOAT2{ x, y }, DirectX::XMFLOAT2{ w, h }, DirectX::XMFLOAT2{ cx, cy }, angle, DirectX::XMFLOAT4{ r, g, b, a });
 }
 
-void Primitive::Rect(const VECTOR2& position, const VECTOR2& size, const VECTOR2& center, float angle, const VECTOR4& color)
+void Primitive::Rect(const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size, const DirectX::XMFLOAT2& center, float angle, const DirectX::XMFLOAT4& color)
 {
     // Kita langsung proses vertices di sini untuk dimasukkan ke batch
     DrawRectInternal(position, size, center, angle, color);
@@ -103,7 +103,7 @@ void Primitive::Circle(float x, float y, float radius, float r, float g, float b
 void Primitive::Triangle(float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a)
 {
     // Use brace initialization for the color vector
-    const VECTOR4 color{ r, g, b, a };
+    const DirectX::XMFLOAT4 color{ r, g, b, a };
 
     // Push exactly 3 vertices to form one triangle in the batch
     batchVertices.push_back({ {x1, y1, 0.0f}, color });
@@ -113,7 +113,7 @@ void Primitive::Triangle(float x1, float y1, float x2, float y2, float x3, float
 
 // --- INTERNAL LOGIC ---
 
-void Primitive::DrawRectInternal(const VECTOR2& pos, const VECTOR2& size, const VECTOR2& center, float angle, const VECTOR4& color)
+void Primitive::DrawRectInternal(const DirectX::XMFLOAT2& pos, const DirectX::XMFLOAT2& size, const DirectX::XMFLOAT2& center, float angle, const DirectX::XMFLOAT4& color)
 {
     float cosA = cosf(angle);
     float sinA = sinf(angle);

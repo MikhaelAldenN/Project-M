@@ -5,11 +5,6 @@
 #include <memory>
 #include <wrl/client.h>
 
-// Short aliases for the DirectXMath float types used by Primitive.
-using VECTOR2 = DirectX::XMFLOAT2;
-using VECTOR3 = DirectX::XMFLOAT3;
-using VECTOR4 = DirectX::XMFLOAT4;
-
 class Primitive
 {
 public:
@@ -23,9 +18,9 @@ public:
         float r, float g, float b, float a);
 
     // Menggambar Kotak (Vector)
-    void Rect(const VECTOR2& position, const VECTOR2& size,
-        const VECTOR2& center, float angle,
-        const VECTOR4& color);
+    void Rect(const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size,
+        const DirectX::XMFLOAT2& center, float angle,
+        const DirectX::XMFLOAT4& color);
 
     // Menggambar Garis
     void Line(float x1, float y1, float x2, float y2,
@@ -47,12 +42,12 @@ private:
     // Internal struct untuk Shader
     struct Vertex
     {
-        VECTOR3 position;
-        VECTOR4 color;
+        DirectX::XMFLOAT3 position;
+        DirectX::XMFLOAT4 color;
     };
 
     // Low-level function (Internal)
-    void DrawRectInternal(const VECTOR2& pos, const VECTOR2& size, const VECTOR2& center, float angle, const VECTOR4& color);
+    void DrawRectInternal(const DirectX::XMFLOAT2& pos, const DirectX::XMFLOAT2& size, const DirectX::XMFLOAT2& center, float angle, const DirectX::XMFLOAT4& color);
 
     // DirectX Resources
     Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;

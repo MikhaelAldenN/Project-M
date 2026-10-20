@@ -22,8 +22,4 @@ private:
     ~ResourceManager() = default;
 
     std::unordered_map<std::string, std::unique_ptr<BitmapFont>> fonts;
-
-    // Nanti bisa ditambah:
-    // std::unordered_map<std::string, std::unique_ptr<Sprite>> textures;
-    // std::unordered_map<std::string, std::unique_ptr<Audio>> sounds;
 };
