@@ -174,14 +174,6 @@ void EnemyManager::Render(ModelRenderer* renderer, Camera* camera)
     }
 }
 
-void EnemyManager::RenderDebug(ShapeRenderer* renderer)
-{
-    for (auto& enemy : m_enemies)
-    {
-        enemy->RenderDebugProjectiles(renderer);
-    }
-}
-
 void EnemyManager::RespawnEnemyAs(size_t index, AttackType attack, MoveDir dir, float minX, float maxX, float minZ, float maxZ)
 {
     if (index >= m_enemies.size()) return;

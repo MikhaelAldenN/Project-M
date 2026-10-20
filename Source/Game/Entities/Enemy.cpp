@@ -427,25 +427,6 @@ void Enemy::RenderProjectiles(ModelRenderer* renderer)
     }
 }
 
-void Enemy::RenderDebugProjectiles(ShapeRenderer* renderer)
-{
-    /*for (const auto& bullet : m_projectiles)
-    {
-        if (bullet && bullet->IsActive())
-        {
-            DirectX::XMFLOAT3 pos = bullet->GetMovement()->GetPosition();
-            float radius = bullet->GetRadius();
-            renderer->DrawSphere(pos, radius, { 1.0f, 0.0f, 0.0f, 1.0f });
-        }
-    }
-
-    if (m_isHighlighted)
-    {
-        DirectX::XMFLOAT3 pos = movement->GetPosition();
-        renderer->DrawBox(pos, { 0.0f, 0.0f, 0.0f }, { 2.0f, 1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f });
-    }*/
-}
-
 DirectX::XMFLOAT4 Enemy::GetRenderColor() const
 {
     // PRIORITY 1: DAMAGE FLASH

@@ -44,7 +44,6 @@ public:
         const DirectX::XMFLOAT3& startRot, const DirectX::XMFLOAT4& startColor,
         EnemyType type, AttackType attackType, float minX, float maxX,
         float minZ, float maxZ, MoveDir dir);
-    void RenderDebugProjectiles(ShapeRenderer* renderer);
     void RenderProjectiles(ModelRenderer* renderer);
 
     DirectX::XMFLOAT3 GetRotation() const;
