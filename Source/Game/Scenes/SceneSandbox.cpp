@@ -222,4 +222,45 @@ void SceneSandbox::DrawDebugPanel()
         ImGui::Text("Player Pos: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
         ImGui::Text("Player HP: %.1f", m_player->GetHP());
     }
+
+    if (m_stage)
+    {
+        StageCollider& collider{ m_stage->GetCollider() };
+        ImGui::Separator();
+        ImGui::Text("Collider: %zu triangles, built in %.1f ms",
+            collider.GetTriangleCount(), m_stage->GetColliderBuildMs());
+
+        if (m_player)
+        {
+            // Probe: the downward cast should report the floor under the player's feet.
+            // The upward cast reaches the floor from below and shows whether back faces are hit.
+            constexpr float probeRadius{ 0.5f };
+            constexpr float probeHeight{ 3.0f };
+            const XMFLOAT3 feet{ m_player->GetPosition() };
+            StageCollider::SweepHit hit{};
+
+            const XMFLOAT3 above{ feet.x, feet.y + probeHeight, feet.z };
+            if (collider.SphereCast(above, { 0.0f, -1.0f, 0.0f }, probeRadius, probeHeight * 2.0f, hit))
+            {
+                ImGui::Text("Down: dist %.3f  floor %.3f  contact Y %.3f  n (%.2f, %.2f, %.2f)",
+                    hit.distance, above.y - hit.distance - probeRadius, hit.position.y,
+                    hit.normal.x, hit.normal.y, hit.normal.z);
+            }
+            else
+            {
+                ImGui::TextUnformatted("Down: no hit");
+            }
+
+            const XMFLOAT3 below{ feet.x, feet.y - probeHeight, feet.z };
+            if (collider.SphereCast(below, { 0.0f, 1.0f, 0.0f }, probeRadius, probeHeight * 2.0f, hit))
+            {
+                ImGui::Text("Up: dist %.3f  contact Y %.3f  n (%.2f, %.2f, %.2f)",
+                    hit.distance, hit.position.y, hit.normal.x, hit.normal.y, hit.normal.z);
+            }
+            else
+            {
+                ImGui::TextUnformatted("Up: no hit");
+            }
+        }
+    }
 }

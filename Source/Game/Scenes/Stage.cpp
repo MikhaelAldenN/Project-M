@@ -1,5 +1,7 @@
 ﻿#include "Stage.h"
 
+#include <chrono>
+
 using namespace DirectX;
 
 Stage::Stage(ID3D11Device* device, const std::string& modelPath)
@@ -26,6 +28,7 @@ Stage::Stage(ID3D11Device* device, const std::string& modelPath)
 
     RebuildSpatialGrid();
     UpdateTransform();
+    RebuildCollider();
 }
 
 Stage::~Stage()
@@ -173,6 +176,19 @@ void Stage::RebuildPhysics()
 
     // Add the fully constructed stage to the active scene simulation
     m_scene->addActor(*m_physxActor);
+}
+
+void Stage::RebuildCollider()
+{
+    if (!model) return;
+
+    // The collider reads each node's worldTransform, which UpdateTransform refreshes.
+    UpdateTransform();
+
+    const auto start{ std::chrono::steady_clock::now() };
+    m_collider.Build(*model);
+    const std::chrono::duration<float, std::milli> elapsed{ std::chrono::steady_clock::now() - start };
+    m_colliderBuildMs = elapsed.count();
 }
 
 void Stage::RebuildSpatialGrid()

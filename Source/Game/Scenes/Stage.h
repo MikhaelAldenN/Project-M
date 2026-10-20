@@ -15,6 +15,7 @@
 #include "System/ModelRenderer.h"
 #include "System/ShapeRenderer.h" 
 #include "System/PrimitiveRenderer.h"
+#include "Game/Collision/StageCollider.h"
 #pragma comment(lib, "PhysXCooking_64.lib") 
 #pragma comment(lib, "PhysXCommon_64.lib")
 #pragma comment(lib, "PhysXFoundation_64.lib")
@@ -207,6 +208,11 @@ public:
     void InitPhysics(physx::PxPhysics* physics, physx::PxScene* scene, physx::PxMaterial* material);
     void RebuildPhysics();
 
+    // Rebuilds the stage collider from the model at the current position, rotation, and scale.
+    void RebuildCollider();
+    StageCollider& GetCollider() noexcept { return m_collider; }
+    float GetColliderBuildMs() const noexcept { return m_colliderBuildMs; }
+
     std::shared_ptr<Model> GetModel() const { return model; }
     const SpatialHashGrid& GetSpatialGrid() const { return m_spatialGrid; }
 
@@ -241,4 +247,7 @@ private:
     physx::PxRigidStatic* m_physxActor{ nullptr };
 
     std::vector<physx::PxTriangleMesh*> m_collisionMeshes;
+
+    StageCollider m_collider{};
+    float m_colliderBuildMs{ 0.0f };
 };
