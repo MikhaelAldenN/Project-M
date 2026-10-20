@@ -3,6 +3,12 @@
 #include "Engine/Common/FitRect.h"
 #include "Engine/Graphics/GameCanvas.h"
 #include "Engine/Common/Constants.h"
+#include "AttackParamManager.h"
+#include "SceneBoss.h"
+#include "SceneGame.h"
+#include "SceneIntro.h"
+#include "SceneSandbox.h"
+#include "SceneTitle.h"
 
 // ========================================================
 // Jembatan Win32 ke ImGui

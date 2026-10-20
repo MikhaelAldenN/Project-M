@@ -3,6 +3,8 @@
 #include "CameraController.h"
 #include "CinematicDirector.h" 
 #include "Framework.h"
+#include "SceneBoss.h"
+#include "SceneTitle.h"
 #include "PostProcessManager.h"
 #include "Primitive.h"
 #include "ResourceManager.h"

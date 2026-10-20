@@ -1,4 +1,5 @@
 #include "SceneIntro.h"
+#include "SceneTitle.h"
 #include "Engine/Common/Constants.h"
 
 SceneIntro::SceneIntro()
