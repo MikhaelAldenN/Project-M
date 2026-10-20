@@ -68,7 +68,7 @@ public:
     std::vector<Bullet*> GetActiveProjectiles() const override { return {}; }
 
     [[nodiscard]] const BossMoveTarget* GetBossMoveTarget() const override { return &m_moveTarget; }
-    Bullet* TryParry(const DirectX::XMFLOAT3& parryPosition, Boss* boss) override;
+    std::optional<DirectX::XMFLOAT3> TryParry(const DirectX::XMFLOAT3& parryPosition, Boss* boss) override;
 
 private:
     [[nodiscard]] bool IsInParryWindow() const;

@@ -44,7 +44,9 @@ public:
     void Update(float elapsedTime);
     [[nodiscard]] float GetEnemyPushRadius(const Enemy* enemy) const;
     [[nodiscard]] Enemy* GetTargetInSlashCone(const DirectX::XMFLOAT3& playerPos, const DirectX::XMFLOAT3& aimDir, float reach, float minDotProduct) const;
-    bool GetParryableProjectile(const DirectX::XMFLOAT3& playerPos, float threshold, class Bullet** outBullet, Enemy** outNearestEnemy);
+    // Finds what a parry at `playerPos` hits. `outPosition` receives where the parried projectile was.
+    // `outBullet` and `outNearestEnemy` stay null for a boss attack, which handles its own parry.
+    bool GetParryableProjectile(const DirectX::XMFLOAT3& playerPos, float threshold, class Bullet** outBullet, Enemy** outNearestEnemy, DirectX::XMFLOAT3* outPosition);
     void SetNavi(NaviAlly* navi) { m_navi = navi; }
     NaviAlly* GetNavi() const { return m_navi; }
     void SetBoss(Boss* Boss) { m_Boss = Boss; }

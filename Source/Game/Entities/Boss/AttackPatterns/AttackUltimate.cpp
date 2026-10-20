@@ -166,14 +166,14 @@ bool AttackUltimate::IsInParryWindow() const {
     return fabsf(m_chargeTimer - m_params.laserDuration) <= m_params.parryWindow;
 }
 
-Bullet* AttackUltimate::TryParry(const XMFLOAT3& parryPosition, Boss* boss) {
-    if (m_state != State::Charging || !IsInParryWindow()) return nullptr;
-    if (!m_ball || !m_ball->IsActive()) return nullptr;
+std::optional<XMFLOAT3> AttackUltimate::TryParry(const XMFLOAT3& parryPosition, Boss* boss) {
+    if (m_state != State::Charging || !IsInParryWindow()) return std::nullopt;
+    if (!m_ball || !m_ball->IsActive()) return std::nullopt;
 
-    Bullet* ball{ m_ball }; // ShatterBijuudama clears m_ball
-    ball->SetParryReturn(true);
+    // Read before shattering: ShatterBijuudama deactivates the ball and may reuse its slot.
+    const XMFLOAT3 ballPosition{ m_ball->GetPosition() };
     ShatterBijuudama(parryPosition, boss);
-    return ball;
+    return ballPosition;
 }
 
 // ============================================================

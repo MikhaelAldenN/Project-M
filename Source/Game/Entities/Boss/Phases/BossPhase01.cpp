@@ -325,11 +325,11 @@ void BossPhase01::TriggerRain(const RainParams& params, RainMode mode, bool isPo
     m_rainAttack->Start(m_bossRef, &m_bulletPool);
 }
 
-Bullet* BossPhase01::TryParryAttack(const XMFLOAT3& parryPosition, Boss* boss) {
+std::optional<XMFLOAT3> BossPhase01::TryParryAttack(const XMFLOAT3& parryPosition, Boss* boss) {
     for (auto& attack : m_activeAttacks) {
-        if (Bullet * parried{ attack->TryParry(parryPosition, boss) }) return parried;
+        if (const std::optional<XMFLOAT3> parried{ attack->TryParry(parryPosition, boss) }) return parried;
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 DamageResult BossPhase01::TakeDamage(const DamageInfo& damage) {

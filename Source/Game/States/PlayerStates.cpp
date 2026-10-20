@@ -127,10 +127,10 @@ namespace {
             // --- Parry Priority ---
             Bullet* parryBullet{ nullptr };
             Enemy* parryTarget{ nullptr };
+            DirectX::XMFLOAT3 bPos{};
 
-            if (colMgr->GetParryableProjectile(pPos, 2.0f, &parryBullet, &parryTarget))
+            if (colMgr->GetParryableProjectile(pPos, 2.0f, &parryBullet, &parryTarget, &bPos))
             {
-                const DirectX::XMFLOAT3 bPos{ parryBullet->GetMovement()->GetPosition() };
                 const float dx{ bPos.x - pPos.x };
                 const float dz{ bPos.z - pPos.z };
                 const float dist{ std::sqrt((dx * dx) + (dz * dz)) };
@@ -149,34 +149,30 @@ namespace {
                     player->SetAimLocked(true);
                 }
 
-                DirectX::XMFLOAT3 tPos{ bPos };
-                float speed{ 0.0f };
-
-                if (parryTarget) {
+                if (parryBullet && parryTarget) {
+                    // An enemy bullet flies back at the nearest enemy, faster than it came.
                     parryBullet->SetHomingTarget(parryTarget);
-                    tPos = parryTarget->GetPosition();
-                    speed = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMLoadFloat3(&parryBullet->GetVelocity()))) * 2.5f;
+                    const DirectX::XMFLOAT3 tPos{ parryTarget->GetPosition() };
+                    float speed{ DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMLoadFloat3(&parryBullet->GetVelocity()))) * 2.5f };
                     if (speed < 10.0f) speed = 30.0f;
+
+                    const float dirX{ tPos.x - bPos.x };
+                    const float dirZ{ tPos.z - bPos.z };
+                    const float distDir{ std::sqrt((dirX * dirX) + (dirZ * dirZ)) };
+
+                    DirectX::XMVECTOR vDir{ DirectX::XMVectorSet(0, 0, 1, 0) };
+                    if (distDir > 0.001f) {
+                        vDir = DirectX::XMVectorSet(dirX / distDir, 0.0f, dirZ / distDir, 0.0f);
+                    }
+
+                    DirectX::XMFLOAT3 newVel{};
+                    DirectX::XMStoreFloat3(&newVel, DirectX::XMVectorScale(vDir, speed));
+                    parryBullet->ApplyMovement(bPos, newVel);
                 }
                 else if (colMgr->GetBoss()) {
-                    parryBullet->SetHomingTarget(nullptr);
-                    tPos = pPos;
-                    speed = 80.0f;
+                    // The boss attack has already shattered the parried projectile into return fragments.
                     AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Bijuudama_Shoot.wav", 0.2f);
                 }
-
-                const float dirX{ tPos.x - bPos.x };
-                const float dirZ{ tPos.z - bPos.z };
-                const float distDir{ std::sqrt((dirX * dirX) + (dirZ * dirZ)) };
-
-                DirectX::XMVECTOR vDir{ DirectX::XMVectorSet(0, 0, 1, 0) };
-                if (distDir > 0.001f) {
-                    vDir = DirectX::XMVectorSet(dirX / distDir, 0.0f, dirZ / distDir, 0.0f);
-                }
-
-                DirectX::XMFLOAT3 newVel;
-                DirectX::XMStoreFloat3(&newVel, DirectX::XMVectorScale(vDir, speed));
-                parryBullet->ApplyMovement(bPos, newVel);
 
                 player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerParry>());
                 return true;

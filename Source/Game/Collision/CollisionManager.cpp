@@ -636,7 +636,7 @@ Enemy* CollisionManager::GetTargetInSlashCone(const DirectX::XMFLOAT3& playerPos
     return bestTarget;
 }
 
-bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float threshold, Bullet** outBullet, Enemy** outNearestEnemy)
+bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float threshold, Bullet** outBullet, Enemy** outNearestEnemy, XMFLOAT3* outPosition)
 {
     // 1. Cek Musuh Biasa (JIKA ADA)
     if (m_enemyManager)
@@ -654,8 +654,8 @@ bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float t
                 if (CheckSphereCollision(playerPos, bPos, threshold))
                 {
                     if (outBullet) *outBullet = bullet.get();
+                    if (outPosition) *outPosition = bPos;
 
-                    // Cari musuh terdekat untuk dijadikan target homing parry
                     Enemy* nearest = nullptr;
                     float closestDistSq = 999999.0f;
                     for (auto& potential : m_enemyManager->GetEnemies())
@@ -682,10 +682,11 @@ bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float t
     if (INaviPhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr })
     {
         // The attack decides whether it can be parried now, and shatters itself if so.
-        if (Bullet * ball{ phase->TryParryAttack(playerPos, m_Boss) })
+        if (const std::optional<XMFLOAT3> ballPosition{ phase->TryParryAttack(playerPos, m_Boss) })
         {
-            if (outBullet) *outBullet = ball;
+            if (outBullet) *outBullet = nullptr;
             if (outNearestEnemy) *outNearestEnemy = nullptr;
+            if (outPosition) *outPosition = *ballPosition;
             return true;
         }
     }

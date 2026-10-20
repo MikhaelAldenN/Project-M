@@ -1,6 +1,7 @@
 #pragma once
 #include <DirectXMath.h>
 #include <memory>
+#include <optional>
 #include <vector>
 
 class Boss;
@@ -45,7 +46,7 @@ public:
     // The pointer stays valid until the attack is destroyed.
     [[nodiscard]] virtual const BossMoveTarget* GetBossMoveTarget() const { return nullptr; }
 
-    // The player parried at `parryPosition`. Returns the bullet that was parried, or null
-// when this attack has nothing to parry right now.
-    virtual Bullet* TryParry(const DirectX::XMFLOAT3& /*parryPosition*/, Boss* /*boss*/) { return nullptr; }
+    // The player parried at `parryPosition`. Returns where the parried projectile was,
+    // or nothing when this attack has nothing to parry right now.
+    virtual std::optional<DirectX::XMFLOAT3> TryParry(const DirectX::XMFLOAT3& /*parryPosition*/, Boss* /*boss*/) { return std::nullopt; }
 };
