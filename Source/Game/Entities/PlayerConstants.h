@@ -13,14 +13,6 @@ namespace PlayerConst
     inline constexpr float Acceleration = 8.0f;   // Input ramp-up rate
     inline constexpr float Deceleration = 12.0f;  // Input ramp-down rate
     inline constexpr float RotSmoothSpeed = 15.0f;  // Foot yaw lerp speed (rad/s)
-    inline constexpr float Gravity = -9.81f; // Applied per-frame via PhysX
-
-    // --- Capsule (PhysX controller descriptor) ---
-    inline constexpr float CapsuleHeight = 2.0f;
-    inline constexpr float CapsuleRadius = 0.5f;
-    inline constexpr float CapsuleStep = 0.5f;
-    inline constexpr float CapsuleHalfHeight = 1.5f;  // Subtracted from PxPos.y to get feet pos
-    inline constexpr float PhysXMinDist = 0.001f; // move() minDist parameter
 
     // --- Stage collision (KinematicMover, Y stays fixed) ---
     inline constexpr float CollisionRadius = 0.5f;      // Swept sphere radius on the XZ plane

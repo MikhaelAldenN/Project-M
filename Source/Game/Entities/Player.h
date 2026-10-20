@@ -11,9 +11,6 @@
 #include <memory>
 #include <DirectXMath.h>
 #include <SDL3/SDL.h>
-#include <characterkinematic/PxController.h> 
-#include <characterkinematic/PxCapsuleController.h>
-#include <characterkinematic/PxControllerManager.h>
 
 class StateMachine;
 class AnimationController;
@@ -28,7 +25,6 @@ struct PlayerConfig
     float dashDuration{ PlayerConst::DashDuration };
     float acceleration{ PlayerConst::Acceleration };
     float deceleration{ PlayerConst::Deceleration };
-    bool  gravityEnabled{ true };
     bool  invertControls{ false };
 };
 
@@ -71,15 +67,10 @@ public:
     // --- Movement config ---
     void ApplyConfig(const PlayerConfig& config) noexcept;
 
-    // --- Physics init (call once after scene PhysX setup) ---
-    // spawnY: initial capsule Y position. SceneGame uses 15.0 (falls to ground).
-    //         SceneBoss uses CapsuleHalfHeight (gravity off, no ground plane).
-    void InitPhysics(physx::PxControllerManager* manager, physx::PxMaterial* material,
-        float spawnY = 15.0f);
-
     // Moves the player against collider on the XZ plane with Y fixed, and stands it on the
     // floor below its current position; SetPosition does the same from then on. The collider is
-    // borrowed: its owner (the scene's Stage) must outlive the player. nullptr keeps the PhysX path.
+    // borrowed: its owner (the scene's Stage) must outlive the player. Without a collider the
+    // player moves freely on the XZ plane.
     void SetStageCollider(StageCollider* collider);
 
 	// --- Weapon ---
@@ -221,9 +212,6 @@ private:
     std::unique_ptr<StateMachine>        stateMachine;
     std::unique_ptr<AnimationController> animator;
 
-    // --- PhysX controller (lifecycle managed by PhysX, released manually in destructor) ---
-    physx::PxController* m_physxController = nullptr;
-
     // --- Stage collision (borrowed, see SetStageCollider) ---
     StageCollider* m_stageCollider{ nullptr };
 
@@ -235,7 +223,6 @@ private:
     bool invertControls = false;
     bool m_isBackpedaling = false;
     bool m_useAimFacing = true;
-    bool gravityEnabled = true;   // Set false for top-down scenes (e.g. SceneBoss)
     bool  m_isStateMoveTimed{ false };  // see SetStateMoveTimeLimit
     float m_stateMoveTimeLeft{ 0.0f };
     DirectX::XMFLOAT2 currentSmoothInput = { 0.0f, 0.0f };

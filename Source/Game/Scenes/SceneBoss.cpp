@@ -60,17 +60,11 @@ SceneBoss::SceneBoss()
     CameraController::Instance().SetControlMode(CameraControlMode::FixedStatic);
     CameraController::Instance().SetFixedSetting(XMFLOAT3(0.0f, unifiedHeight, 0.0f));
 
-    // --- PhysX (minimal: no ground plane, gravity = zero) ---
-    InitializePhysics();
-
     // --- Player ---
     m_player = std::make_unique<Player>();
-    m_player->InitPhysics(m_controllerManager.get(), m_defaultMaterial.get(),
-        PlayerConst::CapsuleHalfHeight);  // Kaki tepat di Y=0, gravity off
     PlayerConfig bossConfig{};
     bossConfig.moveSpeed = 15.0f;         // Fast movement
     bossConfig.dashSpeed = 45.0f;         // Fast dash
-    bossConfig.gravityEnabled = false;    // No gravity for Top-Down Boss mode
 
     m_player->ApplyConfig(bossConfig);
 
@@ -182,32 +176,6 @@ void SceneBoss::Shutdown()
 // =========================================================
 // INITIALIZATION HELPERS
 // =========================================================
-
-void SceneBoss::InitializePhysics()
-{
-    m_foundation.reset(PxCreateFoundation(PX_PHYSICS_VERSION, m_allocator, m_errorCallback));
-    assert(m_foundation && "CRITICAL ERROR: PxCreateFoundation failed!");
-
-    m_physics.reset(PxCreatePhysics(PX_PHYSICS_VERSION, *m_foundation, physx::PxTolerancesScale(), true, nullptr));
-    assert(m_physics && "CRITICAL ERROR: PxCreatePhysics failed!");
-
-    // Zero gravity: player Y is clamped manually in Update; no ground plane needed.
-    physx::PxSceneDesc sceneDesc(m_physics->getTolerancesScale());
-    sceneDesc.gravity = physx::PxVec3(0.0f, 0.0f, 0.0f);
-    sceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
-
-    m_dispatcher.reset(physx::PxDefaultCpuDispatcherCreate(2));
-    sceneDesc.cpuDispatcher = m_dispatcher.get();
-
-    m_scene.reset(m_physics->createScene(sceneDesc));
-    assert(m_scene && "CRITICAL ERROR: createScene failed!");
-
-    m_controllerManager.reset(PxCreateControllerManager(*m_scene));
-    assert(m_controllerManager && "CRITICAL ERROR: PxCreateControllerManager failed!");
-
-    m_defaultMaterial.reset(m_physics->createMaterial(0.5f, 0.5f, 0.1f));
-    assert(m_defaultMaterial && "CRITICAL ERROR: createMaterial failed!");
-}
 
 void SceneBoss::InitializeSubWindows()
 {
@@ -349,13 +317,6 @@ void SceneBoss::Update(float elapsedTime)
         m_uberParams.smoothness = FX_BASE_SMOOTHNESS;
         m_uberParams.intensity = FX_BASE_INTENSITY;
         m_fadeAlpha = 0.0f;
-    }
-
-    // --- PhysX tick ---
-    if (m_scene)
-    {
-        m_scene->simulate(scaledDt);
-        m_scene->fetchResults(true);
     }
 
     Camera* activeCam = CameraController::Instance().GetActiveCamera().get();

@@ -5,7 +5,6 @@
 #include <string>
 
 #include <imgui.h>
-#include <PxPhysicsAPI.h>
 
 #include "Scene.h"
 #include "Camera.h"
@@ -18,7 +17,6 @@
 #include "System/Sprite.h"
 #include "UberShader.h"
 #include "BeyondWindow.h"
-#include "PhysXUtils.h"
 #include "Boss.h"
 #include "HUDRenderer.h"
 #include "DebugUI.h"
@@ -58,7 +56,6 @@ private:
     void RenderScene(float elapsedTime, Camera* camera, bool isTransparentWindow);
 
     // --- Initialization ---
-    void InitializePhysics();
     void InitializeSubWindows();
 
     // --- Debug & System Helpers ---
@@ -105,18 +102,6 @@ private:
     // HUD
     // =========================================================
     std::unique_ptr<HUDRenderer>          m_hud;
-
-    // =========================================================
-    // PHYSX (minimal — no ground plane, no gravity)
-    // =========================================================
-    physx::PxDefaultAllocator                                    m_allocator;
-    physx::PxDefaultErrorCallback                                m_errorCallback;
-    std::unique_ptr<physx::PxFoundation, PhysXDeleter>           m_foundation;
-    std::unique_ptr<physx::PxPhysics, PhysXDeleter>              m_physics;
-    std::unique_ptr<physx::PxDefaultCpuDispatcher, PhysXDeleter> m_dispatcher;
-    std::unique_ptr<physx::PxScene, PhysXDeleter>                m_scene;
-    std::unique_ptr<physx::PxControllerManager, PhysXDeleter>    m_controllerManager;
-    std::unique_ptr<physx::PxMaterial, PhysXDeleter>             m_defaultMaterial;
 
     // =========================================================
     // SQUASH & STRETCH STATE

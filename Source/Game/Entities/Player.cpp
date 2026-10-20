@@ -105,8 +105,6 @@ Player::Player()
 
 Player::~Player()
 {
-    if (m_physxController) m_physxController->release();
-
     if (m_dashReadyVfxHandle != -1) {
         EffectManager::Instance().Stop(m_dashReadyVfxHandle);
     }
@@ -120,18 +118,6 @@ Player::~Player()
     if (m_overdriveVfxHandle != -1) {
         EffectManager::Instance().Stop(m_overdriveVfxHandle);
     }
-}
-
-void Player::InitPhysics(physx::PxControllerManager* manager, physx::PxMaterial* material, float spawnY)
-{
-    physx::PxCapsuleControllerDesc desc;
-    desc.height = PlayerConst::CapsuleHeight;
-    desc.radius = PlayerConst::CapsuleRadius;
-    desc.position = physx::PxExtendedVec3(0.0, spawnY, 0.0);
-    desc.material = material;
-    desc.stepOffset = PlayerConst::CapsuleStep;
-
-    m_physxController = manager->createController(desc);
 }
 
 void Player::SetStageCollider(StageCollider* collider)
@@ -163,7 +149,6 @@ void Player::ApplyConfig(const PlayerConfig& config) noexcept
     dashDuration = config.dashDuration;
     acceleration = config.acceleration;
     deceleration = config.deceleration;
-    gravityEnabled = config.gravityEnabled;
     invertControls = config.invertControls;
 }
 
@@ -622,14 +607,9 @@ void Player::UpdateHorizontalMovement(float dt)
         return;
     }
 
-    // Apply displacement through PhysX capsule controller
-    const float gravityY = gravityEnabled ? PlayerConst::Gravity * dt : 0.0f;
-    physx::PxVec3 displacement(displacementX, gravityY, displacementZ);
-    m_physxController->move(displacement, PlayerConst::PhysXMinDist, dt, physx::PxControllerFilters());
-
-    // Mirror PhysX position back to our movement state (offset by capsule half-height)
-    physx::PxExtendedVec3 pxPos = m_physxController->getPosition();
-    movement->SetPosition({ (float)pxPos.x, (float)pxPos.y - PlayerConst::CapsuleHalfHeight, (float)pxPos.z });
+    // Without a stage collider (SceneBoss) nothing blocks the player; Y stays as it is.
+    const XMFLOAT3 position{ movement->GetPosition() };
+    movement->SetPosition({ position.x + displacementX, position.y, position.z + displacementZ });
 }
 
 void Player::UpdateFootRotation(float dt, float& outSmoothedYaw)
@@ -1055,19 +1035,6 @@ void Player::SetPosition(const DirectX::XMFLOAT3& pos)
     // Update komponen movement logical
     if (movement) movement->SetPosition(pos);
     StandOnGround();
-
-    // PENTING: Update juga komponen fisika PhysX
-    if (m_physxController)
-    {
-        // PxExtendedVec3 membutuhkan offset Y karena posisi 'movement' 
-        // berada di dasar kaki, sedangkan PxController (kapsul) 
-        // posisinya dihitung dari tengah kapsul (titik pusat/centroid).
-        m_physxController->setPosition(physx::PxExtendedVec3(
-            pos.x,
-            pos.y + PlayerConst::CapsuleHalfHeight,
-            pos.z
-        ));
-    }
 }
 
 void Player::ReleasePowerCap()
