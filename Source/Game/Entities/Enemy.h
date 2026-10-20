@@ -47,7 +47,6 @@ public:
     void RenderDebugProjectiles(ShapeRenderer* renderer);
     void RenderProjectiles(ModelRenderer* renderer);
 
-    DirectX::XMFLOAT3 GetPosition() const;
     DirectX::XMFLOAT3 GetRotation() const;
     [[nodiscard]] DirectX::XMFLOAT4 GetRenderColor() const;
     [[nodiscard]] DirectX::XMFLOAT4 GetBaseColor() const { return m_baseColor; }
@@ -56,7 +55,7 @@ public:
     DirectX::XMFLOAT3 GetOriginalRotation() const { return originalRotation; }
 
     EnemyType GetType() const { return m_type; }
-    std::shared_ptr<Model> GetModel() const { return m_model; }
+    std::shared_ptr<Model> GetModel() const { return model; }
 
     AttackType GetAttackType() const { return m_attackType; }
     std::deque<std::unique_ptr<Bullet>>& GetProjectiles() { return m_projectiles; }
@@ -69,8 +68,8 @@ public:
     float GetMaxZ() const { return m_patrolMaxZ - originalPosition.z; }
     MoveDir GetMoveDir() const { return m_moveDir; }
 
-    void SetScale(const DirectX::XMFLOAT3& scale) { m_scale = scale; }
-    DirectX::XMFLOAT3 GetScale() const { return m_scale; }
+    void SetScale(const DirectX::XMFLOAT3& newScale) { scale = newScale; }
+    DirectX::XMFLOAT3 GetScale() const { return scale; }
 
     // Applies one hit with blink, sound and hit effect. Deactivates the enemy when HP reaches zero.
     DamageResult TakeDamage(const DamageInfo& damage);
@@ -91,7 +90,6 @@ private:
     DirectX::XMFLOAT3 originalRotation;
     EnemyType m_type;
     AttackType m_attackType;
-    std::shared_ptr<Model> m_model;
     std::deque<std::unique_ptr<Bullet>> m_projectiles;
 
     // ==========================================
@@ -128,7 +126,6 @@ private:
     static constexpr float BLINK_DURATION{ 0.1f };
 
     DirectX::XMFLOAT4 m_projectileColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-    DirectX::XMFLOAT3 m_scale = { 1.0f, 1.0f, 1.0f };
     bool m_isHighlighted = false;
 
     bool m_killedPlayer = false;

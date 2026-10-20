@@ -81,7 +81,7 @@ void Enemy::Update(float elapsedTime, Camera* camera)
     XMFLOAT3 pos = movement->GetPosition();
     XMFLOAT3 rot = movement->GetRotation();
 
-    XMMATRIX S = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
+    XMMATRIX S = XMMatrixScaling(scale.x, scale.y, scale.z);
     XMMATRIX R = XMMatrixRotationRollPitchYaw(
         XMConvertToRadians(rot.x),
         XMConvertToRadians(rot.y),
@@ -92,7 +92,7 @@ void Enemy::Update(float elapsedTime, Camera* camera)
     XMFLOAT4X4 worldMatrix;
     XMStoreFloat4x4(&worldMatrix, S * R * T);
 
-    if (m_model) m_model->UpdateTransform(worldMatrix);
+    if (model) model->UpdateTransform(worldMatrix);
 }
 
 void Enemy::UpdateTracking(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos, bool allowAttack)
@@ -339,14 +339,13 @@ void Enemy::Reinitialize(ID3D11Device* device, const char* filePath, const Direc
     const float minZ, const float maxZ, const MoveDir dir)
 {
     // Reassign the model (std::shared_ptr handles cleanup of the old model automatically)
-    m_model = std::make_shared<Model>(device, filePath);
-    model = m_model;
+    model = std::make_shared<Model>(device, filePath);
 
     // Reset Core Identity
     m_type = type;
     m_attackType = attackType;
     m_baseColor = startColor;
-    m_scale = (m_type == EnemyType::Pentagon) ? DirectX::XMFLOAT3{ 150.0f, 150.0f, 150.0f } : DirectX::XMFLOAT3{ 1.0f, 1.0f, 1.0f };
+    scale = (m_type == EnemyType::Pentagon) ? DirectX::XMFLOAT3{ 150.0f, 150.0f, 150.0f } : DirectX::XMFLOAT3{ 1.0f, 1.0f, 1.0f };
 
     // Reset Transforms & Patrols
     movement->SetPosition(startPos);
@@ -531,5 +530,4 @@ DamageResult Enemy::TakeDamage(const DamageInfo& damage)
 void Enemy::SetPosition(const DirectX::XMFLOAT3& pos) { movement->SetPosition(pos); }
 void Enemy::SetRotation(const DirectX::XMFLOAT3& rot) { movement->SetRotation(rot); }
 
-DirectX::XMFLOAT3 Enemy::GetPosition() const { return movement->GetPosition(); }
 DirectX::XMFLOAT3 Enemy::GetRotation() const { return movement->GetRotation(); }
