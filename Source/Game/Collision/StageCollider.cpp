@@ -9,7 +9,7 @@
 
 using namespace DirectX;
 
-void StageCollider::Build(const Model& model)
+void StageCollider::Build(const Model& model, const std::vector<WallBox>& walls)
 {
     m_triangles.clear();
 
@@ -35,19 +35,67 @@ void StageCollider::Build(const Model& model)
                 const XMVECTOR local{ XMLoadFloat3(&mesh.vertices[vertexIndex].position) };
                 XMStoreFloat3(&triangle[corner], XMVector3TransformCoord(local, world));
             }
-            if (!indicesValid) continue;
-
-            // Why skipped: a zero-area triangle has no normal, so a cast against it cannot report one.
-            const XMVECTOR a{ XMLoadFloat3(&triangle[0]) };
-            const XMVECTOR edgeAB{ XMVectorSubtract(XMLoadFloat3(&triangle[1]), a) };
-            const XMVECTOR edgeAC{ XMVectorSubtract(XMLoadFloat3(&triangle[2]), a) };
-            if (XMVectorGetX(XMVector3LengthSq(XMVector3Cross(edgeAB, edgeAC))) < 1.0e-12f) continue;
-
-            m_triangles.push_back(triangle);
+            if (indicesValid) AddTriangle(triangle);
         }
     }
 
+    for (const WallBox& wall : walls)
+    {
+        AddWallBox(wall);
+    }
+
     BuildCells();
+}
+
+void StageCollider::AddTriangle(const Triangle& triangle)
+{
+    // Why skipped: a zero-area triangle has no normal, so a cast against it cannot report one.
+    const XMVECTOR a{ XMLoadFloat3(&triangle[0]) };
+    const XMVECTOR edgeAB{ XMVectorSubtract(XMLoadFloat3(&triangle[1]), a) };
+    const XMVECTOR edgeAC{ XMVectorSubtract(XMLoadFloat3(&triangle[2]), a) };
+    if (XMVectorGetX(XMVector3LengthSq(XMVector3Cross(edgeAB, edgeAC))) < 1.0e-12f) return;
+
+    m_triangles.push_back(triangle);
+}
+
+void StageCollider::AddWallBox(const WallBox& wall)
+{
+    // Corner i takes -halfExtents or +halfExtents on each axis from bits 0 (X), 1 (Y), 2 (Z).
+    const XMMATRIX world{ XMLoadFloat4x4(&wall.world) };
+    std::array<XMFLOAT3, 8> corners{};
+    for (std::size_t i = 0; i < corners.size(); ++i)
+    {
+        const XMVECTOR local{ XMVectorSet(
+            (i & 1u) ? wall.halfExtents.x : -wall.halfExtents.x,
+            (i & 2u) ? wall.halfExtents.y : -wall.halfExtents.y,
+            (i & 4u) ? wall.halfExtents.z : -wall.halfExtents.z,
+            1.0f) };
+        XMStoreFloat3(&corners[i], XMVector3TransformCoord(local, world));
+    }
+
+    // Each face as four corner indices going around its edge.
+    constexpr std::array<std::array<std::size_t, 4>, 6> k_faces{ {
+        { 0, 1, 3, 2 }, { 4, 6, 7, 5 },  // -Z, +Z
+        { 0, 4, 5, 1 }, { 2, 3, 7, 6 },  // -Y, +Y
+        { 0, 2, 6, 4 }, { 1, 5, 7, 3 },  // -X, +X
+    } };
+
+    // Why the winding is checked: the casts hit only the side the triangle's normal
+    // (cross of its first two edges) faces, which must point away from the box.
+    const XMVECTOR center{ XMVector3TransformCoord(XMVectorZero(), world) };
+    const auto addOutward = [this, center](const XMFLOAT3& p0, const XMFLOAT3& p1, const XMFLOAT3& p2)
+        {
+            const XMVECTOR a{ XMLoadFloat3(&p0) };
+            const XMVECTOR normal{ XMVector3Cross(XMVectorSubtract(XMLoadFloat3(&p1), a), XMVectorSubtract(XMLoadFloat3(&p2), a)) };
+            const bool facesOut{ XMVectorGetX(XMVector3Dot(normal, XMVectorSubtract(a, center))) >= 0.0f };
+            AddTriangle(facesOut ? Triangle{ p0, p1, p2 } : Triangle{ p0, p2, p1 });
+        };
+
+    for (const auto& face : k_faces)
+    {
+        addOutward(corners[face[0]], corners[face[1]], corners[face[2]]);
+        addOutward(corners[face[0]], corners[face[2]], corners[face[3]]);
+    }
 }
 
 bool StageCollider::SphereCast(const XMFLOAT3& origin, const XMFLOAT3& direction,

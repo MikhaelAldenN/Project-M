@@ -20,9 +20,18 @@ public:
         float distance{ 0.0f };        // Distance from the cast origin to the sphere center at first contact
     };
 
+    // Invisible wall: the box spanning -halfExtents to +halfExtents in its local space,
+    // placed by world. Only its outward faces block.
+    struct WallBox
+    {
+        DirectX::XMFLOAT4X4 world{};
+        DirectX::XMFLOAT3 halfExtents{};
+    };
+
     // Replaces all triangles with the triangles of model, transformed by each mesh node's
-    // worldTransform. Call after Model::UpdateTransform, and again whenever the stage moves.
-    void Build(const Model& model);
+    // worldTransform, plus the faces of walls. Call after Model::UpdateTransform, and again
+    // whenever the stage or a wall moves.
+    void Build(const Model& model, const std::vector<WallBox>& walls = {});
 
     // Sweeps a sphere of radius from origin along direction (unit length) for up to distance.
     // Returns the closest hit; false when the path is clear or nothing has been built.
@@ -42,7 +51,10 @@ private:
         int lastRow{ -1 };
     };
 
+    void AddTriangle(const Triangle& triangle);
+    void AddWallBox(const WallBox& wall);
     void BuildCells();
+
     [[nodiscard]] CellRange GetCellRange(float minX, float minZ, float maxX, float maxZ) const noexcept;
     void CollectCandidates(const CellRange& range);
 

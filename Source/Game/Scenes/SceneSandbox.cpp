@@ -50,6 +50,7 @@ SceneSandbox::SceneSandbox()
     m_stage->m_linesDisable.clear();
     m_stage->m_linesEnable.clear();
     m_stage->m_linesCheckpoint.clear();
+    m_stage->RebuildCollider();
 
     // --- Player ---
     m_player = std::make_unique<Player>();

@@ -185,8 +185,27 @@ void Stage::RebuildCollider()
     // The collider reads each node's worldTransform, which UpdateTransform refreshes.
     UpdateTransform();
 
+    // Each void line is placed relative to the stage's position and rotation, not its scale.
+    const XMMATRIX stagePose{
+        XMMatrixRotationRollPitchYaw(XMConvertToRadians(rotation.x), XMConvertToRadians(rotation.y), XMConvertToRadians(rotation.z))
+        * XMMatrixTranslation(position.x, position.y, position.z) };
+
+    std::vector<StageCollider::WallBox> walls{};
+    walls.reserve(m_linesVoid.size());
+    for (const DebugLineData& line : m_linesVoid)
+    {
+        const XMMATRIX linePose{
+            XMMatrixRotationRollPitchYaw(XMConvertToRadians(line.Rotation.x), XMConvertToRadians(line.Rotation.y), XMConvertToRadians(line.Rotation.z))
+            * XMMatrixTranslation(line.Position.x, line.Position.y, line.Position.z) };
+
+        StageCollider::WallBox wall{};
+        XMStoreFloat4x4(&wall.world, linePose * stagePose);
+        wall.halfExtents = { line.Scale.x * 0.5f, StageConfig::VOID_WALL_HALF_HEIGHT, StageConfig::VOID_WALL_HALF_DEPTH };
+        walls.push_back(wall);
+    }
+
     const auto start{ std::chrono::steady_clock::now() };
-    m_collider.Build(*model);
+    m_collider.Build(*model, walls);
     const std::chrono::duration<float, std::milli> elapsed{ std::chrono::steady_clock::now() - start };
     m_colliderBuildMs = elapsed.count();
 }

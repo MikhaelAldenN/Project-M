@@ -131,6 +131,11 @@ namespace StageConfig
     static const DirectX::XMFLOAT3 WALL_DEFAULT_SCALE = { 1.0f, 1.0f, 1.0f };
     static const DirectX::XMFLOAT3 LINE_DEFAULT_SCALE = { 10.0f, 0.0f, 0.0f };
 
+    // Void lines block as invisible walls this many units above and below the line,
+    // and this many units to each side of it.
+    inline constexpr float VOID_WALL_HALF_HEIGHT{ 50.0f };
+    inline constexpr float VOID_WALL_HALF_DEPTH{ 0.05f };
+
     // =========================================================
     // DEBUG WALL CONFIGURATION
     // =========================================================
