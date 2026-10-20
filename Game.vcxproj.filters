@@ -372,6 +372,9 @@
     <ClCompile Include="Source\Game\Collision\CollisionGeometry.cpp">
       <Filter>Source\Game\Collision</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Collision\StageCollider.cpp">
+      <Filter>Source\Game\Collision</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\BasicShader.h">
@@ -768,6 +771,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\VFX\EffectManager.h">
       <Filter>Source\Engine\VFX</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Collision\StageCollider.h">
+      <Filter>Source\Game\Collision</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

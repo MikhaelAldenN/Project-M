@@ -177,6 +177,7 @@
     <ClInclude Include="Source\Game\Collision\CollisionGeometry.h" />
     <ClInclude Include="Source\Game\Collision\CollisionManager.h" />
     <ClInclude Include="Source\Game\Collision\LevelTriggerSystem.h" />
+    <ClInclude Include="Source\Game\Collision\StageCollider.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackDirect.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackMeteor.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.h" />
@@ -296,6 +297,7 @@
     <ClCompile Include="Source\Game\Collision\CollisionGeometry.cpp" />
     <ClCompile Include="Source\Game\Collision\CollisionManager.cpp" />
     <ClCompile Include="Source\Game\Collision\LevelTriggerSystem.cpp" />
+    <ClCompile Include="Source\Game\Collision\StageCollider.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackDirect.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackMeteor.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.cpp" />
