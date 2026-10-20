@@ -325,19 +325,6 @@ void BossPhase01::TriggerRain(const RainParams& params, RainMode mode, bool isPo
     m_rainAttack->Start(m_bossRef, &m_bulletPool);
 }
 
-//void BossPhase01::TriggerRain(RainMode mode, bool isPositiveSide, float sweepDir, float customDuration) {
-//    if (HasRainActive() || !m_ai) return;
-//
-//    RainParams params = AttackParamManager::Instance().GetRainParams();
-//
-//    if (customDuration > 0.0f) {
-//        params.activeDuration = customDuration;
-//    }
-//
-//    m_rainAttack = std::make_unique<AttackRain>(params, mode, isPositiveSide, sweepDir, m_aiTarget);
-//    m_rainAttack->StartPooled(m_bossRef, &m_bulletPool);
-//}
-
 Bullet* BossPhase01::TryParryAttack(const XMFLOAT3& parryPosition, Boss* boss) {
     for (auto& attack : m_activeAttacks) {
         if (Bullet * parried{ attack->TryParry(parryPosition, boss) }) return parried;

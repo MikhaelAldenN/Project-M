@@ -432,7 +432,6 @@ void NaviAlly::SetPosition(const DirectX::XMFLOAT3& pos)
 void NaviAlly::Render(ModelRenderer* renderer)
 {
     if (!IsAlive() || !model) return;
-    Character::scale = scale;
     DirectX::XMFLOAT4 renderColor = m_color;
 
     if (m_isPotioned) {

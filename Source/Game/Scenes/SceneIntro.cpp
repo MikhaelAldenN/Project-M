@@ -10,8 +10,6 @@ SceneIntro::SceneIntro()
     uberShader = std::make_unique<UberShader>(Graphics::Instance().GetDevice());
     CreateRenderTarget();     
 
-    //AudioManager::Instance().PlayMusic("Data/Sound/BGM_Intro.wav", true, 0.0f);
-
 #if defined(_DEBUG)
 // Capturing `this` is safe: the handle is a member and dies with this scene.
     m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Intro", [this]() { DrawDebugPanel(); }); 

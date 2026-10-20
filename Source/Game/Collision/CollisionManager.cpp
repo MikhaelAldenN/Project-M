@@ -366,7 +366,6 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
 
     auto& projectiles{ m_player->GetProjectiles() };
 
-    //constexpr int PLAYER_BULLET_DAMAGE = 10;
     constexpr float BULLET_HITBOX_RADIUS = 1.0f;
 
     for (auto& bullet : projectiles)

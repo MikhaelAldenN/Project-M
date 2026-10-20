@@ -458,9 +458,6 @@ void SceneTitle::ExecuteMenuSelection() noexcept
         {
             m_isExiting = true;
             m_exitTimer = 0.0f;
-
-            // Optional: Play a confirmation sound effect here
-            // AudioManager::Instance().PlaySFX("Data/Sound/SE_Confirm.wav", 0.5f);
         }
         break;
 

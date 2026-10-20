@@ -3,13 +3,8 @@
 #include <memory>
 #include <vector>
 #include <string>
-// =========================================================
-// Untuk mengaktifkan kembali ImGui debug panel, uncomment baris ini:
-// #define NAVI_DEBUG_GUI
-// =========================================================
 
 #include <imgui.h>
-
 #include <PxPhysicsAPI.h>
 
 #include "Scene.h"
@@ -87,8 +82,6 @@ private:
     static constexpr float k_camNear = 0.1f;
     static constexpr float k_camFar = 1000.0f;
     static constexpr float k_defaultWinSize = 200.0f;
-    //static constexpr float k_screenLimitX = 23.0f;
-    //static constexpr float k_screenLimitZ = 12.5f;
 
     // =========================================================
     // CORE COMPONENTS
@@ -190,12 +183,8 @@ private:
 
     static constexpr float NAVI_DEATH_ANIM_DURATION{ 4.0f };
     static constexpr float WHITE_FADE_DURATION{ 2.0f };
-private:
-    // --- Pengaturan Desain Keseimbangan Game (Tuning) ---
-    float m_overdriveBossHpTriggerPercent = 30.0f; // Default: Uncap aktif saat HP Boss di bawah 30%
-    bool  m_forceUncapOverride = false;            // Kontrol manual untuk memaksa mode Uncap
-    bool  m_lastUncapState = false;                // Menyimpan status state frame sebelumnya
 
+private:
 #if defined(_DEBUG)
     // Keeps the "WINDOWKILL MASTER CONTROL" tab registered while this scene lives.
     // Declared last: destroyed first, before any member the callback reads.

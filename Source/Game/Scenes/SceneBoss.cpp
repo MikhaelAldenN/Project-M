@@ -9,9 +9,6 @@
 #include <algorithm>
 #include <array>
 #include <ctime>
-#ifdef NAVI_DEBUG_GUI
-#include <imgui.h>
-#endif
 #include "Game/Collision/CollisionManager.h"
 #include "EnemyManager.h"
 #include "ItemManager.h"
@@ -79,8 +76,6 @@ SceneBoss::SceneBoss()
 
     m_player->SetPosition(0.0f, 0.0f, -8.0f);
 
-    //auto device = Graphics::Instance().GetDevice();
-
     // --- Primitive Renderers ---
     ID3D11Device* device = Graphics::Instance().GetDevice();
     auto* context = Graphics::Instance().GetDeviceContext();
@@ -91,13 +86,6 @@ SceneBoss::SceneBoss()
     EffectManager::Instance().Initialize(device, context);
 
     m_stage = std::make_unique<Stage>(device); // Walau kosong, ini mencegah Null Pointer
-
-    //m_enemyManager = std::make_unique<EnemyManager>();
-    //m_enemyManager->Initialize(device);
-
-    //m_itemManager = std::make_unique<ItemManager>();
-    //m_itemManager->Initialize(device);
-
 
     m_collisionManager = std::make_unique<CollisionManager>();
 
@@ -535,8 +523,6 @@ void SceneBoss::Update(float elapsedTime)
 
     EffectManager::Instance().Update(scaledDt);
     WindowShatterManager::Instance().Update(scaledDt);
-    // Terapkan posisi m_fixedPos dan Shakes
-    //camCtrl.Update(scaledDt);
 
     // --- Sync sub-window cameras to match main camera ---
     if (m_windowSystem)
@@ -548,9 +534,6 @@ void SceneBoss::Update(float elapsedTime)
 
             tracked->camera->SetPosition(m_mainCamera->GetPosition());
             tracked->camera->SetRotation(m_mainCamera->GetRotation());
-
-            //if (tracked->role != WindowRole::SUB_VIEWPORT && m_player)
-            //    tracked->camera->LookAt(m_player->GetPosition());
         }
 
         m_windowSystem->Update(elapsedTime);
@@ -558,38 +541,12 @@ void SceneBoss::Update(float elapsedTime)
 
     PerformanceLogger::Instance().StopTimer(PerfBucket::Logic);
     const int activeWins = m_windowSystem ? static_cast<int>(m_windowSystem->GetWindows().size()) : 0;
-#ifdef NAVI_DEBUG_GUI
-    PerformanceLogger::Instance().EndFrameCheck(ImGui::GetIO().Framerate, activeWins);
-#else
     PerformanceLogger::Instance().EndFrameCheck(0.0f, activeWins);
-#endif
 
 #if !defined(_DEBUG)
     // Release keeps the floating window until ImGui is removed (beta).
     DrawGUI();
 #endif
-
-    // --- LOGIKA OTOMATISASI OVERDRIVE PLAYER ---
-    //if (m_player && m_navi)
-    //{
-    //    bool shouldUncap = m_forceUncapOverride;
-
-    //    // Cek darah boss jika berada di Fase Normal
-    //    if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase()))
-    //    {
-    //        float bossHpPercent = (static_cast<float>(normalPhase->GetHP()) / 1500.0f) * 100.0f;
-    //        if (bossHpPercent <= m_overdriveBossHpTriggerPercent)
-    //        {
-    //            shouldUncap = true;
-    //        }
-    //    }
-
-    //    // Picu pelepasan batas kekuatan jika kondisi terpenuhi
-    //    if (shouldUncap && !m_player->IsPowerUncapped())
-    //    {
-    //        m_player->ReleasePowerCap();
-    //    }
-    //}
 }
 
 
