@@ -24,7 +24,7 @@ public:
     void Reset() noexcept;
 
     void Update(float elapsedTime, Camera* camera) override;
-    void Render(ModelRenderer* renderer);
+    void Render(ModelRenderer* renderer) override;
     void RenderDebug(ShapeRenderer* shapeRenderer);
 
     void RenderProjectiles(ModelRenderer* renderer);

@@ -12,6 +12,7 @@ Item::Item(ID3D11Device* device, const DirectX::XMFLOAT3& position, ItemType typ
     movement->SetPosition(position);
     originalY = position.y;
     animTime = 0.0f;
+    scale = { 2.0f, 2.0f, 2.0f };
 
     // Initialize color from type
     SetType(type);
@@ -38,6 +39,5 @@ void Item::Render(ModelRenderer* renderer)
 {
     if (!IsActive()) return;
 
-    Character::scale = scale;
     renderer->Draw(ShaderId::Phong, model, color);
 }

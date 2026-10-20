@@ -11,7 +11,7 @@ public:
     ~Item() override = default;
 
     void Update(float elapsedTime, Camera* camera) override;
-    void Render(ModelRenderer* renderer);
+    void Render(ModelRenderer* renderer) override;
 
     // --- Getters / Setters ---
     ItemType GetType()   const { return m_type; }
@@ -24,7 +24,6 @@ public:
         color = (m_type == ItemType::Heal) ? kHealColor : kInvincibleColor;
     }
 
-    DirectX::XMFLOAT3 GetPosition() const { return movement->GetPosition(); }
     DirectX::XMFLOAT3 GetRotation() const { return movement->GetRotation(); }
 
     DirectX::XMFLOAT3 GetBasePosition() const
@@ -39,7 +38,6 @@ public:
 
     // Public for renderer
     DirectX::XMFLOAT4 color = kHealColor;
-    DirectX::XMFLOAT3 scale = { 2.0f, 2.0f, 2.0f };
 
 private:
     ItemType m_type;

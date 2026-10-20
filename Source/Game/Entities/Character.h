@@ -16,8 +16,8 @@ public:
     virtual ~Character() = default;
     virtual void Update(float elapsedTime, Camera* camera) = 0;
 
-    // Standard render pipeline
-    void Render(ModelRenderer* renderer);
+    // Draws the model with the Lambert shader. Subclasses override to choose shader and color.
+    virtual void Render(ModelRenderer* renderer);
     void RenderDebug(const RenderContext& rc, ShapeRenderer* renderer);
 
     DirectX::XMFLOAT3 GetPosition() const { return movement->GetPosition(); }
