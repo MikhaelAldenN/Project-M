@@ -5,10 +5,8 @@
 #include <string>
 #include <DirectXMath.h>
 #include <wrl/client.h>
-#include <PxPhysicsAPI.h>
 #include <SDL3/SDL.h>
 #include <imgui.h>
-#include "PhysXUtils.h"
 #include "Scene.h"
 #include "System/Light.h"
 #include "DebugUI.h"
@@ -48,7 +46,6 @@ public:
 
 private:
     struct Config {
-        static constexpr float GRAVITY{ -9.81f };
         static constexpr float CAM_FOV{ 45.0f };
         static constexpr float CAM_NEAR{ 0.1f };
         static constexpr float CAM_FAR{ 1000.0f };
@@ -73,20 +70,6 @@ private:
     DirectX::XMFLOAT3 m_cameraPosition{ 0.0f, 18.0f, 0.0f };
     DirectX::XMFLOAT3 m_cameraTarget{ 0.0f, 0.0f, 0.0f };
     const DirectX::XMFLOAT3 m_playerSpawnPos{ 0.0f, 2.0f, 0.0f };
-
-    // =========================================================
-    // PHYSX (sama minimal-nya kayak SceneBoss: gak butuh gravity berat,
-    // tapi tetap disiapin karena Stage & Player butuh PxScene buat collision)
-    // =========================================================
-    physx::PxDefaultAllocator m_allocator{};
-    physx::PxDefaultErrorCallback m_errorCallback{};
-    std::unique_ptr<physx::PxFoundation, PhysXDeleter> m_foundation{};
-    std::unique_ptr<physx::PxPhysics, PhysXDeleter> m_physics{};
-    std::unique_ptr<physx::PxDefaultCpuDispatcher, PhysXDeleter> m_dispatcher{};
-    std::unique_ptr<physx::PxScene, PhysXDeleter> m_scene{};
-    std::unique_ptr<physx::PxControllerManager, PhysXDeleter> m_controllerManager{};
-    std::unique_ptr<physx::PxMaterial, PhysXDeleter> m_defaultMaterial{};
-    std::unique_ptr<physx::PxRigidStatic, PhysXDeleter> m_groundPlane{};
 
     // =========================================================
     // DEBUG / SANDBOX TOGGLES

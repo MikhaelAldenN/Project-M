@@ -17,8 +17,17 @@
 #include "InputHelper.h"
 #include "EffectManager.h"
 #include "System/AudioManager.h"
+#include "Game/Collision/KinematicMover.h"
+#include "Game/Collision/StageCollider.h"
 
 using namespace DirectX;
+
+namespace
+{
+    // The player stays on stage geometry: moves that would leave every floor are refused.
+    constexpr KinematicMover::Settings k_stageMoveSettings{
+        PlayerConst::CollisionRadius, PlayerConst::StepOffset, PlayerConst::SkinWidth, true };
+}
 
 // ============================================================
 // LIFECYCLE
@@ -123,6 +132,23 @@ void Player::InitPhysics(physx::PxControllerManager* manager, physx::PxMaterial*
     desc.stepOffset = PlayerConst::CapsuleStep;
 
     m_physxController = manager->createController(desc);
+}
+
+void Player::SetStageCollider(StageCollider* collider)
+{
+    m_stageCollider = collider;
+    if (!m_stageCollider || !movement) return;
+
+    // Why the search starts stepOffset higher: a spawn point lying exactly on the floor
+    // would start the probe inside it, and the one-sided cast would miss.
+    XMFLOAT3 feet{ movement->GetPosition() };
+    const XMFLOAT3 probeStart{ feet.x, feet.y + PlayerConst::StepOffset, feet.z };
+    float groundY{ 0.0f };
+    if (KinematicMover::FindGroundHeight(*m_stageCollider, probeStart, PlayerConst::GroundSnapDistance, groundY))
+    {
+        feet.y = groundY;
+        movement->SetPosition(feet);
+    }
 }
 
 void Player::ApplyConfig(const PlayerConfig& config) noexcept
@@ -582,6 +608,13 @@ void Player::UpdateHorizontalMovement(float dt)
     {
         displacementX = currentSmoothInput.x * moveSpeed * dt;
         displacementZ = currentSmoothInput.y * moveSpeed * dt;
+    }
+
+    if (m_stageCollider)
+    {
+        movement->SetPosition(KinematicMover::Move(*m_stageCollider, movement->GetPosition(),
+            { displacementX, 0.0f, displacementZ }, k_stageMoveSettings));
+        return;
     }
 
     // Apply displacement through PhysX capsule controller

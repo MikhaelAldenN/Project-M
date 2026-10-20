@@ -22,6 +22,12 @@ namespace PlayerConst
     inline constexpr float CapsuleHalfHeight = 1.5f;  // Subtracted from PxPos.y to get feet pos
     inline constexpr float PhysXMinDist = 0.001f; // move() minDist parameter
 
+    // --- Stage collision (KinematicMover, Y stays fixed) ---
+    inline constexpr float CollisionRadius = 0.5f;      // Swept sphere radius on the XZ plane
+    inline constexpr float StepOffset = 0.5f;           // Stage geometry lower than this above the feet does not block
+    inline constexpr float SkinWidth = 0.01f;           // Gap kept from walls
+    inline constexpr float GroundSnapDistance = 10.0f;  // How far below the spawn point the floor is searched
+
     // --- Dash ---
     inline constexpr float DashSpeed = 45.0f;  // Burst speed during dash (units/s)
     inline constexpr float DashDuration = 0.15f;  // How long the dash lasts (s)

@@ -19,6 +19,7 @@ class StateMachine;
 class AnimationController;
 class Camera;
 class CollisionManager;
+class StageCollider;
 
 struct PlayerConfig
 {
@@ -75,6 +76,11 @@ public:
     //         SceneBoss uses CapsuleHalfHeight (gravity off, no ground plane).
     void InitPhysics(physx::PxControllerManager* manager, physx::PxMaterial* material,
         float spawnY = 15.0f);
+
+    // Moves the player against collider on the XZ plane with Y fixed, and stands it on the
+    // floor below its current position. The collider is borrowed: its owner (the scene's Stage)
+    // must outlive the player. nullptr keeps the PhysX path.
+    void SetStageCollider(StageCollider* collider);
 
 	// --- Weapon ---
     void SetActiveWeapon(WeaponType type) { m_activeWeaponType = type; }
@@ -214,6 +220,9 @@ private:
 
     // --- PhysX controller (lifecycle managed by PhysX, released manually in destructor) ---
     physx::PxController* m_physxController = nullptr;
+
+    // --- Stage collision (borrowed, see SetStageCollider) ---
+    StageCollider* m_stageCollider{ nullptr };
 
     // --- Camera ---
     Camera* activeCamera = nullptr;
