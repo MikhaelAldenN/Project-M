@@ -147,7 +147,6 @@ private:
     void DrawDebugPanel();
 
     // --- Math Helpers (Static/Pure) ---
-    //static float ApplyEasing(float t, EasingType type);
     static DirectX::XMFLOAT3 LerpFloat3(const DirectX::XMFLOAT3& start, const DirectX::XMFLOAT3& end, float t);
     static DirectX::XMFLOAT3 CalculateHermitePos(const DirectX::XMFLOAT3& p0, const DirectX::XMFLOAT3& p1, const DirectX::XMFLOAT3& p2, const DirectX::XMFLOAT3& p3, float t, float tension);
 

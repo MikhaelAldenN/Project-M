@@ -4,9 +4,6 @@
 
 using namespace DirectX;
 
-// Optional: If your Graphics class has a mutex for thread-safe DX11 loading
-// #include "System/Graphics.h" 
-
 void EffectManager::Initialize(ID3D11Device* device, ID3D11DeviceContext* context)
 {
     // 1. Create the renderer (sprite capacity: 2048)
@@ -76,9 +73,6 @@ void EffectManager::PreloadEffect(const std::string& filePath)
 {
     // EARLY EXIT: Don't load it if it's already in the RAM cache!
     if (m_effectCache.find(filePath) != m_effectCache.end()) return;
-
-    // Thread Safety Lock (Uncomment if using async loading)
-    // std::lock_guard<std::mutex> lock(Graphics::Instance().GetMutex());
 
     std::u16string utf16Path{ ConvertToUTF16(filePath) };
     Effekseer::EffectRef effect{ Effekseer::Effect::Create(m_manager, utf16Path.c_str()) };

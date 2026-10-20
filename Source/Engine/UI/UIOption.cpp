@@ -146,14 +146,6 @@ void UIOption::Update(float elapsedTime) noexcept
         else if (m_selectedRow == OptionRow::SoundEffects)
         {
             AudioManager::Instance().SetGlobalSFXVolume(normalizedVolume);
-
-            // Optional: Provide auditory feedback when clicking D-pad / A/D once
-            // (Skipped for continuous hold so it doesn't spam the ear)
-            if (hDir == 1 || hDir == -1)
-            {
-                // Un-comment this and use a valid UI click WAV file in your Data folder:
-                // AudioManager::Instance().PlaySFX("Data/Sound/SE_Hit.wav", 0.5f);
-            }
         }
     }
 }

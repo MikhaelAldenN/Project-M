@@ -27,32 +27,6 @@ void EmergencyWatchdog()
     }
 }
 
-void TestPureWin32Transparency()
-{
-    WNDCLASSA wc = {};
-    wc.lpfnWndProc = DefWindowProcA;
-    wc.hInstance = GetModuleHandle(NULL);
-    wc.lpszClassName = "TestTransparent";
-    RegisterClassA(&wc);
-
-    HWND hwnd = CreateWindowExA(
-        WS_EX_LAYERED,
-        "TestTransparent", "Test Transparent",
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,  // ← pakai border agar kelihatan
-        200, 200, 400, 400,
-        NULL, NULL, GetModuleHandle(NULL), NULL
-    );
-
-    // Alpha 128 = 50% transparan seluruh window
-    SetLayeredWindowAttributes(hwnd, 0, 128, LWA_ALPHA);
-
-    Sleep(3000); // Lihat selama 3 detik tanpa MessageBox menghalangi
-    DestroyWindow(hwnd);
-}
-
-// Di main(), panggil sebelum framework:
-// TestPureWin32Transparency();
-
 namespace
 {
     // Writes one debug-output line: active DPI awareness and primary display size.
@@ -119,7 +93,6 @@ int main(int argc, char* argv[])
 
     LogDisplayStartupInfo();
 
-    //TestPureWin32Transparency();
     try
     {
         auto framework = std::make_unique<Framework>();

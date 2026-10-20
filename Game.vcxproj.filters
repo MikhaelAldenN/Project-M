@@ -640,7 +640,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Helpers\CapeSimulator.h" />
     <ClInclude Include="Source\Engine\Helpers\TimeManager.h" />
-    <ClInclude Include="Source\Engine\VFX\EffectManager.h" />
     <ClInclude Include="Source\Game\Entities\Weapon.h" />
     <ClInclude Include="Source\Engine\UI\UIDialogueBox.h">
       <Filter>Source\Engine\UI</Filter>
@@ -766,6 +765,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Collision\CollisionGeometry.h">
       <Filter>Source\Game\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\VFX\EffectManager.h">
+      <Filter>Source\Engine\VFX</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

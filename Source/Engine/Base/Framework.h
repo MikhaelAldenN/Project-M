@@ -80,7 +80,6 @@ public:
     [[nodiscard]] bool HandleDebugHotkey(const SDL_Event& event);
 
 private:
-    void CalculateFrameStats(float dt);
 
 #if defined(_DEBUG)
     // Registers Framework's part of the debug window's menu bar.

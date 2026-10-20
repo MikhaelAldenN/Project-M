@@ -149,11 +149,7 @@ Framework::Framework()
     }
 
     // Init Scene
-#if 0
-    scene = std::make_unique<SceneIntro>();
-#else
-    scene = std::make_unique<SceneBoss>();
-#endif
+    scene = std::make_unique<SceneSandbox>();
 }
 
 Framework::~Framework()
@@ -380,8 +376,6 @@ void Framework::Update(float elapsedTime)
         scene = std::move(nextScene); // the previous scene's destructor runs here
     }
 
-    CalculateFrameStats(elapsedTime);
-
 #if defined(_DEBUG)
     // Keyboard and mouse buttons stop driving the game while the debug window has focus.
     const bool isDebugFocused{ m_debugHost && m_debugHost->HasFocus() };
@@ -435,40 +429,6 @@ void Framework::ForceUpdateRender()
     if (dt > 0.05f) dt = 0.05f;
     Update(dt);
     Render(dt);
-}
-
-void Framework::CalculateFrameStats(float dt)
-{
-    static int frames = 0;
-    static float timeAccumulator = 0.0f;
-
-    frames++;
-    timeAccumulator += dt;
-
-    if (timeAccumulator >= 1.0f)
-    {
-        //float fps = static_cast<float>(frames);
-        //std::ostringstream outs;
-        //outs.precision(6);
-
-        //// Menggunakan judul resmi game barumu
-        //outs << "FPS: " << fps << " (" << (1000.0f / fps) << " ms)";
-
-        // Loop melalui semua window yang ada di WindowManager
-        //size_t index = 0;
-        //while (Beyond::Window* win = WindowManager::Instance().GetWindowByIndex(index))
-        //{
-        //    // Hanya update title pada window yang tidak disembunyikan (visible)
-        //    if (win->IsVisible() && win->GetSDLWindow())
-        //    {
-        //        SDL_SetWindowTitle(win->GetSDLWindow(), outs.str().c_str());
-        //    }
-        //    index++;
-        //}
-
-        frames = 0;
-        timeAccumulator -= 1.0f;
-    }
 }
 
 void Framework::Quit()

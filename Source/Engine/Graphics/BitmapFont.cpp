@@ -180,10 +180,6 @@ void BitmapFont::Draw3D(const std::string& text, const Camera* camera,
     float cursorY = 0.0f;
     float lineHeight = 38.0f * scale;
 
-    // Untuk centering text (Opsional, kalau mau teks rata tengah di worldPos)
-    // DirectX::XMFLOAT2 size = MeasureText(text, scale);
-    // cursorX = -size.x / 2.0f; 
-
     for (size_t offset = 0; offset < text.size(); )
     {
         const size_t nextOffset = NextUtf8Offset(text, offset);
