@@ -1,6 +1,7 @@
 #pragma once
 #include "IBossAttackPattern.h"
 #include "Bullet.h"
+#include "ProjectilePool.h"
 #include <DirectXMath.h>
 #include <random>
 
@@ -57,7 +58,7 @@ private:
 
     PhalanxParams                         m_params;
     Player* m_target = nullptr;
-    std::vector<std::unique_ptr<Bullet>>* m_pool = nullptr;
+    BossBulletPool* m_pool = nullptr; // borrowed from the phase, set in Start
     Boss* m_boss = nullptr;
 
     int   m_state = 0;
@@ -68,5 +69,5 @@ private:
 
     BossMoveTarget m_moveTarget{}; // set in Start, changed once when returning to center
 
-    std::vector<Bullet*> m_bullets; // Raw pointers into the shared pool
+    std::vector<ProjectileHandle> m_bullets; // projectiles this attack spawned, in firing order
 };

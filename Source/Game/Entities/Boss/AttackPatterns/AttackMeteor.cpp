@@ -1,6 +1,7 @@
 #pragma execution_character_set("utf-8")
 #include "AttackMeteor.h"
 #include "Boss.h"
+#include "ProjectilePool.h"
 #include "System/AudioManager.h"
 #include <DirectXMath.h>
 #include <cmath>
@@ -70,74 +71,49 @@ bool AttackMeteor::IsFinished() const {
 void AttackMeteor::FireMeteor() {
     if (!m_pool) return;
 
-    for (auto& bullet : *m_pool) {
-        if (!bullet->IsActive()) {
+    if (Projectile* meteor{ m_pool->Get(m_pool->Spawn()) }) {
+        // 1. Main direction of travel, from the start anchor to the target anchor.
+        float dx = m_params.targetX - m_params.startX;
+        float dz = m_params.targetZ - m_params.startZ;
+        float dist = sqrtf((dx * dx) + (dz * dz));
 
-            // 1. Hitung arah lintasan utama (Dari Start ke Target Anchor)
-            float dx = m_params.targetX - m_params.startX;
-            float dz = m_params.targetZ - m_params.startZ;
-            float dist = sqrtf((dx * dx) + (dz * dz));
-
-            float dirX = 0.0f;
-            float dirZ = 1.0f; // Fallback jika jarak 0
-            if (dist > 0.0001f) {
-                dirX = dx / dist;
-                dirZ = dz / dist;
-            }
-
-            // 2. Cari vektor tegak lurus (Perpendicular) untuk garis sebar
-            float perpX = -dirZ;
-            float perpZ = dirX;
-
-            // ========================================================
-            // PERUBAHAN 1: TIDAK URUT (SCATTER INDEX)
-            // ========================================================
-            // Gunakan Prime Jump agar urutan jatuhnya melompat-lompat
-            // Contoh untuk count=5: urutan yang jatuh adalah indeks 0, 2, 4, 1, 3
-            int primeJump = 5;
-            int scatterIndex = (m_spawnedCount * primeJump) % m_params.count;
-
-            // 3. Kalkulasi jarak offset menggunakan scatterIndex
-            float centerIndex = (m_params.count - 1) / 2.0f;
-            float currentOffset = (scatterIndex - centerIndex) * m_params.spreadOffset;
-
-            // ========================================================
-            // PERUBAHAN 2: RANDOM OFFSET X (JITTER)
-            // ========================================================
-            // Menghasilkan angka acak antara -2.5f hingga 2.5f
-            float randomOffsetX = ((rand() % 100) / 50.0f - 1.0f) * 8.0f;
-
-            // 4. Set Titik Spawn final untuk meteor ini
-            DirectX::XMFLOAT3 spawnPos = {
-                m_params.startX + (perpX * currentOffset) + randomOffsetX,  // X jitter
-                1.0f,
-                m_params.startZ + (perpZ * currentOffset)
-            };
-
-            DirectX::XMFLOAT3 direction = { dirX, 0.0f, dirZ };
-            // ========================================================
-            // PERUBAHAN 3: RANDOM SPEED OFFSET (VARIANCE)
-            // ========================================================
-            // Menghasilkan angka acak antara -1.0 hingga 1.0, lalu dikali batas variance
-            float randomSpeedOffset = ((rand() % 100) / 50.0f - 1.0f) * m_params.speedVariance;
-            float finalSpeed = m_params.speed + randomSpeedOffset;
-
-            // Pastikan kecepatan tidak pernah 0 atau negatif (minimal 5.0f)
-            if (finalSpeed < 5.0f) finalSpeed = 5.0f;
-
-            bullet->SetRadius(m_params.radius);
-            bullet->scale = { m_params.visualScale, m_params.visualScale, m_params.visualScale };
-            bullet->SetHomingTarget(nullptr);
-            bullet->SetBossTarget(nullptr);
-            bullet->SetParabolic(false);
-            bullet->SetParryReturn(false);
-            bullet->SetTurnSpeed(8.0f);
-            bullet->SetDamage(m_params.damage);
-
-            // finalSpeed includes the random speed offset.
-            bullet->Fire(spawnPos, direction, finalSpeed);
-            break;
+        float dirX = 0.0f;
+        float dirZ = 1.0f; // fallback when both anchors coincide
+        if (dist > 0.0001f) {
+            dirX = dx / dist;
+            dirZ = dz / dist;
         }
+
+        // 2. Perpendicular to the travel direction: the line the meteors spread along.
+        float perpX = -dirZ;
+        float perpZ = dirX;
+
+        // A prime jump scatters the spawn order along that line (count 5: 0, 2, 4, 1, 3).
+        int primeJump = 5;
+        int scatterIndex = (m_spawnedCount * primeJump) % m_params.count;
+
+        float centerIndex = (m_params.count - 1) / 2.0f;
+        float currentOffset = (scatterIndex - centerIndex) * m_params.spreadOffset;
+
+        // Random X jitter in [-8, 8).
+        float randomOffsetX = ((rand() % 100) / 50.0f - 1.0f) * 8.0f;
+
+        DirectX::XMFLOAT3 spawnPos = {
+            m_params.startX + (perpX * currentOffset) + randomOffsetX,
+            1.0f,
+            m_params.startZ + (perpZ * currentOffset)
+        };
+        DirectX::XMFLOAT3 direction = { dirX, 0.0f, dirZ };
+
+        // Random speed offset in [-speedVariance, speedVariance), never below 5.
+        float randomSpeedOffset = ((rand() % 100) / 50.0f - 1.0f) * m_params.speedVariance;
+        float finalSpeed = m_params.speed + randomSpeedOffset;
+        if (finalSpeed < 5.0f) finalSpeed = 5.0f;
+
+        meteor->radius = m_params.radius;
+        meteor->visualScale = m_params.visualScale;
+        meteor->damage = m_params.damage;
+        ProjectilePool::Launch(*meteor, spawnPos, direction, finalSpeed);
     }
 
     AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Shoot.wav", 0.2f * m_params.sfxVolume);

@@ -1,6 +1,7 @@
 #pragma execution_character_set("utf-8")
 #include "AttackPhalanx.h"
 #include "Boss.h"
+#include "ProjectilePool.h"
 #include "System/AudioManager.h"
 #include "System/Graphics.h"
 #include "EffectManager.h"
@@ -38,9 +39,10 @@ void AttackPhalanx::Update(float dt, Boss* boss) {
     m_timer += dt;
     XMFLOAT3 bPos = boss->GetPosition();
 
-    // Keep un-fired bullets orbiting the boss, aimed at the player
+    // Keep un-fired projectiles orbiting the boss, aimed at the player
     for (int i = m_fired; i < m_spawned; ++i) {
-        if (!m_bullets[i] || !m_bullets[i]->IsActive()) continue;
+        Projectile* projectile{ m_pool->Get(m_bullets[i]) };
+        if (!projectile) continue;
 
         XMFLOAT3 pPos = m_target->GetPosition();
         float dx = pPos.x - bPos.x;
@@ -57,13 +59,11 @@ void AttackPhalanx::Update(float dt, Boss* boss) {
         hoverPos.z += cosf(bulletAngle) * m_params.hoverRadius;
         hoverPos.y += 1.0f;
 
-        XMFLOAT3 bletPos = m_bullets[i]->GetMovement()->GetPosition();
-        float    s = m_params.smoothSpeed;
-        bletPos.x += (hoverPos.x - bletPos.x) * s * dt;
-        bletPos.y += (hoverPos.y - bletPos.y) * s * dt;
-        bletPos.z += (hoverPos.z - bletPos.z) * s * dt;
-        m_bullets[i]->GetMovement()->SetPosition(bletPos);
-        m_bullets[i]->GetMovement()->SetRotationY(XMConvertToDegrees(angleToPlayer));
+        float s = m_params.smoothSpeed;
+        projectile->position.x += (hoverPos.x - projectile->position.x) * s * dt;
+        projectile->position.y += (hoverPos.y - projectile->position.y) * s * dt;
+        projectile->position.z += (hoverPos.z - projectile->position.z) * s * dt;
+        projectile->yawDegrees = XMConvertToDegrees(angleToPlayer);
     }
 
     // --- State 1: Moving + Charging ---
@@ -78,25 +78,18 @@ void AttackPhalanx::Update(float dt, Boss* boss) {
             if (m_timer >= m_params.chargeDelay) {
                 m_timer -= m_params.chargeDelay;
 
-                for (auto& bullet : *m_pool) {
-                    if (!bullet->IsActive()) {
-                        bullet->SetActive(true);
-                        bullet->ApplyMovement(bPos, { 0, 0, 0 });
-                        bullet->SetHomingTarget(nullptr);
-                        bullet->SetBossTarget(nullptr);
-                        bullet->SetParabolic(false);
-                        bullet->SetParryReturn(false);
-                        bullet->SetRadius(0.35f);
-                        bullet->scale = { 2.0f, 2.0f, 2.0f };
-                        bullet->SetTurnSpeed(m_params.turnSpeed);
-                        bullet->SetDamage(m_params.damage);
-                        bullet->AttachVFX("Data/Effect/VFX_Boss_Phalanx_Smoke.efk", 0.3f);
+                const ProjectileHandle handle{ m_pool->Spawn() };
+                if (Projectile* projectile{ m_pool->Get(handle) }) {
+                    projectile->position = bPos;
+                    projectile->radius = 0.35f;
+                    projectile->visualScale = 2.0f;
+                    projectile->turnSpeed = m_params.turnSpeed;
+                    projectile->damage = m_params.damage;
+                    m_pool->AttachVfx(handle.index, "Data/Effect/VFX_Boss_Phalanx_Smoke.efk", 0.3f);
 
-                        m_bullets.push_back(bullet.get());
-                        AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Phalanx_Ready.wav", 0.1f * m_params.sfxVolume);
-                        m_spawned++;
-                        break;
-                    }
+                    m_bullets.push_back(handle);
+                    AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Phalanx_Ready.wav", 0.1f * m_params.sfxVolume);
+                    m_spawned++;
                 }
 
                 if (m_spawned >= m_params.count) {
@@ -111,9 +104,9 @@ void AttackPhalanx::Update(float dt, Boss* boss) {
         // Switch smoke VFX to flare 0.5s before hold ends
         if (m_timer >= (m_params.holdDuration - 0.5f) && !m_flareTriggered) {
             m_flareTriggered = true;
-            for (Bullet* b : m_bullets) {
-                if (b && b->IsActive()) {
-                    b->AttachVFX("Data/Effect/VFX_Boss_Phalanx_Flare.efk", 0.3f);
+            for (const ProjectileHandle handle : m_bullets) {
+                if (m_pool->Get(handle)) {
+                    m_pool->AttachVfx(handle.index, "Data/Effect/VFX_Boss_Phalanx_Flare.efk", 0.3f);
                 }
             }
         }
@@ -128,11 +121,10 @@ void AttackPhalanx::Update(float dt, Boss* boss) {
             m_timer -= m_params.fireDelay;
 
             if (m_fired < m_spawned) {
-                Bullet* b = m_bullets[m_fired];
-                if (b && b->IsActive()) {
-                    b->SetHomingTarget(m_target);
+                if (Projectile* projectile{ m_pool->Get(m_bullets[m_fired]) }) {
+                    projectile->target = ProjectileTarget::player;
 
-                    XMFLOAT3 myPos = b->GetMovement()->GetPosition();
+                    XMFLOAT3 myPos = projectile->position;
                     XMFLOAT3 pPos = m_target->GetPosition();
                     float dx = pPos.x - myPos.x;
                     float dz = pPos.z - myPos.z;
@@ -142,7 +134,7 @@ void AttackPhalanx::Update(float dt, Boss* boss) {
                         ? XMFLOAT3{ dx / dist, 0.0f, dz / dist }
                     : XMFLOAT3{ 0.0f, 0.0f, 1.0f };
 
-                    b->Fire(myPos, dir, m_params.speed);
+                    ProjectilePool::Launch(*projectile, myPos, dir, m_params.speed);
                 }
                 AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Phalanx_Shoot.wav", 0.1f * m_params.sfxVolume);
                 m_fired++;
@@ -180,9 +172,11 @@ void AttackPhalanx::Render(ID3D11DeviceContext* context, Camera* camera, Boss* b
 }
 
 void AttackPhalanx::Stop(Boss* boss) {
-    // Deactivate any bullets still orbiting (not yet fired)
-    for (Bullet* b : m_bullets) {
-        if (b && b->IsActive()) b->SetActive(false);
+    // Despawn the projectiles this attack still holds (orbiting, or fired in the current volley)
+    if (m_pool) {
+        for (const ProjectileHandle handle : m_bullets) {
+            m_pool->Despawn(handle);
+        }
     }
     m_bullets.clear();
     m_state = 0;

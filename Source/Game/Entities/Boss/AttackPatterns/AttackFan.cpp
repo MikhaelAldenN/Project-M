@@ -1,6 +1,7 @@
 #pragma execution_character_set("utf-8")
 #include "AttackFan.h"
 #include "Boss.h"
+#include "ProjectilePool.h"
 #include "Player.h"
 #include "System/AudioManager.h"
 #include <DirectXMath.h>
@@ -87,27 +88,18 @@ bool AttackFan::IsFinished() const {
 void AttackFan::FireWave(Boss* boss) {
     if (!m_pool || !boss) return;
 
-    int   fired = 0;
-    // --- UBAH m_params.lines JADI m_params.rows ---
     float startAngle = m_lockedBaseAngle - ((m_params.rows - 1) * m_params.spreadAngle * 0.5f);
 
-    for (auto& bullet : *m_pool) {
-        if (!bullet->IsActive()) {
-            bullet->SetRadius(0.25f);
-            bullet->scale = { 1.0f, 1.0f, 1.0f };
-            bullet->SetHomingTarget(nullptr);
-            bullet->SetBossTarget(nullptr);
-            bullet->SetParabolic(false);
-            bullet->SetParryReturn(false);
-            bullet->SetTurnSpeed(8.0f);
-            bullet->SetDamage(m_params.damage);
+    for (int fired = 0; fired < m_params.rows; ++fired) {
+        Projectile* projectile{ m_pool->Get(m_pool->Spawn()) };
+        if (!projectile) break; // pool is full
 
-            float angle = startAngle + (fired * m_params.spreadAngle);
-            bullet->Fire(boss->GetPosition(), { sinf(angle), 0.0f, cosf(angle) }, m_params.speed);
+        projectile->radius = 0.25f;
+        projectile->visualScale = 1.0f;
+        projectile->damage = m_params.damage;
 
-            // --- UBAH m_params.lines JADI m_params.rows ---
-            if (++fired >= m_params.rows) break;
-        }
+        float angle = startAngle + (fired * m_params.spreadAngle);
+        ProjectilePool::Launch(*projectile, boss->GetPosition(), { sinf(angle), 0.0f, cosf(angle) }, m_params.speed);
     }
 
     AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Shoot.wav", 0.2f * m_params.sfxVolume);

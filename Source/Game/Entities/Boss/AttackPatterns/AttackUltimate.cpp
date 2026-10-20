@@ -1,6 +1,7 @@
 ﻿#pragma execution_character_set("utf-8")
 #include "AttackUltimate.h"
 #include "Boss.h"
+#include "ProjectilePool.h"
 #include "Player.h"
 #include "System/Graphics.h"
 #include "System/AudioManager.h"
@@ -20,34 +21,14 @@ void AttackUltimate::Start(Boss* boss, BossBulletPool* pool) {
     m_pool = pool;
     m_state = State::Moving;
     m_chargeTimer = 0.0f;
-    m_ball = nullptr;
+    m_ball = ProjectileHandle{};
     m_chargeEffectHandle = -1;
 
     // Boss slides to top center to charge
     m_moveTarget.position = { 0.0f, 0.0f, 10.0f };
     m_moveTarget.lerpSpeed = m_params.attackMoveSpeed;
 
-    // Claim a bullet from the pool for the ball
-    for (auto& bullet : *m_pool) {
-        if (!bullet->IsActive()) {
-            bullet->SetActive(true);
-            bullet->ApplyMovement({ 0.0f, -1000.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
-            bullet->SetHomingTarget(nullptr);
-            bullet->SetBossTarget(nullptr);
-            bullet->SetParabolic(false);
-            bullet->SetParryReturn(false);
-            bullet->SetTurnSpeed(8.0f);
-
-            float baseHitbox = m_params.baseHitbox;
-            float baseVisual = baseHitbox * m_params.visualMultiplier;
-            bullet->SetRadius(baseHitbox);
-            bullet->scale = { baseVisual, baseVisual, baseVisual };
-            bullet->SetDamage(m_params.ballDamage);
-
-            m_ball = bullet.get();
-            break;
-        }
-    }
+    ClaimBall();
 }
 
 void AttackUltimate::Update(float dt, Boss* boss) {
@@ -62,7 +43,8 @@ void AttackUltimate::Update(float dt, Boss* boss) {
         if ((dx * dx + dz * dz) <= 1.0f) {
             m_state = State::Charging;
             m_chargeTimer = 0.0f;
-            if (m_ball) m_ball->SetActive(true); // The ball is visible from the start of the charge
+            // The ball is visible from the start of the charge.
+            if (!m_pool->Get(m_ball)) ClaimBall();
         }
         else {
             // Never deactivate the ball here.
@@ -77,31 +59,33 @@ void AttackUltimate::Update(float dt, Boss* boss) {
                 "Data/Sound/SE_Boss_Bijuudama_Charge.wav", 0.1f * m_params.sfxVolume);
         }
 
+        // A ball lost to a collision is claimed again, so the charge always shows one.
+        if (!m_pool->Get(m_ball)) ClaimBall();
+        Projectile* ball{ m_pool->Get(m_ball) };
+
         // Spawn charge VFX once
-        if (m_chargeEffectHandle == -1 && m_ball) {
-            XMFLOAT3 spawnPos = m_ball->GetMovement()->GetPosition();
+        if (m_chargeEffectHandle == -1 && ball) {
+            XMFLOAT3 spawnPos = ball->position;
             m_chargeEffectHandle = EffectManager::Instance().Play(
                 "Data/Effect/VFX_Boss_Bijuudama_Charge.efk", spawnPos, 1.0f);
-            m_ball->AttachVFX("Data/Effect/VFX_Boss_Fireball.efk", m_ball->scale.x * 0.3f);
+            m_pool->AttachVfx(m_ball.index, "Data/Effect/VFX_Boss_Fireball.efk", ball->visualScale * 0.3f);
         }
 
         m_chargeTimer += dt;
 
         // Position and grow ball while stationary
-        if (m_ball) {
-            if (!m_ball->IsActive()) m_ball->SetActive(true); // Nyalakan jika terlanjur mati
-
-            XMFLOAT3 vel = m_ball->GetVelocity();
+        if (ball) {
+            XMFLOAT3 vel = ball->velocity;
             if ((vel.x * vel.x + vel.z * vel.z) < 0.01f) {
                 XMFLOAT3 offsetPos = bPos;
                 offsetPos.z -= m_params.spawnOffsetZ;
-                m_ball->GetMovement()->SetPosition(offsetPos);
+                ball->position = offsetPos;
 
                 float progress = min(1.0f, m_chargeTimer / m_params.laserDuration);
                 float currentHitbox = m_params.baseHitbox + (m_params.maxHitboxGrow * progress);
-                m_ball->SetRadius(currentHitbox);
+                ball->radius = currentHitbox;
                 float visualScale = currentHitbox * m_params.visualMultiplier;
-                m_ball->scale = { visualScale, visualScale, visualScale };
+                ball->visualScale = visualScale;
 
                 // Sync charge VFX scale to ball
                 if (m_chargeEffectHandle != -1 &&
@@ -151,10 +135,8 @@ void AttackUltimate::Render(ID3D11DeviceContext* context, Camera* camera, Boss* 
 
 void AttackUltimate::Stop(Boss* boss) {
     CancelCharge();
-    if (m_ball && m_ball->IsActive()) {
-        m_ball->SetActive(false);
-    }
-    m_ball = nullptr;
+    if (m_pool) m_pool->Despawn(m_ball);
+    m_ball = ProjectileHandle{};
     m_state = State::Done;
 }
 
@@ -168,10 +150,11 @@ bool AttackUltimate::IsInParryWindow() const {
 
 std::optional<XMFLOAT3> AttackUltimate::TryParry(const XMFLOAT3& parryPosition, Boss* boss) {
     if (m_state != State::Charging || !IsInParryWindow()) return std::nullopt;
-    if (!m_ball || !m_ball->IsActive()) return std::nullopt;
+    const Projectile* ball{ m_pool ? m_pool->Get(m_ball) : nullptr };
+    if (!ball) return std::nullopt;
 
-    // Read before shattering: ShatterBijuudama deactivates the ball and may reuse its slot.
-    const XMFLOAT3 ballPosition{ m_ball->GetPosition() };
+    // Read before shattering: ShatterBijuudama despawns the ball and may reuse its slot.
+    const XMFLOAT3 ballPosition{ ball->position };
     ShatterBijuudama(parryPosition, boss);
     return ballPosition;
 }
@@ -183,10 +166,8 @@ std::optional<XMFLOAT3> AttackUltimate::TryParry(const XMFLOAT3& parryPosition, 
 void AttackUltimate::ShatterBijuudama(XMFLOAT3 parryPos, Boss* boss) {
     if (!m_pool || !boss) return;
 
-    if (m_ball) {
-        m_ball->SetActive(false);
-        m_ball = nullptr; 
-    }
+    m_pool->Despawn(m_ball);
+    m_ball = ProjectileHandle{};
 
     CameraController::Instance().AddTrauma(0.8f);
     AudioManager::Instance().PlaySFX("Data/Sound/SE_Player_Parry_Boss.wav", 0.6f);
@@ -198,40 +179,37 @@ void AttackUltimate::ShatterBijuudama(XMFLOAT3 parryPos, Boss* boss) {
     std::uniform_real_distribution<float> distAngle(-XM_PIDIV2, XM_PIDIV2);
 
     int fragments = distCount(gen);
-    int spawned = 0;
 
     XMFLOAT3 bossPos = boss->GetPosition();
     float baseAngle = atan2f(bossPos.x - parryPos.x, bossPos.z - parryPos.z);
 
-    for (auto& bullet : *m_pool) {
-        if (!bullet->IsActive()) {
-            bullet->SetActive(true);
-            bullet->ApplyMovement(parryPos, { 0, 0, 0 });
-            bullet->SetBossTarget(boss);
-            bullet->SetParabolic(true);
-            bullet->SetParryReturn(false);
-            bullet->SetTurnSpeed(8.0f);
+    // Fragments curve back into the boss; CollisionManager damages it when they arrive.
+    for (int spawned = 0; spawned < fragments; ++spawned) {
+        Projectile* fragment{ m_pool->Get(m_pool->Spawn()) };
+        if (!fragment) break; // pool is full
 
-            float r = distSize(gen);
-            bullet->SetRadius(r);
-            bullet->scale = { r * 3.0f, r * 3.0f, r * 3.0f };
+        fragment->position = parryPos;
+        fragment->target = ProjectileTarget::boss;
+        fragment->isParabolic = true;
 
-            float spreadAngle = baseAngle + distAngle(gen);
-            XMFLOAT3 ctrlPoint = {
-                parryPos.x + sinf(spreadAngle) * m_params.shatterCurveOffset,
-                parryPos.y,
-                parryPos.z + cosf(spreadAngle) * m_params.shatterCurveOffset
-            };
-            bullet->SetParabolaParams(parryPos, ctrlPoint, distDur(gen));
-            AudioManager::Instance().PlaySFX(
-                "Data/Sound/SE_Player_Parry_Boss.wav", 0.015f * m_params.sfxVolume);
+        float r = distSize(gen);
+        fragment->radius = r;
+        fragment->visualScale = r * 3.0f;
 
-            if (++spawned >= fragments) break;
-        }
+        float spreadAngle = baseAngle + distAngle(gen);
+        XMFLOAT3 ctrlPoint = {
+            parryPos.x + sinf(spreadAngle) * m_params.shatterCurveOffset,
+            parryPos.y,
+            parryPos.z + cosf(spreadAngle) * m_params.shatterCurveOffset
+        };
+        fragment->parabolaStart = parryPos;
+        fragment->parabolaControl = ctrlPoint;
+        fragment->parabolaDuration = distDur(gen);
+        AudioManager::Instance().PlaySFX(
+            "Data/Sound/SE_Player_Parry_Boss.wav", 0.015f * m_params.sfxVolume);
     }
 
     CancelCharge();
-    m_ball = nullptr;
     m_state = State::Recovering;
     m_recoveryTimer = 0.0f;
 }
@@ -240,14 +218,26 @@ void AttackUltimate::ShatterBijuudama(XMFLOAT3 parryPos, Boss* boss) {
 // Internal
 // ============================================================
 
+void AttackUltimate::ClaimBall() {
+    m_ball = m_pool->Spawn();
+    Projectile* ball{ m_pool->Get(m_ball) };
+    if (!ball) return; // pool is full: the attack runs without a ball
+
+    // Parked far below the arena until the charge moves it to the boss.
+    ball->position = { 0.0f, -1000.0f, 0.0f };
+    ball->radius = m_params.baseHitbox;
+    ball->visualScale = m_params.baseHitbox * m_params.visualMultiplier;
+    ball->damage = m_params.ballDamage;
+}
+
 void AttackUltimate::LaunchBall(Boss* boss) {
     CancelCharge();
 
     m_state = State::Recovering;
     m_recoveryTimer = 0.0f;
 
-    if (m_ball && m_ball->IsActive()) {
-        XMFLOAT3 vel = m_ball->GetVelocity();
+    if (Projectile* ball{ m_pool->Get(m_ball) }) {
+        XMFLOAT3 vel = ball->velocity;
         if ((vel.x * vel.x + vel.z * vel.z) < 0.01f) {
             XMFLOAT3 bPos = boss->GetPosition();
             XMFLOAT3 pPos = m_target->GetPosition();
@@ -257,15 +247,13 @@ void AttackUltimate::LaunchBall(Boss* boss) {
 
             if (dist > 0.001f) {
                 float spd = m_params.shootSpeed;
-                XMFLOAT3 shootVel = { (dx / dist) * spd, 0.0f, (dz / dist) * spd };
-                XMFLOAT3 ballPos = m_ball->GetMovement()->GetPosition();
-                m_ball->ApplyMovement(ballPos, shootVel);
+                ball->velocity = { (dx / dist) * spd, 0.0f, (dz / dist) * spd };
                 AudioManager::Instance().PlaySFX(
                     "Data/Sound/SE_Boss_Bijuudama_Shoot.wav", 0.2f * m_params.sfxVolume);
             }
         }
     }
-    m_ball = nullptr;
+    m_ball = ProjectileHandle{};
 }
 
 void AttackUltimate::CancelCharge() {

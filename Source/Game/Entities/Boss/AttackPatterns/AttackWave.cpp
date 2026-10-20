@@ -1,6 +1,7 @@
 #pragma execution_character_set("utf-8")
 #include "AttackWave.h"
 #include "Boss.h"
+#include "ProjectilePool.h"
 #include "System/AudioManager.h"
 #include <DirectXMath.h>
 
@@ -54,38 +55,26 @@ bool AttackWave::IsFinished() const {
 void AttackWave::FireWave(bool fromRight) {
     if (!m_pool) return;
 
-    int fired = 0;
-    // Kanan = Track Ganjil (1, 3, 5...), Kiri = Track Genap (0, 2, 4...)
+    // Right uses the odd tracks (1, 3, 5...), left the even ones (0, 2, 4...).
     int startIndex = fromRight ? 1 : 0;
 
-    for (auto& bullet : *m_pool) {
-        if (!bullet->IsActive()) {
-            int trackIndex = startIndex + (fired * 2);
+    for (int fired = 0; fired < m_params.bulletsPerWave; ++fired) {
+        int trackIndex = startIndex + (fired * 2);
+        if (trackIndex >= m_params.trackCount) break;
 
-            // Cegah peluru spawn jika melewati batas total track
-            if (trackIndex >= m_params.trackCount) break;
+        Projectile* projectile{ m_pool->Get(m_pool->Spawn()) };
+        if (!projectile) break; // pool is full
 
-            // Kalkulasi posisi spawn di grid/track
-            float zPos = m_params.startZ + (trackIndex * m_params.trackSpacing);
-            float xPos = fromRight ? m_params.spawnX : -m_params.spawnX;
+        float zPos = m_params.startZ + (trackIndex * m_params.trackSpacing);
+        float xPos = fromRight ? m_params.spawnX : -m_params.spawnX;
 
-            DirectX::XMFLOAT3 spawnPos = { xPos, 1.0f, zPos };
-            DirectX::XMFLOAT3 direction = { fromRight ? -1.0f : 1.0f, 0.0f, 0.0f };
+        DirectX::XMFLOAT3 spawnPos = { xPos, 1.0f, zPos };
+        DirectX::XMFLOAT3 direction = { fromRight ? -1.0f : 1.0f, 0.0f, 0.0f };
 
-            // Setup bullet
-            bullet->SetRadius(0.35f);
-            bullet->scale = { 1.5f, 1.5f, 1.5f };
-            bullet->SetHomingTarget(nullptr);
-            bullet->SetBossTarget(nullptr);
-            bullet->SetParabolic(false);
-            bullet->SetParryReturn(false);
-            bullet->SetTurnSpeed(8.0f);
-            bullet->SetDamage(m_params.damage);
-
-            bullet->Fire(spawnPos, direction, m_params.speed);
-
-            if (++fired >= m_params.bulletsPerWave) break;
-        }
+        projectile->radius = 0.35f;
+        projectile->visualScale = 1.5f;
+        projectile->damage = m_params.damage;
+        ProjectilePool::Launch(*projectile, spawnPos, direction, m_params.speed);
     }
 
     AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Shoot.wav", 0.2f * m_params.sfxVolume);

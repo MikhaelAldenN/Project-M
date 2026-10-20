@@ -4,6 +4,8 @@
 #include "Primitive.h"
 #include "UIDialogueBox.h"
 #include "IBossAttackPattern.h"
+#include "ProjectilePool.h"
+#include "System/Model.h"
 
 // AI
 #include "BossAI.h"
@@ -60,22 +62,28 @@ public:
     BossAI_Phase01* GetAI() const { return m_ai.get(); }
     const std::vector<std::unique_ptr<IBossAttackPattern>>& GetActiveAttacks() const { return m_activeAttacks; }
     void AppendActiveProjectiles(std::vector<Bullet*>& out) const override;
+    [[nodiscard]] ProjectilePool* GetProjectilePool() override { return &m_projectiles; }
+    [[nodiscard]] const ProjectilePool* GetProjectilePool() const override { return &m_projectiles; }
 
 private:
     // Stops and destroys every running attack, including the Rain.
-    // Must run while m_bulletPool is still alive: Stop() touches pooled bullets.
+    // Runs before m_projectiles is cleared: Stop() despawns what an attack still holds.
     void StopAllAttacks(Boss* boss);
     void UpdateBossMovement(float dt, Boss* boss);
     void UpdateIdleHover(float dt, Boss* boss);
     void UpdateBulletPool(float dt, Boss* boss);
+    void LoadProjectileModel();
     void UpdateGlitchVFX(float dt, Boss* boss);
     void UpdateDeathSequence(float dt, Boss* boss);
 
 private:
     Boss* m_bossRef = nullptr;
 
-    // ---- Bullet pool ----
-    std::vector<std::unique_ptr<Bullet>> m_bulletPool;
+    // ---- Projectile pool ----
+    static constexpr std::size_t k_projectileCapacity{ 500 };
+    ProjectilePool m_projectiles{ k_projectileCapacity };
+    std::shared_ptr<Model> m_projectileModel;     // one model drawn for every projectile
+    DirectX::XMFLOAT4X4 m_projectileMeshOffset{}; // mesh node transform relative to the model root
 
     // ---- Active attacks ----
     std::vector<std::unique_ptr<IBossAttackPattern>> m_activeAttacks;

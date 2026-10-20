@@ -1,6 +1,7 @@
 #pragma execution_character_set("utf-8")
 #include "AttackDirect.h"
 #include "Boss.h"
+#include "ProjectilePool.h"
 #include "Player.h"
 #include "System/AudioManager.h"
 #include <DirectXMath.h>
@@ -73,36 +74,24 @@ bool AttackDirect::IsFinished() const {
 void AttackDirect::FireBullet() {
     if (!m_pool || !m_boss || !m_target) return;
 
-    for (auto& bullet : *m_pool) {
-        if (!bullet->IsActive()) {
+    if (Projectile* projectile{ m_pool->Get(m_pool->Spawn()) }) {
+        // Aim at where the player is at the moment of firing.
+        XMFLOAT3 bPos = m_boss->GetPosition();
+        XMFLOAT3 pPos = m_target->GetPosition();
 
-            // ========================================================
-            // LOGIKA TRACKING REAL-TIME
-            // ========================================================
-            XMFLOAT3 bPos = m_boss->GetPosition();
-            XMFLOAT3 pPos = m_target->GetPosition();
+        float dx = pPos.x - bPos.x;
+        float dz = pPos.z - bPos.z;
+        float dist = sqrtf((dx * dx) + (dz * dz));
 
-            float dx = pPos.x - bPos.x;
-            float dz = pPos.z - bPos.z;
-            float dist = sqrtf((dx * dx) + (dz * dz));
-
-            XMFLOAT3 direction = { 0.0f, 0.0f, 1.0f }; // Default jika jarak 0
-            if (dist > 0.001f) {
-                direction = { dx / dist, 0.0f, dz / dist };
-            }
-
-            bullet->SetRadius(m_params.radius);
-            bullet->scale = { m_params.visualScale, m_params.visualScale, m_params.visualScale };
-            bullet->SetHomingTarget(nullptr);
-            bullet->SetBossTarget(nullptr);
-            bullet->SetParabolic(false);
-            bullet->SetParryReturn(false);
-            bullet->SetTurnSpeed(8.0f);
-            bullet->SetDamage(m_params.damage);
-
-            bullet->Fire(bPos, direction, m_params.speed);
-            break;
+        XMFLOAT3 direction = { 0.0f, 0.0f, 1.0f }; // fallback when the player stands on the boss
+        if (dist > 0.001f) {
+            direction = { dx / dist, 0.0f, dz / dist };
         }
+
+        projectile->radius = m_params.radius;
+        projectile->visualScale = m_params.visualScale;
+        projectile->damage = m_params.damage;
+        ProjectilePool::Launch(*projectile, bPos, direction, m_params.speed);
     }
 
     AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Shoot.wav", 0.2f * m_params.sfxVolume);

@@ -49,7 +49,7 @@ private:
     void FireMeteor();
 
     MeteorParams                          m_params;
-    std::vector<std::unique_ptr<Bullet>>* m_pool = nullptr;
+    BossBulletPool* m_pool = nullptr; // borrowed from the phase, set in Start
     Boss* m_boss = nullptr;
 
     bool  m_active = false;

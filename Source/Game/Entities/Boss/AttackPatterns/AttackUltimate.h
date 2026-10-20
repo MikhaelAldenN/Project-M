@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "IBossAttackPattern.h"
 #include "Bullet.h"
+#include "ProjectilePool.h"
 #include <DirectXMath.h>
 
 // ============================================================
@@ -75,17 +76,19 @@ private:
     void ShatterBijuudama(DirectX::XMFLOAT3 parryPos, Boss* boss);
     void LaunchBall(Boss* boss);
     void CancelCharge();
+    // Takes a free projectile for the ball and parks it below the arena.
+    void ClaimBall();
     enum class State { Moving, Charging, Fired, Recovering, Done };
 
     UltimateParams                        m_params;
     Player* m_target = nullptr;
-    std::vector<std::unique_ptr<Bullet>>* m_pool = nullptr;
+    BossBulletPool* m_pool = nullptr; // borrowed from the phase, set in Start
 
     State m_state = State::Done;
 
     float   m_chargeTimer = 0.0f;
     float   m_recoveryTimer = 0.0f;
-    Bullet* m_ball = nullptr;
+    ProjectileHandle m_ball{};
 
     int m_chargeEffectHandle = -1;
 

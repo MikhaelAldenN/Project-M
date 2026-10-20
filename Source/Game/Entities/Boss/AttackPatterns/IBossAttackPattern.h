@@ -9,8 +9,10 @@ class Bullet;
 class Camera;
 struct ID3D11DeviceContext;
 
-// Bullets shared by all attacks of one phase. Owned by the phase.
-using BossBulletPool = std::vector<std::unique_ptr<Bullet>>;
+class ProjectilePool;
+
+// Projectiles shared by all attacks of one phase. Owned by the phase.
+using BossBulletPool = ProjectilePool;
 
 struct BossMoveTarget {
     DirectX::XMFLOAT3 position{};

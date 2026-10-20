@@ -1,6 +1,7 @@
 #pragma execution_character_set("utf-8")
 #include "AttackRadial.h"
 #include "Boss.h"
+#include "ProjectilePool.h"
 #include "System/AudioManager.h"
 #include <DirectXMath.h>
 
@@ -80,25 +81,18 @@ bool AttackRadial::IsFinished() const {
 void AttackRadial::FireBurst(Boss* boss, float angleOffset) {
     if (!m_pool || !boss) return;
 
-    int   fired = 0;
     float angleStep = XM_2PI / (float)m_params.count;
 
-    for (auto& bullet : *m_pool) {
-        if (!bullet->IsActive()) {
-            bullet->SetRadius(0.25f);
-            bullet->scale = { 1.0f, 1.0f, 1.0f };
-            bullet->SetHomingTarget(nullptr);
-            bullet->SetBossTarget(nullptr);
-            bullet->SetParabolic(false);
-            bullet->SetParryReturn(false);
-            bullet->SetTurnSpeed(8.0f);
-            bullet->SetDamage(m_params.damage);
+    for (int fired = 0; fired < m_params.count; ++fired) {
+        Projectile* projectile{ m_pool->Get(m_pool->Spawn()) };
+        if (!projectile) break; // pool is full
 
-            float angle = (fired * angleStep) + angleOffset;
-            bullet->Fire(boss->GetPosition(), { sinf(angle), 0.0f, cosf(angle) }, m_params.speed);
+        projectile->radius = 0.25f;
+        projectile->visualScale = 1.0f;
+        projectile->damage = m_params.damage;
 
-            if (++fired >= m_params.count) break;
-        }
+        float angle = (fired * angleStep) + angleOffset;
+        ProjectilePool::Launch(*projectile, boss->GetPosition(), { sinf(angle), 0.0f, cosf(angle) }, m_params.speed);
     }
 
     AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Shoot.wav", 0.2f * m_params.sfxVolume);

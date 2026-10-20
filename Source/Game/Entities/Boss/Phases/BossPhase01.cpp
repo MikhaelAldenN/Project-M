@@ -15,6 +15,8 @@
 #include "EffectManager.h"
 #include "WindowShatter.h"
 #include <SDL3/SDL.h>
+#include <algorithm>
+#include <cassert>
 #include <random>
 
 using namespace DirectX;
@@ -49,14 +51,9 @@ void BossPhase01::Enter(Boss* boss) {
         WindowManager::Instance().MarkPriorityDirty();
     }
 
-    // ----- Pre-allocate bullet pool -----
-    m_bulletPool.clear();
-    m_bulletPool.reserve(500);
-    for (int i = 0; i < 500; ++i) {
-        auto b = std::make_unique<Bullet>();
-        b->SetActive(false);
-        m_bulletPool.push_back(std::move(b));
-    }
+    // ----- Projectile pool -----
+    m_projectiles.Clear();
+    if (!m_projectileModel) LoadProjectileModel();
 
     m_zonePrimitive = std::make_unique<Primitive>(Graphics::Instance().GetDevice());
 
@@ -121,9 +118,9 @@ void BossPhase01::Enter(Boss* boss) {
 }
 
 void BossPhase01::Exit(Boss* boss) {
-    // Why this order: attacks hold raw pointers into the pool.
+    // Why this order: attacks despawn the projectiles they still hold when stopped.
     StopAllAttacks(boss);
-    m_bulletPool.clear();
+    m_projectiles.Clear();
 
     if (m_bossGlitchVfxHandle != -1) {
         EffectManager::Instance().Stop(m_bossGlitchVfxHandle);
@@ -246,21 +243,34 @@ void BossPhase01::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
     auto renderer = Graphics::Instance().GetModelRenderer();
     auto shapeRenderer = Graphics::Instance().GetShapeRenderer();
 
-    for (auto& bullet : m_bulletPool) {
-        if (!bullet->IsActive()) continue;
+    const XMFLOAT4 normalColor{ AttackParamManager::Instance().GetRadialNormalParams().color };
+    const XMFLOAT4 returnColor{ AttackParamManager::Instance().GetUltimateParams().ballColor };
+    const XMMATRIX meshOffset{ XMLoadFloat4x4(&m_projectileMeshOffset) };
 
-        XMFLOAT4 color = AttackParamManager::Instance().GetRadialNormalParams().color;
+    for (const Projectile& projectile : m_projectiles.Slots()) {
+        if (!projectile.isActive) continue;
 
-        if (bullet->GetBossTarget() != nullptr)
-            color = AttackParamManager::Instance().GetUltimateParams().ballColor;
+        XMFLOAT4 color{ normalColor };
+        if (projectile.target == ProjectileTarget::boss) {
+            color = returnColor;
+        }
         else {
-            XMFLOAT3 vel = bullet->GetVelocity();
+            const XMFLOAT3& vel{ projectile.velocity };
             float speedSq = vel.x * vel.x + vel.z * vel.z;
             if (speedSq > 900.0f)
                 color = { 1.0f, 0.0f, 0.0f, 1.0f };
         }
 
-        renderer->Draw(ShaderId::Phong, bullet->GetModel(), color);
+        // Same composition Model::UpdateTransform applies to the root: scale, rotation, translation.
+        const float s{ projectile.visualScale };
+        const XMMATRIX world{ meshOffset
+            * XMMatrixScaling(s, s, s)
+            * XMMatrixRotationY(XMConvertToRadians(projectile.yawDegrees))
+            * XMMatrixTranslation(projectile.position.x, projectile.position.y, projectile.position.z) };
+        XMFLOAT4X4 worldMatrix{};
+        XMStoreFloat4x4(&worldMatrix, world);
+
+        renderer->Draw(ShaderId::Phong, m_projectileModel, color, worldMatrix);
     }
 
     for (auto& attack : m_activeAttacks) {
@@ -276,7 +286,7 @@ void BossPhase01::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
 void BossPhase01::AddAttack(std::unique_ptr<IBossAttackPattern> attack) {
     if (!attack) return;
 
-    attack->Start(m_bossRef, &m_bulletPool);
+    attack->Start(m_bossRef, &m_projectiles);
     m_activeAttacks.push_back(std::move(attack));
 }
 
@@ -322,7 +332,7 @@ void BossPhase01::AddUltimate(std::unique_ptr<AttackUltimate> attack) {
 void BossPhase01::TriggerRain(const RainParams& params, RainMode mode, bool isPositiveSide, float sweepDir) {
     if (HasRainActive() || !m_ai) return;
     m_rainAttack = std::make_unique<AttackRain>(params, mode, isPositiveSide, sweepDir, m_aiTarget);
-    m_rainAttack->Start(m_bossRef, &m_bulletPool);
+    m_rainAttack->Start(m_bossRef, &m_projectiles);
 }
 
 std::optional<XMFLOAT3> BossPhase01::TryParryAttack(const XMFLOAT3& parryPosition, Boss* boss) {
@@ -371,19 +381,51 @@ void BossPhase01::UpdateBossMovement(float dt, Boss* boss) {
 }
 
 void BossPhase01::UpdateBulletPool(float dt, Boss* boss) {
-    // Bullets are recycled once they are this far outside the arena edge.
+    ProjectileTargets targets{};
+    if (boss) targets.bossPosition = boss->GetPosition();
+    if (m_aiTarget) {
+        targets.playerPosition = m_aiTarget->GetPosition();
+        targets.playerVelocity = m_aiTarget->GetMovement()->GetVelocity();
+    }
+    m_projectiles.Update(dt, targets);
+
+    // Projectiles are recycled once they are this far outside the arena edge.
     constexpr float k_despawnMargin{ 30.0f };
     const float limitX{ (Beyond::Config::ARENA_WIDTH_UNITS * 0.5f) + k_despawnMargin };
     const float limitZ{ (Beyond::Config::ARENA_HEIGHT_UNITS * 0.5f) + k_despawnMargin };
 
-    for (auto& bullet : m_bulletPool) {
-        if (!bullet->IsActive()) continue;
-        bullet->Update(dt, nullptr);
+    const std::vector<Projectile>& slots{ m_projectiles.Slots() };
+    for (std::size_t i{ 0 }; i < slots.size(); ++i) {
+        const Projectile& projectile{ slots[i] };
+        if (!projectile.isActive) continue;
 
-        XMFLOAT3 bp = bullet->GetMovement()->GetPosition();
-        if (bp.x < -limitX || bp.x > limitX || bp.z < -limitZ || bp.z > limitZ)
-            bullet->SetActive(false);
+        const XMFLOAT3& p{ projectile.position };
+        if (p.x < -limitX || p.x > limitX || p.z < -limitZ || p.z > limitZ)
+            m_projectiles.Despawn(i);
     }
+}
+
+void BossPhase01::LoadProjectileModel() {
+    m_projectileModel = std::make_shared<Model>(
+        Graphics::Instance().GetDevice(), "Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");
+
+    // Why: each projectile is drawn with its own world matrix, which replaces the mesh node's
+    // world transform. Capture that node's offset from the root once, with the root at identity.
+    Model::Node* root{ m_projectileModel->GetRootNode() };
+    root->position = { 0.0f, 0.0f, 0.0f };
+    root->rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
+    root->scale = { 1.0f, 1.0f, 1.0f };
+
+    XMFLOAT4X4 identity{};
+    XMStoreFloat4x4(&identity, XMMatrixIdentity());
+    m_projectileModel->UpdateTransform(identity);
+
+    const std::vector<Model::Mesh>& meshes{ m_projectileModel->GetMeshes() };
+    assert(!meshes.empty() && "projectile model has no mesh");
+    // One world matrix per draw only works when every mesh hangs off the same node.
+    assert(std::all_of(meshes.begin(), meshes.end(),
+        [&](const Model::Mesh& mesh) { return mesh.node == meshes.front().node; }));
+    m_projectileMeshOffset = meshes.front().node->worldTransform;
 }
 
 void BossPhase01::UpdateGlitchVFX(float dt, Boss* boss) {
@@ -450,10 +492,7 @@ void BossPhase01::UpdateDeathSequence(float dt, Boss* boss) {
     }
 }
 
-void BossPhase01::AppendActiveProjectiles(std::vector<Bullet*>& out) const
+void BossPhase01::AppendActiveProjectiles(std::vector<Bullet*>& /*out*/) const
 {
-    for (const auto& bullet : m_bulletPool)
-    {
-        if (bullet->IsActive()) out.push_back(bullet.get());
-    }
+    // Bullet hell projectiles live in m_projectiles; callers read them through GetProjectilePool.
 }
