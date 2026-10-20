@@ -82,3 +82,15 @@ External/PhysX/
 # !External/**/*.lib
 # !External/**/*.dll
 /External/DirectXTex/Bin/Desktop_2022/x64/Debug/DirectXTex.lib
+
+# =================================
+# Local working files
+# =================================
+# Output of Tools/pack_code_2.1.bat; regenerate instead of committing.
+context_bundle.txt
+# Debug window rects written by WindowLayoutStore; differs per machine.
+window_layout.json
+# Working notes; the maintained copy lives outside the repository.
+/STATUS.md
+# Windows folder metadata
+desktop.ini
