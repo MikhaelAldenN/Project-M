@@ -110,14 +110,14 @@ public:
     // image is 1920x1080 on the desktop). Only needed where code talks to the OS.
     float GetDesktopScale() const { return m_desktopScale; }
 
-    // Accessors for Rendering (misal untuk menggambar overlay shatter)
+    // For rendering, for example the shatter overlay
     const std::vector<std::unique_ptr<TrackedWindow>>& GetWindows() const { return m_trackedWindows; }
 
-    // Helpers (Public karena mungkin Scene butuh untuk debug/rendering overlay)
+    // Public for scenes that draw debug or overlay graphics
     void WorldToScreenPos(const DirectX::XMFLOAT3& worldPos, float& outScreenX, float& outScreenY);
     float GetUnifiedCameraHeight();
 
-    // Jembatan untuk Pool System
+    // Used by WindowPool
     std::unique_ptr<TrackedWindow> ExtractForPool(const std::string& name);
     void RestoreFromPool(std::unique_ptr<TrackedWindow> window);
 

@@ -8,8 +8,7 @@
 class WindowSwarmRenderer
 {
 public:
-    // Ini data yang sangat ringan! Cuma 36 Byte per jendela.
-    // 2000 jendela = cuma ~72 KB memori yang dikirim ke GPU tiap frame. Sangat efisien!
+    // 36 bytes per window: 2000 windows upload about 72 KB per frame.
     struct InstanceData
     {
         DirectX::XMFLOAT3 position;
@@ -19,17 +18,17 @@ public:
 
     WindowSwarmRenderer(ID3D11Device* device);
 
-    // Dipanggil 1x setiap awal frame
+    // Call once at the start of each frame.
     void Begin();
 
-    // Dipanggil berulang kali untuk ngumpulin data (CPU Side, Super Cepat)
+    // Queues one window on the CPU; nothing is drawn yet.
     void AddWindow(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT2& size, const DirectX::XMFLOAT4& color);
 
-    // Tembakkan semua ke GPU dalam 1x Draw Call!
+    // Draws every queued window in one instanced draw call.
     void Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT4X4& viewProj, ID3D11ShaderResourceView* textureSRV);
 
 private:
-    static const UINT MaxInstances = 2000; // Kapasitas maksimal sayap
+    static const UINT MaxInstances = 2000; // AddWindow ignores windows beyond this count
 
     struct QuadVertex {
         DirectX::XMFLOAT3 position;
@@ -46,7 +45,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11PixelShader>   pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>   inputLayout;
 
-    Microsoft::WRL::ComPtr<ID3D11Buffer>        vertexBuffer;   // Statis
-    Microsoft::WRL::ComPtr<ID3D11Buffer>        instanceBuffer; // Dinamis
+    Microsoft::WRL::ComPtr<ID3D11Buffer>        vertexBuffer;   // static quad
+    Microsoft::WRL::ComPtr<ID3D11Buffer>        instanceBuffer; // per-instance data, rewritten every frame
     Microsoft::WRL::ComPtr<ID3D11Buffer>        constantBuffer;
 };

@@ -6,9 +6,7 @@
 #include <functional>
 #include <DirectXMath.h>
 
-// Forward declaration karena kita akan mendefinisikan ini di tempat lain, atau
-// kita asumsikan kamu akan memindahkan definisi struktur ini ke header global / terpisah nanti.
-// Untuk saat ini, kita include WindowTrackingSystem.h agar tipe datanya dikenali.
+// TrackedWindow and TrackedWindowConfig are defined here.
 #include "WindowTrackingSystem.h" 
 
 namespace Beyond
@@ -16,7 +14,7 @@ namespace Beyond
     class WindowPool
     {
     public:
-        // Singleton pattern agar pool ini bisa diakses dari mana saja tanpa dilempar-lempar
+        // Singleton, so any scene can reach the pool without passing it around.
         static WindowPool& Instance()
         {
             static WindowPool instance;
@@ -24,7 +22,7 @@ namespace Beyond
         }
 
         // --- CORE FUNCTIONS ---
-        // Mencoba mengambil window dari pool. Mengembalikan true jika berhasil, false jika pool kosong.
+        // Moves a pooled window back into tracking. Returns false if the pool is empty.
         bool Acquire(
             WindowTrackingSystem& trackingSystem,
             const TrackedWindowConfig& config,
@@ -32,10 +30,10 @@ namespace Beyond
             std::function<DirectX::XMFLOAT2()> getTargetSize = nullptr
         );
 
-        // Memasukkan window kembali ke pool (menyembunyikannya)
+        // Hides the window and moves it from tracking into the pool.
         void Release(WindowTrackingSystem& trackingSystem, const std::string& name);
 
-        // Membersihkan seluruh gudang (dipanggil saat pindah scene/reset)
+        // Drops every pooled window (scene change or reset).
         void Clear();
 
     private:
@@ -44,7 +42,7 @@ namespace Beyond
         WindowPool(const WindowPool&) = delete;
         WindowPool& operator=(const WindowPool&) = delete;
 
-        // "Gudang" penyimpanan
+        // Hidden windows waiting to be reused.
         std::vector<std::unique_ptr<TrackedWindow>> m_pool;
     };
 }

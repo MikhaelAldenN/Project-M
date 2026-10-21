@@ -30,10 +30,9 @@ WindowTrackingSystem::~WindowTrackingSystem()
 
 void WindowTrackingSystem::ClearAll()
 {
-    // Gunakan iterator untuk menghapus dengan aman
     for (auto it = m_trackedWindows.begin(); it != m_trackedWindows.end(); )
     {
-        // PENTING: Jangan pernah hancurkan MAIN_VIEWPORT!
+        // The main viewport window is never destroyed here; only sub-windows are.
         if ((*it)->role != WindowRole::MAIN_VIEWPORT)
         {
             if ((*it)->window) {
@@ -44,7 +43,7 @@ void WindowTrackingSystem::ClearAll()
         }
         else
         {
-            ++it; // Lewati Main Window
+            ++it;
         }
     }
 }
@@ -52,13 +51,13 @@ void WindowTrackingSystem::ClearAll()
 bool WindowTrackingSystem::AddTrackedWindow(
     const TrackedWindowConfig& config,
     std::function<DirectX::XMFLOAT3()> getTargetPos,
-    std::function<DirectX::XMFLOAT2()> getTargetSize // Parameter baru
+    std::function<DirectX::XMFLOAT2()> getTargetSize
 )
 {
     auto start = std::chrono::high_resolution_clock::now();
 
     // =========================================================
-    // [1] CEK POOL: DAUR ULANG WINDOW YANG TIDUR
+    // [1] Reuse an inactive window with the same transparency
     // =========================================================
     for (auto& tw : m_trackedWindows) {
         if (!tw->isActive && tw->isTransparent == config.isTransparent) {
@@ -86,7 +85,7 @@ bool WindowTrackingSystem::AddTrackedWindow(
                 if (config.fpsLimit > 0.0f) tw->window->SetTargetFPS(config.fpsLimit);
                 tw->window->LockUserMoveAndResize();
 
-                // Set Posisi Awal agar tidak nge-blink dari koordinat -10000
+                // Place the window before showing it, so it does not flash at the -10000 parking position.
                 if (getTargetPos) {
                     DirectX::XMFLOAT3 initialPos = getTargetPos();
                     float screenX, screenY;
@@ -98,10 +97,10 @@ bool WindowTrackingSystem::AddTrackedWindow(
                     SDL_SetWindowPosition(sdlWin, tw->state.actualX, tw->state.actualY);
                 }
 
-                SDL_ShowWindow(sdlWin); // Bangunkan window!
+                SDL_ShowWindow(sdlWin);
             }
 
-            m_windowLookup[config.name] = tw.get(); // Masukkan kembali ke lookup
+            m_windowLookup[config.name] = tw.get();
             WindowManager::Instance().MarkPriorityDirty();
 
             auto end = std::chrono::high_resolution_clock::now();
@@ -205,7 +204,7 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
     if (!tracked.window || !tracked.camera || !tracked.getTargetPositionFunc)
         return;
 
-    // 1. AMBIL POSISI OS SAAT INI (Kunci Anti-Ghosting / DWM Lag)
+    // 1. Read the current OS position and size
     int osX, osY, osW, osH;
     SDL_GetWindowPosition(tracked.window->GetSDLWindow(), &osX, &osY);
     SDL_GetWindowSize(tracked.window->GetSDLWindow(), &osW, &osH);
@@ -215,7 +214,7 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
     {
         tracked.state.actualW = osW;
         tracked.state.actualH = osH;
-        // Update target juga agar tidak snap balik. Target is kept in canvas pixels.
+        // Keep the target in step so the window does not snap back. Target is kept in canvas pixels.
         tracked.state.targetW = (float)osW / m_desktopScale;
         tracked.state.targetH = (float)osH / m_desktopScale;
     }
@@ -278,26 +277,25 @@ void WindowTrackingSystem::UpdateSingleWindow(float dt, TrackedWindow& tracked)
         const bool shakesWithCamera{ tracked.role == WindowRole::TRACKED_ENTITY };
 
         if (shakesWithCamera && trauma > 0.01f) {
-            float shakeIntensity = trauma * trauma; // Pangkat 2 untuk natural falloff
-            float maxShakePixels = 35.0f; // Jarak loncatan maksimal jendela di monitor!
+            float shakeIntensity = trauma * trauma; // squared for a softer falloff
+            float maxShakePixels = 35.0f; // largest offset, in desktop pixels
 
-            // RNG dari -1.0 sampai 1.0
+            // random value in [-1, 0.99]
             float randX = ((rand() % 200) / 100.0f) - 1.0f;
             float randY = ((rand() % 200) / 100.0f) - 1.0f;
 
             int shakeOffsetX = static_cast<int>(randX * shakeIntensity * maxShakePixels);
             int shakeOffsetY = static_cast<int>(randY * shakeIntensity * maxShakePixels);
 
-            // Terapkan getaran langsung ke OS Windows!
             SDL_SetWindowPosition(tracked.window->GetSDLWindow(), newX + shakeOffsetX, newY + shakeOffsetY);
 
-            // PENTING: Biarkan actualX/Y memegang koordinat 'newX' aslinya.
-            // Ini menjamin saat getaran selesai, jendela langsung snap-back ke jalur aslinya!
+            // actualX/Y keep the unshaken position, so the window is back on its path
+            // as soon as the shake ends.
             tracked.state.actualX = newX;
             tracked.state.actualY = newY;
         }
         else {
-            // --- LOGIKA NORMAL GUARD (Tanpa Getaran) ---
+            // No shake: move the OS window only when the target moved by half a pixel or more.
             float deltaX = fabsf(tracked.state.targetX - tracked.state.actualX);
             float deltaY = fabsf(tracked.state.targetY - tracked.state.actualY);
 
@@ -332,8 +330,8 @@ void WindowTrackingSystem::UpdateOffCenterProjection(Camera* targetCam, int winX
     DirectX::XMFLOAT3 currentPos = targetCam->GetPosition();
     targetCam->SetPosition(currentPos);
 
-    // Pastikan arah hadap kamera portal selalu tegak lurus ke bawah (Top-Down)
-    // agar proyeksi portal tetap konsisten dengan koordinat Desktop.
+    // The portal camera always looks straight down, so its projection lines up
+    // with desktop coordinates.
     targetCam->LookAt({ currentPos.x, 0.0f, currentPos.z });
 
     float nearZ = 0.1f;
@@ -365,7 +363,7 @@ void WindowTrackingSystem::UpdateOffCenterProjection(Camera* targetCam, int winX
 void WindowTrackingSystem::WorldToScreenPos(const DirectX::XMFLOAT3& worldPos, float& outScreenX, float& outScreenY)
 {
     // World origin sits at the centre of the arena rect.
-    // Note: Z world menjadi Y layar (negatif) karena coordinate system game ini
+    // World +Z maps to screen -Y.
     const float centerX{ static_cast<float>(m_arenaRect.x) + static_cast<float>(m_arenaRect.width) * 0.5f };
     const float centerY{ static_cast<float>(m_arenaRect.y) + static_cast<float>(m_arenaRect.height) * 0.5f };
 
@@ -384,28 +382,24 @@ float WindowTrackingSystem::GetUnifiedCameraHeight()
 
 void WindowTrackingSystem::RemoveTrackedWindow(const std::string& name)
 {
-    // 1. Cek apakah window ada di lookup table
     auto it = m_windowLookup.find(name);
-    if (it == m_windowLookup.end()) return; // Tidak ketemu, keluar.
+    if (it == m_windowLookup.end()) return;
 
     TrackedWindow* trackedInfo = it->second;
 
-    // 2. [POOLING LOGIC] Sembunyikan window fisik, jangan dihancurkan!
+    // Hide the OS window instead of destroying it.
     if (trackedInfo && trackedInfo->window && trackedInfo->window->GetSDLWindow())
     {
         SDL_Window* sdlWin = trackedInfo->window->GetSDLWindow();
         SDL_HideWindow(sdlWin);
-        SDL_SetWindowPosition(sdlWin, -10000, -10000); // Lempar jauh dari layar
+        SDL_SetWindowPosition(sdlWin, -10000, -10000); // park it off screen
 
         trackedInfo->isActive = false;
-        trackedInfo->name = "POOL_" + name; // Ganti nama agar tidak bentrok
+        trackedInfo->name = "POOL_" + name; // frees the original name for reuse
     }
 
-    // 3. Hapus dari Map Lookup saja agar ID-nya bisa dipakai lagi
+    // Only the lookup entry is removed: the name is free again, and the object stays in m_trackedWindows as a pooled window.
     m_windowLookup.erase(it);
-
-    // CATATAN: Kita TIDAK melakukan erase pada m_trackedWindows 
-    // agar objeknya tetap hidup sebagai pool.
 }
 
 void WindowTrackingSystem::RegisterWindow(Beyond::Window* window, WindowRole role, std::shared_ptr<Camera> camera)
@@ -413,15 +407,14 @@ void WindowTrackingSystem::RegisterWindow(Beyond::Window* window, WindowRole rol
     if (!window) return;
 
     auto tracked = std::make_unique<TrackedWindow>();
-    tracked->name = "main_window"; // ID statis agar mudah dicari
+    tracked->name = "main_window"; // fixed lookup name
     tracked->window = window;
     tracked->role = role;
     tracked->camera = camera;
 
-    // Berikan fungsi dummy (kosong) agar tidak crash saat di-update
+    // UpdateSingleWindow skips windows without a target function; the main window needs one.
     tracked->getTargetPositionFunc = []() { return DirectX::XMFLOAT3(0, 0, 0); };
 
-    // Ambil data posisi & ukuran awal dari OS Windows
     int osX, osY, osW, osH;
     SDL_GetWindowPosition(window->GetSDLWindow(), &osX, &osY);
     SDL_GetWindowSize(window->GetSDLWindow(), &osW, &osH);
@@ -441,7 +434,7 @@ void WindowTrackingSystem::RegisterWindow(Beyond::Window* window, WindowRole rol
 
 void WindowTrackingSystem::UpdateWindowBounds(int windowIndex, int width, int height)
 {
-    if (windowIndex == 0) // Index 0 adalah Main Window
+    if (windowIndex == 0) // index 0 is the main window
     {
         TrackedWindow* tracked = GetTrackedWindow("main_window");
         if (tracked)

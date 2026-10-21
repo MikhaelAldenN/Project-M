@@ -161,7 +161,6 @@ void WindowShatter::TransitionToNativeWindow()
         m_window->SetPriority(-1);
         m_window->SetAlwaysOnTop(true);
 
-        // Border Aktif
         SDL_SetWindowBordered(m_window->GetSDLWindow(), true);
 
         int finalX = (int)(screenX - (desktopWidth * 0.5f));
@@ -207,7 +206,7 @@ void WindowShatterManager::PreloadExplosion(DirectX::XMFLOAT2 centerWorldPos, in
     for (int i = 0; i < count; ++i)
     {
         SpawnSingleInstance(centerWorldPos, i, count);
-        // Paksa shatter yang baru di-spawn masuk mode tidur
+        // Preloaded shatters stay asleep until WakeUpAll().
         m_shatters.back()->SetSleeping(true);
     }
 }
@@ -228,7 +227,7 @@ void WindowShatter::EnforceScreenBounds()
     int x, y;
     SDL_GetWindowPosition(m_window->GetSDLWindow(), &x, &y);
 
-    // Ambil ukuran FISIK real (karena mungkin beda sama m_width logika)
+    // Physical size in desktop pixels; it can differ from the logical m_width.
     int realW, realH;
     SDL_GetWindowSize(m_window->GetSDLWindow(), &realW, &realH);
 
@@ -278,7 +277,7 @@ void WindowShatterManager::TriggerExplosion(DirectX::XMFLOAT2 centerWorldPos, in
 
 void WindowShatterManager::Update(float dt)
 {
-    // 1. Update semua shatter
+    // 1. Update every shatter
     for (auto& shatter : m_shatters)
     {
         shatter->Update(dt);
@@ -289,11 +288,11 @@ void WindowShatterManager::Update(float dt)
     {
         if (shatter->ShouldDestroy())
         {
-            shatter->Cleanup(); // Safe cleanup window dulu
+            shatter->Cleanup();
         }
     }
 
-    // 3. Baru hapus dari container (safe karena window sudah di-cleanup)
+    // 3. Erase them; their windows were cleaned up in step 2.
     m_shatters.erase(
         std::remove_if(m_shatters.begin(), m_shatters.end(),
             [](const std::unique_ptr<WindowShatter>& s) {
@@ -312,7 +311,6 @@ void WindowShatterManager::SpawnSingleInstance(DirectX::XMFLOAT2 centerPos, int 
     std::uniform_real_distribution<float> jitterAngle(-10.0f, 10.0f);
     float angleRad = DirectX::XMConvertToRadians((index * angleStep) + jitterAngle(gen));
 
-    // Speed kencang (800-1200)
     std::uniform_real_distribution<float> speedDist(4000.0f, 5000.0f);
     float speed = speedDist(gen);
     DirectX::XMFLOAT2 velocity = { cosf(angleRad) * speed, sinf(angleRad) * speed };
@@ -321,7 +319,7 @@ void WindowShatterManager::SpawnSingleInstance(DirectX::XMFLOAT2 centerPos, int 
     std::uniform_real_distribution<float> offsetDist(-2.0f, 2.0f);
     DirectX::XMFLOAT2 spawnPos = { centerPos.x + offsetDist(gen), centerPos.y + offsetDist(gen) };
 
-    // 3. Size (Agak besar supaya kelihatan mengecilnya)
+    // 3. Size: starts large so the shrinking is visible
     int size = static_cast<int>(std::uniform_real_distribution<float>(200.0f, 400.0f)(gen));
 
     // 4. Unique Name

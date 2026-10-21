@@ -4,36 +4,35 @@
 
 WindowSwarmRenderer::WindowSwarmRenderer(ID3D11Device* device)
 {
-    // 1. INPUT LAYOUT (Gabungan Data Vertex & Data Instance)
+    // 1. Input layout: per-vertex data in slot 0, per-instance data in slot 1
     D3D11_INPUT_ELEMENT_DESC layout[] =
     {
-        // --- SLOT 0: Data Vertex Statis (Per-Vertex) ---
+        // Slot 0: static quad vertices
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 
-        // --- SLOT 1: Data Instance Dinamis (Per-Instance) ---
-        // PENTING: Perhatikan angka '1' di parameter dan flag D3D11_INPUT_PER_INSTANCE_DATA!
+        // Slot 1: per-instance data. Input slot 1 with D3D11_INPUT_PER_INSTANCE_DATA
+        // advances once per instance instead of once per vertex.
         { "INST_POS",  0, DXGI_FORMAT_R32G32B32_FLOAT,    1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
         { "INST_SIZE", 0, DXGI_FORMAT_R32G32_FLOAT,       1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
         { "INST_COL",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
     };
 
-    // Load Shaders (Pastikan path file .cso kamu benar!)
     GpuResourceUtils::LoadVertexShader(device, "Data/Shader/SwarmVS.cso", layout, ARRAYSIZE(layout), inputLayout.GetAddressOf(), vertexShader.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Data/Shader/SwarmPS.cso", pixelShader.GetAddressOf());
     GpuResourceUtils::CreateConstantBuffer(device, sizeof(CbScene), constantBuffer.GetAddressOf());
 
-    // 2. CREATE VERTEX BUFFER (Bentuk Kotak - Dibuat mengelilingi titik tengah 0,0)
+    // 2. Vertex buffer: unit quad centred on the origin
     QuadVertex quad[4] = {
-        { {-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f} }, // Kiri Atas
-        { { 0.5f,  0.5f, 0.0f}, {1.0f, 0.0f} }, // Kanan Atas
-        { {-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f} }, // Kiri Bawah
-        { { 0.5f, -0.5f, 0.0f}, {1.0f, 1.0f} }  // Kanan Bawah
+        { {-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f} },
+        { { 0.5f,  0.5f, 0.0f}, {1.0f, 0.0f} },
+        { {-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f} },
+        { { 0.5f, -0.5f, 0.0f}, {1.0f, 1.0f} }
     };
 
     D3D11_BUFFER_DESC vbDesc = {};
     vbDesc.ByteWidth = sizeof(QuadVertex) * 4;
-    vbDesc.Usage = D3D11_USAGE_IMMUTABLE; // Tidak akan pernah berubah
+    vbDesc.Usage = D3D11_USAGE_IMMUTABLE;
     vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     D3D11_SUBRESOURCE_DATA vbData = { quad, 0, 0 };
     device->CreateBuffer(&vbDesc, &vbData, vertexBuffer.GetAddressOf());
@@ -41,8 +40,8 @@ WindowSwarmRenderer::WindowSwarmRenderer(ID3D11Device* device)
     // 3. CREATE INSTANCE BUFFER
     D3D11_BUFFER_DESC ibDesc = {};
     ibDesc.ByteWidth = sizeof(InstanceData) * MaxInstances;
-    ibDesc.Usage = D3D11_USAGE_DYNAMIC;           // Bisa di-update tiap frame
-    ibDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;  // Secara teknis ini diperlakukan seperti Vertex Buffer
+    ibDesc.Usage = D3D11_USAGE_DYNAMIC;
+    ibDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;  // bound as the second vertex buffer (slot 1)
     ibDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     device->CreateBuffer(&ibDesc, nullptr, instanceBuffer.GetAddressOf());
 
@@ -51,7 +50,7 @@ WindowSwarmRenderer::WindowSwarmRenderer(ID3D11Device* device)
 
 void WindowSwarmRenderer::Begin()
 {
-    instances.clear(); // Bersihkan antrean dari frame sebelumnya
+    instances.clear();
 }
 
 void WindowSwarmRenderer::AddWindow(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT2& size, const DirectX::XMFLOAT4& color)
@@ -66,12 +65,12 @@ void WindowSwarmRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT
 {
     if (instances.empty() || !textureSRV) return;
 
-    // 1. Update Constant Buffer (Matriks Kamera)
+    // 1. Update the constant buffer (view-projection)
     CbScene cb = { viewProj };
     dc->UpdateSubresource(constantBuffer.Get(), 0, 0, &cb, 0, 0);
 
     // 2. Update Instance Buffer (Map -> memcpy -> Unmap)
-    // D3D11_MAP_WRITE_DISCARD memastikan CPU tidak stall menunggu GPU selesai merender frame sebelumnya.
+    // WRITE_DISCARD returns fresh memory, so the CPU does not wait for the GPU to finish reading last frame's data.
     D3D11_MAPPED_SUBRESOURCE mapped;
     if (SUCCEEDED(dc->Map(instanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
     {
@@ -79,14 +78,14 @@ void WindowSwarmRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT
         dc->Unmap(instanceBuffer.Get(), 0);
     }
 
-    // 3. Bind State ke Pipeline
+    // 3. Bind the pipeline state
     dc->VSSetShader(vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(pixelShader.Get(), nullptr, 0);
     dc->IASetInputLayout(inputLayout.Get());
     dc->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
     dc->PSSetShaderResources(0, 1, &textureSRV);
 
-    // 4. BIND 2 BUFFER SEKALIGUS! (Ini rahasia Instancing)
+    // 4. Bind the quad and the instance buffer to slots 0 and 1
     ID3D11Buffer* buffers[2] = { vertexBuffer.Get(), instanceBuffer.Get() };
     UINT strides[2] = { sizeof(QuadVertex), sizeof(InstanceData) };
     UINT offsets[2] = { 0, 0 };
@@ -94,6 +93,6 @@ void WindowSwarmRenderer::Render(ID3D11DeviceContext* dc, const DirectX::XMFLOAT
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
     dc->IASetVertexBuffers(0, 2, buffers, strides, offsets);
 
-    // 5. EKSEKUSI! (Gambar 4 titik, tapi diulang otomatis oleh GPU sebanyak jumlah instance)
+    // 5. Draw the 4-vertex quad once per instance
     dc->DrawInstanced(4, static_cast<UINT>(instances.size()), 0, 0);
 }

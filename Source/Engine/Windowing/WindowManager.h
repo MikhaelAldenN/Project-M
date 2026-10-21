@@ -41,10 +41,8 @@ public:
     // Helper functions
     // --------------------------------------------------------
 
-    // 1. Cek apakah ada window yang hidup (Dipakai di Main.cpp)
     bool HasWindows() const { return !windows.empty(); }
 
-    // 2. Ambil window berdasarkan index (Dipakai di Framework.cpp untuk ambil Main Window)
     Beyond::Window* GetWindowByIndex(size_t index)
     {
         if (index < windows.size()) return windows[index].get();

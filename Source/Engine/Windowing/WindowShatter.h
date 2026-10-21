@@ -84,7 +84,7 @@ private:
     bool m_isSleeping = false;
 };
 
-// Manager definition (tidak berubah, copy paste saja bagian class WindowShatterManager seperti sebelumnya)
+// Owns every shatter window and updates them together.
 class WindowShatterManager
 {
 public:

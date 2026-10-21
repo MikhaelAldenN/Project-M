@@ -3,7 +3,7 @@
 #include <SDL3/SDL.h>
 #include <d3d11.h>
 #include <dxgi1_3.h> 
-#include <dcomp.h> // Wajib untuk transparansi per-pixel di Windows
+#include <dcomp.h> // required for per-pixel window transparency
 #include <wrl.h>
 #include <functional>
 
@@ -82,7 +82,7 @@ namespace Beyond
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_renderTargetView;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthStencilView;
 
-        // ── DirectComposition untuk Transparansi ──
+        // ── DirectComposition (transparent windows) ──
         Microsoft::WRL::ComPtr<IDCompositionDevice>    m_dcompDevice;
         Microsoft::WRL::ComPtr<IDCompositionTarget>    m_dcompTarget;
         Microsoft::WRL::ComPtr<IDCompositionVisual>    m_dcompVisual;

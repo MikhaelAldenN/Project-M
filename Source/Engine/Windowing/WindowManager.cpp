@@ -6,7 +6,7 @@
 #include "SceneBoss.h"
 #include <mutex>
 #include "Framework.h"
-#include <SDL3/SDL.h> // Wajib untuk SDL_RaiseWindow
+#include <SDL3/SDL.h>
 #include "Engine/Common/Constants.h"
 #include "Engine/Graphics/GameCanvas.h"
 
@@ -37,7 +37,6 @@ void WindowManager::Update(float dt)
 
 void WindowManager::EnforceWindowPriorities()
 {
-    // 1. Kumpulkan semua window yang valid
     std::vector<Beyond::Window*> sortedWindows;
     sortedWindows.reserve(windows.size());
 
@@ -49,7 +48,6 @@ void WindowManager::EnforceWindowPriorities()
         }
     }
 
-    // 2. Urutkan berdasarkan prioritas (Ascending / Terendah dulu)
     std::sort(sortedWindows.begin(), sortedWindows.end(),
         [](Beyond::Window* a, Beyond::Window* b) {
             return a->GetPriority() < b->GetPriority();
@@ -87,7 +85,6 @@ void WindowManager::RenderAll(float dt, Scene* scene, const GameCanvas* canvas)
             if (scene) scene->Render(dt, win->GetCamera());
         }
 
-        // Ambil Alpha dan mulai render
         float bgAlpha = win->GetBackgroundAlpha();
 
         // Why only with the canvas: there the clear colour shows only as the letterbox.
@@ -95,7 +92,6 @@ void WindowManager::RenderAll(float dt, Scene* scene, const GameCanvas* canvas)
         const float clearGray{ usesCanvas ? k_letterboxGray : 0.0f };
         win->BeginRender(clearGray, clearGray, clearGray, bgAlpha);
 
-        // Jika ini Main Window (Index 0)
         if (isMainWindow)
         {
             if (usesCanvas)
@@ -122,7 +118,7 @@ void WindowManager::RenderAll(float dt, Scene* scene, const GameCanvas* canvas)
             if (m_imguiOnMainWindow) {
                 ImGuiRenderer::Render(Graphics::Instance().GetDeviceContext());
             }
-        }        // Jika ini Sub Window (Windowkill, dsb)
+        }
         else
         {
             if (scene && win->ShouldRenderScene()) {
@@ -134,7 +130,6 @@ void WindowManager::RenderAll(float dt, Scene* scene, const GameCanvas* canvas)
     }
 }
 
-// Perhatikan parameternya sekarang menggunakan SDL_Window*
 void WindowManager::HandleResize(SDL_Window* sdlWindow, int width, int height)
 {
     for (auto& win : windows)
@@ -182,6 +177,5 @@ void WindowManager::DestroyWindow(Beyond::Window* targetWindow)
 
 void WindowManager::ClearAll()
 {
-    // Menghapus semua window dari memori dan memanggil destructor-nya
     windows.clear();
 }

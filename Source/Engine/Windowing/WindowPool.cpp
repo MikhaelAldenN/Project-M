@@ -12,10 +12,9 @@ namespace Beyond
     {
         if (m_pool.empty())
         {
-            return false; // Pool kosong, beri tahu pemanggil untuk membuat baru
+            return false; // the caller creates a new window instead
         }
 
-        // Ambil satu dari gudang
         auto recycled = std::move(m_pool.back());
         m_pool.pop_back();
 
@@ -33,11 +32,10 @@ namespace Beyond
                 recycled->window->SetTargetFPS(config.fpsLimit);
             }
 
-            // Tampilkan kembali
             SDL_ShowWindow(recycled->window->GetSDLWindow());
         }
 
-        // Masukkan kembali ke sistem tracking agar mulai dihitung posisinya
+        // Ownership goes back to the tracking system, which positions the window again.
         trackingSystem.RestoreFromPool(std::move(recycled));
 
         return true;
@@ -45,26 +43,24 @@ namespace Beyond
 
     void WindowPool::Release(WindowTrackingSystem& trackingSystem, const std::string& name)
     {
-        // Minta tracking system untuk melepaskan kepemilikan window ini
+        // Take ownership of the window away from the tracking system.
         std::unique_ptr<TrackedWindow> extractedWindow = trackingSystem.ExtractForPool(name);
 
         if (extractedWindow)
         {
             if (extractedWindow->window)
             {
-                // Sembunyikan window
                 SDL_HideWindow(extractedWindow->window->GetSDLWindow());
             }
 
-            // Masukkan ke gudang
             m_pool.push_back(std::move(extractedWindow));
         }
     }
 
     void WindowPool::Clear()
     {
-        // Karena vector berisi unique_ptr, clear() otomatis akan memanggil destructor 
-        // TrackedWindow, yang pada gilirannya harus menghancurkan Beyond::Window (pastikan ini terjadi).
+        // TrackedWindow only borrows its Beyond::Window (WindowManager owns it),
+        // so clearing the pool does not destroy the OS windows.
         m_pool.clear();
     }
 }
