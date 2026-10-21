@@ -10,7 +10,7 @@ using namespace DirectX;
 AttackBoomerangs::AttackBoomerangs(const BoomerangParams& params)
     : m_params(params) {}
 
-void AttackBoomerangs::Start(Boss* boss, BossBulletPool* pool) {
+void AttackBoomerangs::Start(Boss* boss, ProjectilePool* pool) {
     assert(pool && "AttackBoomerangs needs the phase's projectile pool");
     m_pool = pool;
     if (!m_mesh.IsLoaded()) m_mesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");

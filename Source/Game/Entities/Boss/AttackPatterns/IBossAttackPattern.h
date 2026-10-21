@@ -6,12 +6,8 @@
 
 class Boss;
 class Camera;
-struct ID3D11DeviceContext;
-
 class ProjectilePool;
-
-// Projectiles shared by all attacks of one phase. Owned by the phase.
-using BossBulletPool = ProjectilePool;
+struct ID3D11DeviceContext;
 
 struct BossMoveTarget {
     DirectX::XMFLOAT3 position{};
@@ -26,7 +22,7 @@ public:
     // Starts the attack: resources, tracking windows, VFX, first bullets.
     // `boss` and `pool` are borrowed and outlive the attack. `pool` is the running phase's
     // shared projectile pool.
-    virtual void Start(Boss* boss, BossBulletPool* pool) = 0;
+    virtual void Start(Boss* boss, ProjectilePool* pool) = 0;
 
     // Processes bullet physics, window tracking, and spawning logic.
     virtual void Update(float dt, Boss* boss) = 0;

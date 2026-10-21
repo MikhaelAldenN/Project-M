@@ -12,7 +12,7 @@ using namespace DirectX;
 AttackBlasters::AttackBlasters(const BlasterParams& params, bool isTargeted, float targetX)
     : m_params(params), m_isTargeted(isTargeted), m_targetX(targetX) {}
 
-void AttackBlasters::Start(Boss* boss, BossBulletPool* /*pool*/) 
+void AttackBlasters::Start(Boss* boss, ProjectilePool* /*pool*/) 
 {
     auto device = Graphics::Instance().GetDevice();
     m_solidRenderer = std::make_unique<Primitive>(device);

@@ -28,7 +28,7 @@ public:
     AttackSpears(const UndyneSpearParams& params, Player* target);
     ~AttackSpears() override = default;
 
-    void Start(Boss* boss, BossBulletPool* pool) override;
+    void Start(Boss* boss, ProjectilePool* pool) override;
     void Update(float dt, Boss* boss) override;
     void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) override;
     void Stop(Boss* boss) override;
@@ -51,7 +51,7 @@ private:
 
     UndyneSpearParams m_params;
     Player* m_playerTarget;
-    BossBulletPool* m_pool = nullptr; // borrowed from the phase, set in Start
+    ProjectilePool* m_pool = nullptr; // borrowed from the phase, set in Start
     ProjectileMesh m_mesh;
     std::vector<UndyneSpearWindow> m_spears;
 

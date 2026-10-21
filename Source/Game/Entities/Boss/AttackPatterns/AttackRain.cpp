@@ -22,7 +22,7 @@ AttackRain::AttackRain(const RainParams& params, RainMode mode, bool isPositiveS
     m_vfxHandles.assign(params.triggerCount * maxDrops, -1);
 }
 
-void AttackRain::Start(Boss* boss, BossBulletPool* pool) {
+void AttackRain::Start(Boss* boss, ProjectilePool* pool) {
     assert(pool && "AttackRadial needs the phase's bullet pool");
     m_pool = pool;
     m_boss = boss;

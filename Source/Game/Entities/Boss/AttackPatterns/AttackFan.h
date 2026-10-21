@@ -34,7 +34,7 @@ public:
     // Used by the combo AI to override the parameters.
     void SetParams(const FanParams& newParams) { m_params = newParams; }
 
-    void Start(Boss* boss, BossBulletPool* pool) override;
+    void Start(Boss* boss, ProjectilePool* pool) override;
     void Update(float dt, Boss* boss) override;
     void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) override;
     void Stop(Boss* boss) override;
@@ -46,7 +46,7 @@ private:
 
     FanParams                             m_params;
     float                                 m_lockedBaseAngle = 0.0f;
-    BossBulletPool* m_pool = nullptr; // borrowed from the phase, set in Start
+    ProjectilePool* m_pool = nullptr; // borrowed from the phase, set in Start
     Boss* m_boss = nullptr;
     Player* m_target = nullptr;
 

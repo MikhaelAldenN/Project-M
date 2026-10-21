@@ -60,7 +60,7 @@ public:
     AttackUltimate(const UltimateParams& params, Player* target);
     ~AttackUltimate() override = default;
 
-    void Start(Boss* boss, BossBulletPool* pool) override;
+    void Start(Boss* boss, ProjectilePool* pool) override;
     void Update(float dt, Boss* boss) override;
     void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) override;
     void Stop(Boss* boss) override;
@@ -81,7 +81,7 @@ private:
 
     UltimateParams                        m_params;
     Player* m_target = nullptr;
-    BossBulletPool* m_pool = nullptr; // borrowed from the phase, set in Start
+    ProjectilePool* m_pool = nullptr; // borrowed from the phase, set in Start
 
     State m_state = State::Done;
 

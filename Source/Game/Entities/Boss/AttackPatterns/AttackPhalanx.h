@@ -43,7 +43,7 @@ public:
     AttackPhalanx(const PhalanxParams& params, Player* target);
     ~AttackPhalanx() override = default;
 
-    void Start(Boss* boss, BossBulletPool* pool) override;
+    void Start(Boss* boss, ProjectilePool* pool) override;
     void Update(float dt, Boss* boss) override;
     void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) override;
     void Stop(Boss* boss) override;
@@ -57,7 +57,7 @@ private:
 
     PhalanxParams                         m_params;
     Player* m_target = nullptr;
-    BossBulletPool* m_pool = nullptr; // borrowed from the phase, set in Start
+    ProjectilePool* m_pool = nullptr; // borrowed from the phase, set in Start
     Boss* m_boss = nullptr;
 
     int   m_state = 0;

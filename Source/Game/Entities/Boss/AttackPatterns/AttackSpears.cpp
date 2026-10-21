@@ -12,7 +12,7 @@ using namespace DirectX;
 AttackSpears::AttackSpears(const UndyneSpearParams& params, Player* target)
     : m_params(params), m_playerTarget(target) {}
 
-void AttackSpears::Start(Boss* boss, BossBulletPool* pool) {
+void AttackSpears::Start(Boss* boss, ProjectilePool* pool) {
     assert(pool && "AttackSpears needs the phase's projectile pool");
     m_pool = pool;
     if (!m_mesh.IsLoaded()) m_mesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");

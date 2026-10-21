@@ -11,7 +11,7 @@ using namespace DirectX;
 AttackMeteor::AttackMeteor(const MeteorParams& params)
     : m_params(params) {}
 
-void AttackMeteor::Start(Boss* boss, BossBulletPool* pool) {
+void AttackMeteor::Start(Boss* boss, ProjectilePool* pool) {
     assert(pool && "AttackMeteor needs the phase's bullet pool");
     m_pool = pool;
     m_active = true;

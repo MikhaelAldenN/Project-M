@@ -11,7 +11,7 @@ using namespace DirectX;
 AttackBouncing::AttackBouncing(const BouncingBulletParams& params)
     : m_params(params) {}
 
-void AttackBouncing::Start(Boss* boss, BossBulletPool* pool) {
+void AttackBouncing::Start(Boss* boss, ProjectilePool* pool) {
     assert(pool && "AttackBouncing needs the phase's projectile pool");
     m_pool = pool;
     if (!m_mesh.IsLoaded()) m_mesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");

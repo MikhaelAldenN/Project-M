@@ -16,7 +16,7 @@ using namespace DirectX;
 AttackUltimate::AttackUltimate(const UltimateParams& params, Player* target)
     : m_params(params), m_target(target) {}
 
-void AttackUltimate::Start(Boss* boss, BossBulletPool* pool) {
+void AttackUltimate::Start(Boss* boss, ProjectilePool* pool) {
     assert(pool && "AttackUltimate needs the phase's bullet pool");
     m_pool = pool;
     m_state = State::Moving;
