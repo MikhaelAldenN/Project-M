@@ -378,6 +378,9 @@
     <ClCompile Include="Source\Game\Entities\ProjectilePool.cpp">
       <Filter>Source\Game\Entities</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Entities\ProjectileMesh.cpp">
+      <Filter>Source\Game\Entities</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\BasicShader.h">
@@ -773,6 +776,9 @@
       <Filter>Source\Game\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Entities\ProjectilePool.h">
+      <Filter>Source\Game\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Entities\ProjectileMesh.h">
       <Filter>Source\Game\Entities</Filter>
     </ClInclude>
   </ItemGroup>

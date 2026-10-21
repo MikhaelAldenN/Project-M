@@ -207,6 +207,7 @@
     <ClInclude Include="Source\Game\Entities\NaviAlly.h" />
     <ClInclude Include="Source\Game\Entities\Player.h" />
     <ClInclude Include="Source\Game\Entities\PlayerConstants.h" />
+    <ClInclude Include="Source\Game\Entities\ProjectileMesh.h" />
     <ClInclude Include="Source\Game\Entities\ProjectilePool.h" />
     <ClInclude Include="Source\Game\Entities\Weapon.h" />
     <ClInclude Include="Source\Game\Scenes\Scene.h" />
@@ -324,6 +325,7 @@
     <ClCompile Include="Source\Game\Entities\ItemManager.cpp" />
     <ClCompile Include="Source\Game\Entities\NaviAlly.cpp" />
     <ClCompile Include="Source\Game\Entities\Player.cpp" />
+    <ClCompile Include="Source\Game\Entities\ProjectileMesh.cpp" />
     <ClCompile Include="Source\Game\Entities\ProjectilePool.cpp" />
     <ClCompile Include="Source\Game\Entities\Weapon.cpp" />
     <ClCompile Include="Source\Game\Scenes\SceneBoss.cpp" />

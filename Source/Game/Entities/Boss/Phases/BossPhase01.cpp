@@ -53,7 +53,7 @@ void BossPhase01::Enter(Boss* boss) {
 
     // ----- Projectile pool -----
     m_projectiles.Clear();
-    if (!m_projectileModel) LoadProjectileModel();
+    if (!m_projectileMesh.IsLoaded()) m_projectileMesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");
 
     m_zonePrimitive = std::make_unique<Primitive>(Graphics::Instance().GetDevice());
 
@@ -245,7 +245,6 @@ void BossPhase01::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
 
     const XMFLOAT4 normalColor{ AttackParamManager::Instance().GetRadialNormalParams().color };
     const XMFLOAT4 returnColor{ AttackParamManager::Instance().GetUltimateParams().ballColor };
-    const XMMATRIX meshOffset{ XMLoadFloat4x4(&m_projectileMeshOffset) };
 
     for (const Projectile& projectile : m_projectiles.Slots()) {
         if (!projectile.isActive) continue;
@@ -261,16 +260,8 @@ void BossPhase01::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
                 color = { 1.0f, 0.0f, 0.0f, 1.0f };
         }
 
-        // Same composition Model::UpdateTransform applies to the root: scale, rotation, translation.
-        const float s{ projectile.visualScale };
-        const XMMATRIX world{ meshOffset
-            * XMMatrixScaling(s, s, s)
-            * XMMatrixRotationY(XMConvertToRadians(projectile.yawDegrees))
-            * XMMatrixTranslation(projectile.position.x, projectile.position.y, projectile.position.z) };
-        XMFLOAT4X4 worldMatrix{};
-        XMStoreFloat4x4(&worldMatrix, world);
-
-        renderer->Draw(ShaderId::Phong, m_projectileModel, color, worldMatrix);
+        m_projectileMesh.Draw(*renderer, ShaderId::Phong, color, projectile.position,
+            projectile.visualScale, XMConvertToRadians(projectile.yawDegrees));
     }
 
     for (auto& attack : m_activeAttacks) {
@@ -403,29 +394,6 @@ void BossPhase01::UpdateBulletPool(float dt, Boss* boss) {
         if (p.x < -limitX || p.x > limitX || p.z < -limitZ || p.z > limitZ)
             m_projectiles.Despawn(i);
     }
-}
-
-void BossPhase01::LoadProjectileModel() {
-    m_projectileModel = std::make_shared<Model>(
-        Graphics::Instance().GetDevice(), "Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");
-
-    // Why: each projectile is drawn with its own world matrix, which replaces the mesh node's
-    // world transform. Capture that node's offset from the root once, with the root at identity.
-    Model::Node* root{ m_projectileModel->GetRootNode() };
-    root->position = { 0.0f, 0.0f, 0.0f };
-    root->rotation = { 0.0f, 0.0f, 0.0f, 1.0f };
-    root->scale = { 1.0f, 1.0f, 1.0f };
-
-    XMFLOAT4X4 identity{};
-    XMStoreFloat4x4(&identity, XMMatrixIdentity());
-    m_projectileModel->UpdateTransform(identity);
-
-    const std::vector<Model::Mesh>& meshes{ m_projectileModel->GetMeshes() };
-    assert(!meshes.empty() && "projectile model has no mesh");
-    // One world matrix per draw only works when every mesh hangs off the same node.
-    assert(std::all_of(meshes.begin(), meshes.end(),
-        [&](const Model::Mesh& mesh) { return mesh.node == meshes.front().node; }));
-    m_projectileMeshOffset = meshes.front().node->worldTransform;
 }
 
 void BossPhase01::UpdateGlitchVFX(float dt, Boss* boss) {

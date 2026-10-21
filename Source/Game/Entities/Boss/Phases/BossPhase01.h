@@ -4,6 +4,7 @@
 #include "Primitive.h"
 #include "UIDialogueBox.h"
 #include "IBossAttackPattern.h"
+#include "ProjectileMesh.h"
 #include "ProjectilePool.h"
 #include "System/Model.h"
 
@@ -72,7 +73,6 @@ private:
     void UpdateBossMovement(float dt, Boss* boss);
     void UpdateIdleHover(float dt, Boss* boss);
     void UpdateBulletPool(float dt, Boss* boss);
-    void LoadProjectileModel();
     void UpdateGlitchVFX(float dt, Boss* boss);
     void UpdateDeathSequence(float dt, Boss* boss);
 
@@ -82,8 +82,7 @@ private:
     // ---- Projectile pool ----
     static constexpr std::size_t k_projectileCapacity{ 500 };
     ProjectilePool m_projectiles{ k_projectileCapacity };
-    std::shared_ptr<Model> m_projectileModel;     // one model drawn for every projectile
-    DirectX::XMFLOAT4X4 m_projectileMeshOffset{}; // mesh node transform relative to the model root
+    ProjectileMesh m_projectileMesh; // one model drawn for every projectile
 
     // ---- Active attacks ----
     std::vector<std::unique_ptr<IBossAttackPattern>> m_activeAttacks;
