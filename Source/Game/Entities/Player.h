@@ -198,16 +198,22 @@ private:
     void StandOnGround();
 
     // --- Update pipeline (called in order from Update()) ---
+    void UpdateUncapRegen(float elapsedTime);
     void UpdateDashRecovery(float dt);
     [[nodiscard]] bool HasFullDash() const { return m_dashCharges > 0; }
     void HandleMovementInput(float dt);
     void HandleAimInput(Camera* camera);
     void UpdateHorizontalMovement(float dt);
+    void UpdateActionState(float elapsedTime);
+    void AutoSheatheSword();
     void UpdateFootRotation(float dt, float& outSmoothedYaw);
     void UpdateAimConstraint(float dt, float& inOutSmoothedYaw, bool& outShouldAim, float& outRelativeAngle);
     void UpdateAimConstraint(float& inOutSmoothedYaw, bool& outShouldAim, float& outRelativeAngle);
     void ApplyWorldMatrix(float smoothedYaw, bool shouldAim, float relativeAngle);
     void UpdateProjectiles(float dt);
+    void UpdateDashReadyVfx();
+    void UpdateDashStandbyVfx();
+    void UpdateOverdriveVfx();
 
     // --- Owned components ---
     std::unique_ptr<StateMachine>        stateMachine;

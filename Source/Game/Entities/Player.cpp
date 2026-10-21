@@ -159,17 +159,7 @@ void Player::Update(float elapsedTime, Camera* camera)
         m_invincibilityTimer -= elapsedTime;
     }
 
-    if (m_isPowerUncapped && m_hp > 0 && m_hp < m_uncapMaxRegenHP) {
-        m_uncapRegenAccumulator += m_uncapHealthRegenPerSecond * elapsedTime;
-        int healAmount = static_cast<int>(m_uncapRegenAccumulator);
-        if (healAmount > 0) {
-            Heal(healAmount);
-            m_uncapRegenAccumulator -= static_cast<float>(healAmount);
-        }
-    }
-    else {
-        m_uncapRegenAccumulator = 0.0f;
-    }
+    UpdateUncapRegen(elapsedTime);
 
     UpdateDashRecovery(elapsedTime);
 
@@ -183,40 +173,11 @@ void Player::Update(float elapsedTime, Camera* camera)
 
     UpdateHorizontalMovement(elapsedTime);
 
-    // -------------------------------------------------------------
-    // DEBUG: BYPASS THE STATE MACHINE FOR WEAPON TUNING
-    // -------------------------------------------------------------
-    if (m_debugState.forceAnimation)
-    {
-        // Force the animation on loop, bypassing the State Machine entirely!
-        if (!animator->IsPlaying(m_debugState.animationName))
-        {
-            // Note: We play this on the FULL body, ignoring PlayUpper, 
-            // so you get a perfectly clean stance for tuning!
-            animator->Play(m_debugState.animationName, true, 0.2f);
-        }
-    }
-    else
-    {
-        // Normal Gameplay
-        if (stateMachine) stateMachine->Update(this, elapsedTime);
-    }
-    // -------------------------------------------------------------
+    UpdateActionState(elapsedTime);
 
     if (animator) animator->Update(elapsedTime);
 
-    // -------------------------------------------------------------
-    // WEAPON STATE MANAGER (AUTO-SHEATHE)
-    // -------------------------------------------------------------
-    // If the player is holding the Sword, but the upper-body attack 
-    // animation has officially finished, automatically revert to the Crossbow.
-    // The !m_debugState check ensures the sword doesn't vanish while you are tuning it in the GUI!
-    if (!m_debugState.forceAnimation && m_activeWeaponType == WeaponType::Sword && !animator->IsUpperPlaying())
-    {
-        SetActiveWeapon(WeaponType::Crossbow);
-        m_aimLocked = false;
-    }
-    // -------------------------------------------------------------
+    AutoSheatheSword();
 
     float smoothedYaw = 0.0f;
     bool  shouldAim = false;
@@ -235,9 +196,72 @@ void Player::Update(float elapsedTime, Camera* camera)
     ApplyWorldMatrix(smoothedYaw, shouldAim, relativeAngle);
     UpdateProjectiles(elapsedTime);
 
-    // =========================================================
-    // Keep the Dash Ready VFX attached to the player
-    // =========================================================
+    UpdateDashReadyVfx();
+
+    if (m_damageGlitchTimer > 0.0f)
+    {
+        m_damageGlitchTimer = (std::max)(0.0f, m_damageGlitchTimer - elapsedTime);
+    }
+
+    if (m_hp <= 0) return;
+    UpdateDashStandbyVfx();
+    UpdateOverdriveVfx();
+}
+
+// ============================================================
+// UPDATE SUB-STEPS
+// ============================================================
+
+void Player::UpdateUncapRegen(float elapsedTime)
+{
+    if (m_isPowerUncapped && m_hp > 0 && m_hp < m_uncapMaxRegenHP) {
+        m_uncapRegenAccumulator += m_uncapHealthRegenPerSecond * elapsedTime;
+        int healAmount = static_cast<int>(m_uncapRegenAccumulator);
+        if (healAmount > 0) {
+            Heal(healAmount);
+            m_uncapRegenAccumulator -= static_cast<float>(healAmount);
+        }
+    }
+    else {
+        m_uncapRegenAccumulator = 0.0f;
+    }
+}
+
+void Player::UpdateActionState(float elapsedTime)
+{
+    // Debug: a forced animation bypasses the state machine for weapon tuning.
+    if (m_debugState.forceAnimation)
+    {
+        // Force the animation on loop, bypassing the State Machine entirely!
+        if (!animator->IsPlaying(m_debugState.animationName))
+        {
+            // Note: We play this on the FULL body, ignoring PlayUpper, 
+            // so you get a perfectly clean stance for tuning!
+            animator->Play(m_debugState.animationName, true, 0.2f);
+        }
+    }
+    else
+    {
+        // Normal Gameplay
+        if (stateMachine) stateMachine->Update(this, elapsedTime);
+    }
+}
+
+void Player::AutoSheatheSword()
+{
+    // If the player is holding the Sword, but the upper-body attack 
+    // animation has officially finished, automatically revert to the Crossbow.
+    // The !m_debugState check ensures the sword doesn't vanish while you are tuning it in the GUI!
+    if (!m_debugState.forceAnimation && m_activeWeaponType == WeaponType::Sword && !animator->IsUpperPlaying())
+    {
+        SetActiveWeapon(WeaponType::Crossbow);
+        m_aimLocked = false;
+    }
+}
+
+void Player::UpdateDashReadyVfx()
+{
+    // Keeps the Dash Ready VFX attached to the player.
     if (m_dashReadyVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashReadyVfxHandle))
     {
         DirectX::XMFLOAT3 vfxPos = movement->GetPosition();
@@ -247,18 +271,10 @@ void Player::Update(float elapsedTime, Camera* camera)
 
         EffectManager::Instance().SetPosition(m_dashReadyVfxHandle, vfxPos);
     }
+}
 
-    if (m_damageGlitchTimer > 0.0f)
-    {
-        m_damageGlitchTimer = (std::max)(0.0f, m_damageGlitchTimer - elapsedTime);
-    }
-
-
-    // =========================================================
-    // Logika Standby Dash VFX (Otomatis & Tracking)
-    // =========================================================
-
-    if (m_hp <= 0) return;
+void Player::UpdateDashStandbyVfx()
+{
     if (HasFullDash()) // standby VFX means "a full dash is available"
     {
         // 1. Jika handle kosong atau efek sebelumnya sudah selesai (mati), putar lagi!
@@ -285,20 +301,10 @@ void Player::Update(float elapsedTime, Camera* camera)
             m_dashStandbyVfxHandle = -1; // Reset handle agar bisa spawn baru nanti
         }
     }
+}
 
-    // =========================================================
-    // Keep the Dash Ready VFX attached to the player
-    // =========================================================
-    if (m_dashReadyVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashReadyVfxHandle))
-    {
-        DirectX::XMFLOAT3 vfxPos = movement->GetPosition();
-        vfxPos.y += m_dashReadyOffsetY;
-        EffectManager::Instance().SetPosition(m_dashReadyVfxHandle, vfxPos);
-    }
-
-    // =========================================================
-    // Logika VFX Overdrive & Standby Dash (Hierarki & Tracking)
-    // =========================================================
+void Player::UpdateOverdriveVfx()
+{
     if (IsPowerUncapped())
     {
         // 1. Matikan paksa Dash Standby jika kebetulan masih menyala
@@ -357,10 +363,6 @@ void Player::Update(float elapsedTime, Camera* camera)
         }
     }
 }
-
-// ============================================================
-// UPDATE SUB-STEPS
-// ============================================================
 
 void Player::UpdateDashRecovery(float dt)
 {
