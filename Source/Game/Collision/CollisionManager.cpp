@@ -357,8 +357,8 @@ void CollisionManager::CheckPlayerVsItems()
 
 void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
 {
-    // Cukup cek player di awal, agar logic menembak kandang tetap jalan 
-    // meskipun tidak ada musuh (atau m_enemyManager belum siap)
+    // Only the player is required: its bullets must still reach the boss phase (the
+    // Windowkill cage) when there are no enemies.
     if (!m_player) return;
 
     ProjectilePool& projectiles{ m_player->GetProjectiles() };
@@ -381,9 +381,9 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
         }
 
         // =========================================================
-        // DETEKSI PELURU VS MUSUH (Logika Aslimu)
+        // PLAYER BULLET VS ENEMIES
         // =========================================================
-        if (!m_enemyManager) continue; // Cek musuh di sini agar aman
+        if (!m_enemyManager) continue;
         const auto& enemies{ m_enemyManager->GetEnemies() };
 
         const DirectX::XMFLOAT3 velocity{ bullet.velocity };
@@ -636,7 +636,7 @@ Enemy* CollisionManager::GetTargetInSlashCone(const DirectX::XMFLOAT3& playerPos
 
 bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float threshold, Projectile** outEnemyBullet, Enemy** outNearestEnemy, XMFLOAT3* outPosition)
 {
-    // 1. Cek Musuh Biasa (JIKA ADA)
+    // 1. Bullets of tracking enemies
     if (m_enemyManager)
     {
         for (auto& enemy : m_enemyManager->GetEnemies())
@@ -675,7 +675,7 @@ bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float t
     }
 
     // =========================================================
-    // 2. DETEKSI BIJUUDAMA NAVI BOSS
+    // 2. BOSS ATTACKS (BIJUUDAMA)
     // =========================================================
     if (INaviPhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr })
     {

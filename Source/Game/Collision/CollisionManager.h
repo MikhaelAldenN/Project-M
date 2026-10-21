@@ -37,7 +37,7 @@ public:
     CollisionManager() = default;
     ~CollisionManager() = default;
 
-    // OVERLOAD 1: Untuk SceneGameBreaker (Tidak butuh Boss)
+    // The boss is optional and set separately with SetBoss().
     void Initialize(Player* p, Stage* s, EnemyManager* em, ItemManager* im);
 
     void Update(float elapsedTime);
@@ -65,7 +65,7 @@ private:
     void CheckNaviProjectilesVsEnemies(float elapsedTime);
     void CheckNaviAllyProjectilesVsPlayer(float elapsedTime);
     void CheckBossProjectilesVsPlayer(float elapsedTime);
-    void CheckBossProjectilesVsBoss(float elapsedTime); // Fungsi pantulan
+    void CheckBossProjectilesVsBoss(float elapsedTime); // parried projectiles sent back at the boss
     // Player bullets against the boss window (point inside an XZ box).
     void CheckPlayerProjectilesVsBoss();
 
