@@ -281,3 +281,11 @@ void ProjectilePool::Launch(Projectile& projectile, const XMFLOAT3& position,
     XMStoreFloat3(&projectile.velocity,
         XMVectorScale(XMVector3Normalize(XMLoadFloat3(&direction)), speed));
 }
+
+void ProjectilePool::Advance(Projectile& projectile, float dt)
+{
+    projectile.age += dt;
+    projectile.position.x += projectile.velocity.x * dt;
+    projectile.position.y += projectile.velocity.y * dt;
+    projectile.position.z += projectile.velocity.z * dt;
+}

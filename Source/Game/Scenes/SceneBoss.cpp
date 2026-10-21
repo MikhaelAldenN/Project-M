@@ -658,7 +658,7 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
                     : DirectX::XMFLOAT4{ 1.0f, 0.0f, 0.0f, 1.0f } };
                 for (const Projectile& projectile : pool->Slots())
                 {
-                    if (projectile.isActive) shapeRenderer->DrawSphere(projectile.position, projectile.radius, color);
+                    if (projectile.isActive && projectile.hitsPlayer) shapeRenderer->DrawSphere(projectile.position, projectile.radius, color);
                 }
             }
         }

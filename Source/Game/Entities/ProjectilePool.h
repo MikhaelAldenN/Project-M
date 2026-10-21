@@ -41,6 +41,7 @@ struct Projectile
     float radius{ 0.25f };      // hitbox radius, world units
     float visualScale{ 1.0f };  // uniform model scale
     int damage{ 10 };
+    bool hitsPlayer{ true };    // false while the projectile is shown but cannot hurt the player
     float age{ 0.0f };          // seconds since spawn
     float turnSpeed{ 8.0f };    // homing steering rate, per second
     ProjectileTarget target{ ProjectileTarget::none };
@@ -113,6 +114,10 @@ public:
     // Sets straight flight from `position` along `direction` (normalized here) at `speed`.
     static void Launch(Projectile& projectile, const DirectX::XMFLOAT3& position,
         const DirectX::XMFLOAT3& direction, float speed);
+
+    // Moves `projectile` straight along its velocity for `dt` seconds and ages it.
+    // For owners that move their projectiles one at a time instead of calling Update.
+    static void Advance(Projectile& projectile, float dt);
 
     // Every slot, active or not. Check `isActive` before using one.
     [[nodiscard]] std::vector<Projectile>& Slots() { return m_slots; }

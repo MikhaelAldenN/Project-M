@@ -26,7 +26,7 @@ public:
 
     // Starts the attack: resources, tracking windows, VFX, first bullets.
     // `boss` and `pool` are borrowed and outlive the attack. `pool` is the running phase's
-    // shared bullet pool; it is null in Windowkill, whose attacks own their bullets.
+    // shared projectile pool.
     virtual void Start(Boss* boss, BossBulletPool* pool) = 0;
 
     // Processes bullet physics, window tracking, and spawning logic.

@@ -11,6 +11,7 @@
 #include "UIDialogueBox.h"
 #include "HUDRenderer.h"
 #include "IBossAttackPattern.h"
+#include "ProjectilePool.h"
 #include "BossAI.h"
 
 class Sprite;
@@ -67,6 +68,8 @@ public:
     Camera* GetFXCamera() const { return m_fxCamera.get(); }
 
     void AppendActiveProjectiles(std::vector<Bullet*>& out) const override;
+    [[nodiscard]] ProjectilePool* GetProjectilePool() override { return &m_projectiles; }
+    [[nodiscard]] const ProjectilePool* GetProjectilePool() const override { return &m_projectiles; }
 
     void SetAITarget(Player* p) override { m_aiTarget = p; }
     void SetAIEnabled(bool val) override { m_aiEnabled = val; }
@@ -183,6 +186,11 @@ private:
     // ==========================================
     // MODULAR AI & ATTACK SYSTEM
     // ==========================================
+    // Projectiles of every running attack. The attacks move their own projectiles;
+    // the phase only stores them. Declared before the attacks, so it outlives them.
+    static constexpr std::size_t k_projectileCapacity{ 128 };
+    ProjectilePool m_projectiles{ k_projectileCapacity };
+
     std::vector<std::unique_ptr<IBossAttackPattern>> m_activeAttacks;
 
     std::unique_ptr<BossAI_Phase02> m_ai;

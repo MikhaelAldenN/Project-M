@@ -749,6 +749,7 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
             if (!projectile.isActive) continue;
             // A projectile heading back to the boss never hurts the player.
             if (projectile.target == ProjectileTarget::boss) continue;
+            if (!projectile.hitsPlayer) continue;
 
             if (hitPlayer(projectile.position, projectile.radius, projectile.damage))
             {
