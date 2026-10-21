@@ -5,6 +5,7 @@
 #include "DamageTypes.h"
 #include "EffectManager.h"
 #include "EnemyManager.h"
+#include "ProjectilePool.h"
 #include <cmath>
 #include <cstdint>
 #include <deque>
@@ -21,6 +22,7 @@ enum class AttackType;
 enum class MoveDir;
 
 class ShapeRenderer;
+class ProjectileMesh;
 class Enemy : public Character
 {
 public:
@@ -31,8 +33,10 @@ public:
     ~Enemy() override;
 
     void Update(float elapsedTime, Camera* camera) override;
-    void UpdateTracking(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos, bool allowAttack = true);
-    void UpdateProjectiles(float elapsedTime, Camera* camera);
+    void UpdateTracking(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos,
+        const ProjectileTargets& projectileTargets, bool allowAttack = true);
+    // Steers, moves, and despawns this enemy's bullets. EnemyManager calls it once per frame after Update.
+    void UpdateProjectiles(float elapsedTime, const ProjectileTargets& targets);
     void SetHighlight(bool highlight) { m_isHighlighted = highlight; }
     void UpdateOriginalTransform(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& rot);
     void SetBaseMoveSpeed(float speed) { m_baseMoveSpeed = speed; }
@@ -45,7 +49,7 @@ public:
         const DirectX::XMFLOAT3& startRot, const DirectX::XMFLOAT4& startColor,
         EnemyType type, AttackType attackType, float minX, float maxX,
         float minZ, float maxZ, MoveDir dir);
-    void RenderProjectiles(ModelRenderer* renderer);
+    void RenderProjectiles(ModelRenderer* renderer, const ProjectileMesh& mesh) const;
 
     DirectX::XMFLOAT3 GetRotation() const;
     [[nodiscard]] DirectX::XMFLOAT4 GetRenderColor() const;
@@ -58,7 +62,7 @@ public:
     std::shared_ptr<Model> GetModel() const { return model; }
 
     AttackType GetAttackType() const { return m_attackType; }
-    std::deque<std::unique_ptr<Bullet>>& GetProjectiles() { return m_projectiles; }
+    ProjectilePool& GetProjectiles() { return m_projectiles; }
 
     bool IsHighlighted() const { return m_isHighlighted; }
 
@@ -88,14 +92,23 @@ public:
     [[nodiscard]] std::uint32_t GetId() const { return m_id; }
 
 private:
-    void UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos, bool allowAttack);
+    void UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos,
+        const ProjectileTargets& projectileTargets, bool allowAttack);
+    // Fires one bullet from `position` along `direction`. An aimed shooter keeps at most
+    // MAX_PROJECTILES bullets alive, so a new aimed shot replaces the oldest one.
+    void FireProjectile(const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& direction, bool isAimed);
+    // Moves every bullet one step and despawns those farther than m_despawnDistance from `center`.
+    void AdvanceProjectiles(float elapsedTime, const ProjectileTargets& targets, const DirectX::XMFLOAT3& center);
 
     DirectX::XMFLOAT3 GetForwardVector() const;
     DirectX::XMFLOAT3 originalPosition;
     DirectX::XMFLOAT3 originalRotation;
     EnemyType m_type;
     AttackType m_attackType;
-    std::deque<std::unique_ptr<Bullet>> m_projectiles;
+    // A radial burst fires 8 bullets every 0.7 s and most despawn by distance within about 4 s,
+    // so about 45 are alive at once.
+    static constexpr std::size_t k_projectileCapacity{ 64 };
+    ProjectilePool m_projectiles{ k_projectileCapacity };
 
     // ==========================================
     // ATTACK SETTINGS 

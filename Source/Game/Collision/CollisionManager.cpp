@@ -80,16 +80,17 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
 
     for (auto& enemy : m_enemyManager->GetEnemies())
     {
-        auto& projectiles = enemy->GetProjectiles();
+        ProjectilePool& projectiles{ enemy->GetProjectiles() };
         AttackType type = enemy->GetAttackType();
 
-        for (auto it = projectiles.begin(); it != projectiles.end(); )
+        std::vector<Projectile>& slots{ projectiles.Slots() };
+        for (std::size_t i{ 0 }; i < slots.size(); ++i)
         {
-            auto& bullet = *it;
-            if (!bullet) { ++it; continue; }
+            Projectile& bullet{ slots[i] };
+            if (!bullet.isActive) continue;
 
-            XMFLOAT3 currentPos = bullet->GetMovement()->GetPosition();
-            XMFLOAT3 currentVel = bullet->GetVelocity();
+            XMFLOAT3 currentPos = bullet.position;
+            XMFLOAT3 currentVel = bullet.velocity;
             XMVECTOR vPos = XMLoadFloat3(&currentPos);
             XMVECTOR vVel = XMLoadFloat3(&currentVel);
             XMVECTOR vNextPos = vPos + (vVel * elapsedTime);
@@ -97,7 +98,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
 
             float speed = XMVectorGetX(XMVector3Length(vVel));
             float frameDist = speed * elapsedTime;
-            float bulletRadius = bullet->GetRadius();
+            float bulletRadius = bullet.radius;
 
             bool hitWall = false;
             float closestT = frameDist;
@@ -127,7 +128,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
             if (hitWall)
             {
                 if (type == AttackType::Static) {
-                    it = projectiles.erase(it);
+                    projectiles.Despawn(i);
                     continue;
                 }
 
@@ -143,31 +144,23 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                 XMStoreFloat3(&finalVel, vReflectedVel);
                 finalPos.y = 0.0f; finalVel.y = 0.0f;
 
-                bullet->ApplyMovement(finalPos, finalVel);
-                ++it;
+                bullet.position = finalPos;
+                bullet.velocity = finalVel;
                 continue;
             }
 
-            if (bullet->GetHomingTarget() != nullptr)
+            if (bullet.target == ProjectileTarget::enemy)
             {
-                Enemy* targetEnemy = static_cast<Enemy*>(bullet->GetHomingTarget());
+                // Null once the target has died, or has been recycled into a new enemy.
+                Enemy* targetEnemy{ m_enemyManager->FindActiveEnemy(bullet.targetId) };
 
-                // Verify the target wasn't deleted from memory by a different attack (like a Slash)
-                bool isTargetAlive = false;
-                for (auto& activeEnemy : m_enemyManager->GetEnemies()) {
-                    if (activeEnemy.get() == targetEnemy && activeEnemy->IsActive()) {
-                        isTargetAlive = true;
-                        break;
-                    }
-                }
-
-                // If the target died while the bullet was mid-air, destroy the bullet to prevent a crash.
-                if (!isTargetAlive) {
-                    it = projectiles.erase(it);
+                // If the target died while the bullet was mid-air, destroy the bullet.
+                if (!targetEnemy) {
+                    projectiles.Despawn(i);
                     continue;
                 }
 
-                DirectX::XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
+                DirectX::XMFLOAT3 bPos = bullet.position;
                 DirectX::XMFLOAT3 targetPos = targetEnemy->GetPosition();
 
                 float dx = bPos.x - targetPos.x;
@@ -181,7 +174,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                 if (targetEnemy->GetType() == EnemyType::Pentagon) hitRadius = 4.0f * enemyScale;
                 else if (targetEnemy->GetType() == EnemyType::Paddle) hitRadius = 0.8f * enemyScale;
 
-                float combinedHitRadius = hitRadius + bullet->GetRadius();
+                float combinedHitRadius = hitRadius + bullet.radius;
 
                 if (distSq < (combinedHitRadius * combinedHitRadius))
                 {
@@ -189,7 +182,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                     targetEnemy->TakeDamage(DamageInfo{ m_damageConfig.parriedBulletToEnemy, bPos });
 
                     // Destroy the bullet
-                    it = projectiles.erase(it);
+                    projectiles.Despawn(i);
                     continue;
                 }
             }
@@ -202,7 +195,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
             XMFLOAT3 nextPosFloat;
             XMStoreFloat3(&nextPosFloat, vNextPos);
 
-            if (m_player && bullet->GetHomingTarget() == nullptr && m_player->GetHP() > 0 && !m_player->IsInvincible())
+            if (m_player && bullet.target == ProjectileTarget::none && m_player->GetHP() > 0 && !m_player->IsInvincible())
             {
                 DirectX::XMFLOAT3 playerPos = m_player->GetMovement()->GetPosition();
 
@@ -217,14 +210,13 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                 {
                     m_player->TakeDamage(DamageInfo{ m_damageConfig.enemyBulletToPlayer, currentPos });
 
-                    // Destroy the bullet and prevent crashes
-                    it = projectiles.erase(it);
+                    // Destroy the bullet
+                    projectiles.Despawn(i);
                     continue;
                 }
             }
 
-            bullet->ApplyMovement(nextPosFloat, currentVel);
-            ++it;
+            bullet.position = nextPosFloat;
         }
     }
 }
@@ -637,7 +629,7 @@ Enemy* CollisionManager::GetTargetInSlashCone(const DirectX::XMFLOAT3& playerPos
     return bestTarget;
 }
 
-bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float threshold, Bullet** outBullet, Enemy** outNearestEnemy, XMFLOAT3* outPosition)
+bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float threshold, Projectile** outEnemyBullet, Enemy** outNearestEnemy, XMFLOAT3* outPosition)
 {
     // 1. Cek Musuh Biasa (JIKA ADA)
     if (m_enemyManager)
@@ -646,15 +638,15 @@ bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float t
         {
             if (enemy->GetAttackType() != AttackType::Tracking) continue;
 
-            for (auto& bullet : enemy->GetProjectiles())
+            for (Projectile& bullet : enemy->GetProjectiles().Slots())
             {
-                if (!bullet->IsActive()) continue;
+                if (!bullet.isActive) continue;
 
-                XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
+                XMFLOAT3 bPos = bullet.position;
 
                 if (CheckSphereCollision(playerPos, bPos, threshold))
                 {
-                    if (outBullet) *outBullet = bullet.get();
+                    if (outEnemyBullet) *outEnemyBullet = &bullet;
                     if (outPosition) *outPosition = bPos;
 
                     Enemy* nearest = nullptr;
@@ -685,7 +677,7 @@ bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float t
         // The attack decides whether it can be parried now, and shatters itself if so.
         if (const std::optional<XMFLOAT3> ballPosition{ phase->TryParryAttack(playerPos, m_Boss) })
         {
-            if (outBullet) *outBullet = nullptr;
+            if (outEnemyBullet) *outEnemyBullet = nullptr;
             if (outNearestEnemy) *outNearestEnemy = nullptr;
             if (outPosition) *outPosition = *ballPosition;
             return true;

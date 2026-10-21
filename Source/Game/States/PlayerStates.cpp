@@ -9,7 +9,7 @@
 
 #include "Game/Collision/CollisionManager.h"
 #include "Enemy.h"
-#include "Bullet.h"
+#include "ProjectilePool.h"
 #include "Boss.h"
 #include "System/AudioManager.h"
 
@@ -125,7 +125,7 @@ namespace {
             }
 
             // --- Parry Priority ---
-            Bullet* parryBullet{ nullptr };
+            Projectile* parryBullet{ nullptr };
             Enemy* parryTarget{ nullptr };
             DirectX::XMFLOAT3 bPos{};
 
@@ -151,9 +151,10 @@ namespace {
 
                 if (parryBullet && parryTarget) {
                     // An enemy bullet flies back at the nearest enemy, faster than it came.
-                    parryBullet->SetHomingTarget(parryTarget);
+                    parryBullet->target = ProjectileTarget::enemy;
+                    parryBullet->targetId = parryTarget->GetId();
                     const DirectX::XMFLOAT3 tPos{ parryTarget->GetPosition() };
-                    float speed{ DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMLoadFloat3(&parryBullet->GetVelocity()))) * 2.5f };
+                    float speed{ DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMLoadFloat3(&parryBullet->velocity))) * 2.5f };
                     if (speed < 10.0f) speed = 30.0f;
 
                     const float dirX{ tPos.x - bPos.x };
@@ -167,7 +168,8 @@ namespace {
 
                     DirectX::XMFLOAT3 newVel{};
                     DirectX::XMStoreFloat3(&newVel, DirectX::XMVectorScale(vDir, speed));
-                    parryBullet->ApplyMovement(bPos, newVel);
+                    parryBullet->position = bPos;
+                    parryBullet->velocity = newVel;
                 }
                 else if (colMgr->GetBoss()) {
                     // The boss attack has already shattered the parried projectile into return fragments.

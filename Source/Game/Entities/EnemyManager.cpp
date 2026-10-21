@@ -102,6 +102,15 @@ void EnemyManager::SpawnEnemy(const EnemySpawnConfig& config)
 
 void EnemyManager::Update(const float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos, const bool allowAttack)
 {
+    // What parried bullets can home on: every active enemy, as it stands at the start of the frame.
+    m_projectileTargets.enemies.clear();
+    for (const auto& enemy : m_enemies)
+    {
+        if (!enemy->IsActive()) continue;
+        m_projectileTargets.enemies.push_back(TrackedTarget{
+            enemy->GetId(), enemy->GetPosition(), enemy->GetMovement()->GetVelocity() });
+    }
+
     for (size_t i{ 0 }; i < m_enemies.size(); ) // Notice: No ++i here!
     {
         // We use a reference to avoid copying the unique_ptr
@@ -131,7 +140,8 @@ void EnemyManager::Update(const float elapsedTime, Camera* camera, const DirectX
             if (allowAttack)
             {
                 currentEnemy->Update(elapsedTime, camera);
-                currentEnemy->UpdateTracking(elapsedTime, camera, playerPos, allowAttack);
+                currentEnemy->UpdateProjectiles(elapsedTime, m_projectileTargets);
+                currentEnemy->UpdateTracking(elapsedTime, camera, playerPos, m_projectileTargets, allowAttack);
             }
 
             // Move to the next element
@@ -142,6 +152,8 @@ void EnemyManager::Update(const float elapsedTime, Camera* camera, const DirectX
 
 void EnemyManager::Render(ModelRenderer* renderer, Camera* camera)
 {
+    if (!m_projectileMesh.IsLoaded()) m_projectileMesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");
+
     for (auto& enemy : m_enemies)
     {
         bool isBodyVisible = true;
@@ -173,7 +185,7 @@ void EnemyManager::Render(ModelRenderer* renderer, Camera* camera)
         }
 
         // Projectiles tetap dirender terpisah (selalu render)
-        enemy->RenderProjectiles(renderer);
+        enemy->RenderProjectiles(renderer, m_projectileMesh);
     }
 }
 
@@ -217,7 +229,7 @@ void EnemyManager::ReviveKamikazes()
             // Snap it back to its original spawn position
             (*it)->SetPosition((*it)->GetOriginalPosition());
             (*it)->SetRotation((*it)->GetOriginalRotation());
-            (*it)->GetProjectiles().clear(); // Wipe any old bullets
+            (*it)->GetProjectiles().Clear(); // Wipe any old bullets
 
             // Move it from the graveyard back to the active enemies list
             m_enemies.push_back(std::move(*it));

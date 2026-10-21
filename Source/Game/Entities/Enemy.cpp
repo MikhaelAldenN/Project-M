@@ -1,4 +1,5 @@
 #include "Enemy.h"
+#include "ProjectileMesh.h"
 
 using namespace DirectX;
 
@@ -76,8 +77,6 @@ void Enemy::Update(float elapsedTime, Camera* camera)
         movement->SetPosition(pos);
     }
 
-    UpdateProjectiles(elapsedTime, camera);
-
     XMFLOAT3 pos = movement->GetPosition();
     XMFLOAT3 rot = movement->GetRotation();
 
@@ -95,16 +94,18 @@ void Enemy::Update(float elapsedTime, Camera* camera)
     if (model) model->UpdateTransform(worldMatrix);
 }
 
-void Enemy::UpdateTracking(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos, bool allowAttack)
+void Enemy::UpdateTracking(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos,
+    const ProjectileTargets& projectileTargets, bool allowAttack)
 {
     if (!camera) return;
     if (allowAttack)
     {
-        UpdateAttackLogic(elapsedTime, camera, playerPos, allowAttack);
+        UpdateAttackLogic(elapsedTime, camera, playerPos, projectileTargets, allowAttack);
     }
 }
 
-void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos, bool allowAttack)
+void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos,
+    const ProjectileTargets& projectileTargets, bool allowAttack)
 {
     // 1. FAST FAIL: Guard clauses prevent deep nesting and dangling pointer crashes.
     if (m_attackType == AttackType::None || !camera || !allowAttack) return;
@@ -224,24 +225,7 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
                         myPos.z + (dirZ * 1.0f)
                     };
 
-                    // Reuse an inactive bullet; allocate only when none is free.
-                    bool bulletRecycled{ false };
-                    for (auto& bullet : m_projectiles)
-                    {
-                        if (!bullet->IsActive())
-                        {
-                            bullet->Fire(spawnPos, burstDir, m_projectileSpeed);
-                            bulletRecycled = true;
-                            break;
-                        }
-                    }
-
-                    if (!bulletRecycled)
-                    {
-                        auto newBullet{ std::make_unique<Bullet>() };
-                        newBullet->Fire(spawnPos, burstDir, m_projectileSpeed);
-                        m_projectiles.push_back(std::move(newBullet));
-                    }
+                    FireProjectile(spawnPos, burstDir, false);
                 }
             }
             else
@@ -274,52 +258,14 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
                     myPos.z + (fwd.z * SPAWN_OFFSET_FWD)
                 };
 
-                // Reuse an inactive bullet; allocate only when none is free.
-                bool bulletRecycled{ false };
-                for (auto& bullet : m_projectiles)
-                {
-                    if (!bullet->IsActive())
-                    {
-                        bullet->Fire(spawnPos, fwd, m_projectileSpeed);
-                        bulletRecycled = true;
-                        break; // Instant exit
-                    }
-                }
-
-                if (!bulletRecycled)
-                {
-                    auto newBullet{ std::make_unique<Bullet>() };
-                    newBullet->Fire(spawnPos, fwd, m_projectileSpeed);
-                    m_projectiles.push_back(std::move(newBullet));
-
-                    if (m_projectiles.size() > static_cast<size_t>(MAX_PROJECTILES))
-                    {
-                        m_projectiles.pop_front();
-                    }
-                }
+                FireProjectile(spawnPos, fwd, true);
             }
         }
     }
     // 5. UPDATE IN-FLIGHT PROJECTILES (despawn by distance)
-    const float despawnDistSq{ m_despawnDistance * m_despawnDistance };
-
-    for (auto& bullet : m_projectiles)
-    {
-        if (!bullet->IsActive()) continue;
-
-        bullet->Update(elapsedTime, camera);
-
-        const DirectX::XMFLOAT3 bPos{ bullet->GetMovement()->GetPosition() };
-        const float bDx{ myPos.x - bPos.x };
-        const float bDz{ myPos.z - bPos.z };
-
-        // BUG PREVENTION: INFINITE FLIGHT GUARD
-        // Instead of erasing the bullet from memory (which is slow), we just turn it off!
-        if ((bDx * bDx + bDz * bDz) > despawnDistSq)
-        {
-            bullet->SetActive(false);
-        }
-    }
+    // Why a second step: UpdateProjectiles already moved the bullets once this frame. Both steps,
+    // plus the one in CollisionManager, make the speed enemy bullets have always flown at.
+    AdvanceProjectiles(elapsedTime, projectileTargets, myPos);
 }
 
 DirectX::XMFLOAT3 Enemy::GetForwardVector() const
@@ -365,7 +311,7 @@ void Enemy::Reinitialize(ID3D11Device* device, const char* filePath, const Direc
     else                            m_currentSpeed = 0.0f;
 
     // 4. Clean up the "Zombie" state from its previous life
-    m_projectiles.clear(); // Destroy old bullets
+    m_projectiles.Clear(); // Destroy old bullets
     m_attackTimer = 0.0f;
     m_aggroTimer = 0.0f;
     m_blinkTimer = 0.0f;
@@ -375,43 +321,63 @@ void Enemy::Reinitialize(ID3D11Device* device, const char* filePath, const Direc
     SetActive(true);
 }
 
-void Enemy::UpdateProjectiles(float elapsedTime, Camera* camera)
+void Enemy::UpdateProjectiles(float elapsedTime, const ProjectileTargets& targets)
 {
-    // UPDATE IN-FLIGHT PROJECTILES (despawn by distance)
-    const float despawnDistSq{ m_despawnDistance * m_despawnDistance };
+    AdvanceProjectiles(elapsedTime, targets, movement->GetPosition());
+}
 
-    for (auto& bullet : m_projectiles)
+void Enemy::FireProjectile(const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& direction, bool isAimed)
+{
+    if (isAimed)
     {
-        if (!bullet->IsActive()) continue;
-
-        bullet->Update(elapsedTime, camera);
-
-        const DirectX::XMFLOAT3 myPos{ movement->GetPosition() };
-        const DirectX::XMFLOAT3 bPos{ bullet->GetMovement()->GetPosition() };
-        const float bDx{ myPos.x - bPos.x };
-        const float bDz{ myPos.z - bPos.z };
-
-        if ((bDx * bDx + bDz * bDz) > despawnDistSq)
+        const std::vector<Projectile>& slots{ m_projectiles.Slots() };
+        std::size_t liveCount{ 0 };
+        std::size_t oldest{ 0 };
+        for (std::size_t i{ 0 }; i < slots.size(); ++i)
         {
-            bullet->SetActive(false);
+            if (!slots[i].isActive) continue;
+            if ((liveCount == 0) || (slots[i].age > slots[oldest].age)) oldest = i;
+            ++liveCount;
         }
+        if (liveCount >= static_cast<std::size_t>(MAX_PROJECTILES)) m_projectiles.Despawn(oldest);
+    }
+
+    Projectile* bullet{ m_projectiles.Get(m_projectiles.Spawn()) };
+    if (!bullet) return; // every slot is in use
+    ProjectilePool::Launch(*bullet, position, direction, m_projectileSpeed);
+}
+
+void Enemy::AdvanceProjectiles(float elapsedTime, const ProjectileTargets& targets, const DirectX::XMFLOAT3& center)
+{
+    m_projectiles.Update(elapsedTime, targets);
+
+    // Why: a bullet that never reaches a wall would otherwise fly forever.
+    const float despawnDistSq{ m_despawnDistance * m_despawnDistance };
+    const std::vector<Projectile>& slots{ m_projectiles.Slots() };
+    for (std::size_t i{ 0 }; i < slots.size(); ++i)
+    {
+        if (!slots[i].isActive) continue;
+
+        const float dx{ center.x - slots[i].position.x };
+        const float dz{ center.z - slots[i].position.z };
+        if (((dx * dx) + (dz * dz)) > despawnDistSq) m_projectiles.Despawn(i);
     }
 }
 
-void Enemy::RenderProjectiles(ModelRenderer* renderer)
+void Enemy::RenderProjectiles(ModelRenderer* renderer, const ProjectileMesh& mesh) const
 {
     // 1. Color Constants (Static for Zero-Allocation)
     static constexpr DirectX::XMFLOAT4 TOXIC_GREEN{ 0.4f, 0.9f, 0.2f, 1.0f };
     static constexpr DirectX::XMFLOAT4 ELECTRIC_PINK{ 1.0f, 0.0f, 1.0f, 1.0f };
     static constexpr float PULSE_SPEED{ 15.0f };
 
-    for (auto& bullet : m_projectiles)
+    for (const Projectile& bullet : m_projectiles.Slots())
     {
-        if (bullet && bullet->IsActive())
+        if (bullet.isActive)
         {
             // 2. Calculate the sine pulse (Result: 0.0 to 1.0)
-            // Using bullet->GetLifeTime() ensures each bullet pulses independently
-            const float pulse{ (std::sin(bullet->GetLifeTime() * PULSE_SPEED) + 1.0f) * 0.5f };
+            // Each bullet's own age keeps the bullets pulsing independently
+            const float pulse{ (std::sin(bullet.age * PULSE_SPEED) + 1.0f) * 0.5f };
 
             // 3. Interpolate (LERP) between Toxic Green and Electric Pink
             const DirectX::XMFLOAT4 pulseColor{
@@ -422,7 +388,7 @@ void Enemy::RenderProjectiles(ModelRenderer* renderer)
             };
 
             // 4. Render using Phong to ensure the Bloom/HDR glow activates
-            renderer->Draw(ShaderId::Phong, bullet->GetModel(), pulseColor);
+            mesh.Draw(*renderer, ShaderId::Phong, pulseColor, bullet.position, bullet.visualScale, 0.0f);
         }
     }
 }
