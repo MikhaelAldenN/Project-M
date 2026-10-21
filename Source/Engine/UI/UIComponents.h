@@ -4,7 +4,7 @@
 #include <deque>
 #include <functional>
 #include <memory>
-#include "BitmapFont.h" // Untuk BitmapFont
+#include "BitmapFont.h"
 
 // --- BASE CLASS ---
 class UIElement {
@@ -13,7 +13,7 @@ public:
     UIElement(float _x, float _y) : x(_x), y(_y) {}
     virtual ~UIElement() = default;
 
-    virtual void Update(float dt) {} // Default kosong
+    virtual void Update(float dt) {} // does nothing by default
     virtual void Draw(BitmapFont* font) = 0; // Pure virtual
 };
 
@@ -55,6 +55,6 @@ private:
 public:
     DirectoryPanel(float x, float y);
     void AddFile(std::string name, int size, bool isDir, std::function<void()> action);
-    void Update(float dt) override; // Override Update karena butuh Input
+    void Update(float dt) override; // reads keyboard input
     void Draw(BitmapFont* font) override;
 };

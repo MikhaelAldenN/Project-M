@@ -11,10 +11,9 @@ enum class TextAlignment {
     Right
 };
 
-// 1. Struct untuk menampung Style per State
-// Ini profesional karena mengelompokkan data yang berkaitan.
+// Colors for one button state
 struct ButtonStyle {
-    DirectX::XMFLOAT4 backColor;   // RGBA (Penting ada A untuk transparansi)
+    DirectX::XMFLOAT4 backColor;   // RGBA; alpha 0 hides the background
     DirectX::XMFLOAT4 borderColor; // RGBA
     DirectX::XMFLOAT4 textColor;   // RGBA
 };
@@ -31,8 +30,8 @@ public:
         verticalAdjustment = 3.0f;
         textScale = 0.625f;
 
-        // Default Style (Fallback) - Bisa di-override nanti
-        // Normal: Biru Tua, Hover: Biru Terang, Press: Hijau
+        // Default styles until SetStyle is called:
+        // standby dark blue, hover bright blue, pressed green
         styles[0] = { {0.0f, 0.0f, 0.5f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} }; // Standby
         styles[1] = { {0.0f, 0.0f, 0.8f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 1.0f} }; // Hover
         styles[2] = { {0.0f, 0.5f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f, 1.0f} }; // Pressed
@@ -54,18 +53,15 @@ public:
     int GetTotalChars() const { return (int)labelText.length(); }
     bool IsFinishedTyping() const { return visibleChars >= (int)labelText.length(); }
 
-    // Setter Style yang Efisien (By Reference)
     void SetStyle(ButtonState state, const ButtonStyle& style)
     {
-        // Convert enum class ke index array (0, 1, 2)
         int index = static_cast<int>(state);
-        // Safety check (walaupun enum class sudah aman, defensif programming itu bagus)
         if (index >= 0 && index < 3) {
             styles[index] = style;
         }
     }
 
-    // Helper cepat untuk set Text Color saja (jika perlu)
+    // Changes only the text color of one state
     void SetTextColor(ButtonState state, DirectX::XMFLOAT4 color) {
         int index = static_cast<int>(state);
         styles[index].textColor = color;
@@ -77,7 +73,7 @@ public:
     void SetPadding(float p) { paddingX = p; }
     void SetVerticalAdjustment(float y) { verticalAdjustment = y; }
 
-    // --- Getters untuk ImGui/Debug ---
+    // --- Getters for ImGui / debug (mutable on purpose) ---
     const std::string& GetText() const { return labelText; }
     float& GetTextScale() { return textScale; }
     float& GetPadding() { return paddingX; }
@@ -89,36 +85,34 @@ public:
     {
         if (!primitive) return;
 
-        // 2. Tentukan Style aktif berdasarkan State
+        // 1. Style of the current state
         int stateIdx = static_cast<int>(currentState);
         const ButtonStyle& activeStyle = styles[stateIdx];
 
-        // 3. Render Background & Border
-        // Perhatikan parameter terakhir (Alpha) diambil dari activeStyle.backColor.w
-        // Jika Normal Alpha-nya 0, maka background jadi invisible (transparan).
-        if (activeStyle.backColor.w > 0.0f) // Optimasi: Jangan gambar jika full transparan
+        // 2. Background and border
+        if (activeStyle.backColor.w > 0.0f) // skip a fully transparent background
         {
             primitive->Rect((float)rect.left, (float)rect.top, width, height, 0, 0, 0.0f,
                 activeStyle.backColor.x, activeStyle.backColor.y, activeStyle.backColor.z, activeStyle.backColor.w);
         }
 
-        // Render Border (Opsional: Bisa dikasih logika if alpha > 0 juga)
+        // Border
         primitive->Rect((float)rect.left, (float)rect.top, width, height, 0, 0, 0.0f,
             activeStyle.borderColor.x, activeStyle.borderColor.y, activeStyle.borderColor.z, activeStyle.borderColor.w);
 
         primitive->Render(dc);
 
-        // 4. Render Text
+        // 3. Text
         BitmapFont* font = ResourceManager::Instance().GetFont("VGA_FONT");
         if (font && visibleChars > 0)
         {
-            // [KUNCI]: Ukur teks UTUH untuk mendapatkan posisi (Anchor) yang stabil
+            // Measure the full text, so the anchor does not move while the text types out
             DirectX::XMFLOAT2 fullTextSize = font->MeasureText(labelText, textScale);
 
-            // Siapkan teks POTONGAN untuk digambar
+            // The visible part of the text
             std::string drawText = labelText.substr(0, visibleChars);
 
-            // Perhitungan Posisi X (Gunakan fullTextSize, bukan textSize)
+            // X from the full text width
             float textX = 0.0f;
             switch (alignment)
             {
@@ -126,7 +120,6 @@ public:
                 textX = (float)rect.left + paddingX;
                 break;
             case TextAlignment::Right:
-                // Menggunakan lebar utuh agar anchor point tidak pindah-pindah
                 textX = (float)rect.left + width - fullTextSize.x - paddingX;
                 break;
             case TextAlignment::Center:
@@ -138,7 +131,7 @@ public:
             float pressOffset = (currentState == ButtonState::PRESSED) ? 2.0f : 0.0f;
             float textY = (float)rect.top + (height - fullTextSize.y) / 2.0f + verticalAdjustment + pressOffset;
 
-            // Gambar teks potongan di posisi anchor yang sudah stabil
+            // Draw the visible part at the full-text anchor
             font->Draw(drawText.c_str(), textX, textY, textScale,
                 activeStyle.textColor.x, activeStyle.textColor.y, activeStyle.textColor.z, activeStyle.textColor.w);
         }
@@ -148,8 +141,7 @@ private:
     Primitive* primitive;
     std::string labelText;
 
-    // Array style untuk 3 state: STANDBY, HOVER, PRESSED
-    // Menggunakan array lebih cepat aksesnya daripada if-else branch
+    // Indexed by ButtonState: STANDBY, HOVER, PRESSED
     ButtonStyle styles[3];
 
     int visibleChars = 0;

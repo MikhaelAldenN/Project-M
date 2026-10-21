@@ -1,5 +1,5 @@
 #include "CursorBlock.h"
-#include "System/Mouse.h" // Include full definition di sini
+#include "System/Mouse.h"
 #include <cmath>
 
 CursorBlock::CursorBlock(ID3D11Device* device)
@@ -13,9 +13,9 @@ CursorBlock::CursorBlock(ID3D11Device* device)
 
     blendDesc.RenderTarget[0].BlendEnable = TRUE;
 
-    // SRC_ALPHA = Pakai alpha dari warna kursor
+    // SRC_ALPHA: weight by the cursor alpha
     blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-    // INV_SRC_ALPHA = Background terlihat sesuai sisa alpha kursor
+    // INV_SRC_ALPHA: the background shows through the rest
     blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
     blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 
@@ -49,7 +49,7 @@ void CursorBlock::SetBlink(bool enable, float visibleTime, float invisibleTime)
     blinkVisibleTime = visibleTime;
     blinkInvisibleTime = invisibleTime;
 
-    // Reset state agar saat diaktifkan, kursor mulai dari kondisi terlihat (fresh start)
+    // Restart visible, so a newly enabled blink begins with the cursor shown.
     isVisible = true;
     blinkTimer = 0.0f;
 }
@@ -104,7 +104,6 @@ void CursorBlock::Update(float dt, Mouse& mouse)
     float mx = static_cast<float>(mouse.GetPositionX());
     float my = static_cast<float>(mouse.GetPositionY());
 
-    // Panggil fungsi generic di atas
     Update(dt, mx, my);
 }
 
@@ -112,20 +111,19 @@ void CursorBlock::Render(ID3D11DeviceContext* context, Primitive* primitiveBatch
 {
     if (!isVisible || !primitiveBatcher) return;
 
-    // 1. Simpan State Lama
+    // 1. Save the current blend state
     float blendFactor[4];
     UINT sampleMask;
     context->OMGetBlendState(oldBlendState.GetAddressOf(), blendFactor, &sampleMask);
 
-    // 2. Pasang Invert Blend State
+    // 2. Bind the cursor blend state (standard alpha, despite the member name)
     context->OMSetBlendState(invertBlendState.Get(), nullptr, 0xFFFFFFFF);
 
-    // 3. Gambar Kotak (Flush via Primitive)
-    // Warna Amber: 0.96, 0.80, 0.23
+    // 3. Draw the block and flush the batch
     primitiveBatcher->Rect(posX, posY, width, height, 0.0f, 0.0f, 0.0f, m_color[0], m_color[1], m_color[2], m_color[3]);
     primitiveBatcher->Render(context);
 
-    // 4. Kembalikan State Lama
+    // 4. Restore the saved blend state
     context->OMSetBlendState(oldBlendState.Get(), blendFactor, sampleMask);
     oldBlendState.Reset();
 }

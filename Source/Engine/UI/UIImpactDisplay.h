@@ -17,7 +17,7 @@ enum class ImpactType {
     Ready,
     Go,
     Nigero,
-    SpaceKeyJP,  // Untuk "Sprite_Text_SPACEKEY_jp.png"
+    SpaceKeyJP,  // Sprite_Text_SPACEKEY_jp.png
     RendaSeyo,
     Bougyo,
     Kougeki
@@ -37,7 +37,7 @@ public:
 
     void Initialize(ID3D11Device* device);
 
-    // Fungsi Show biasa (single)
+    // Plays one impact.
     void Show(ImpactType type, float duration = 1.5f);
 
     // Plays the events in order.

@@ -1,5 +1,5 @@
 #include "UIComponents.h"
-#include "System/Input.h" // Input cuma dibutuhkan di sini, header tidak perlu tahu
+#include "System/Input.h" // only the .cpp needs Input
 
 // ================= STATUS PANEL =================
 StatusPanel::StatusPanel(float x, float y, const std::string& startText)
@@ -48,7 +48,7 @@ void DirectoryPanel::AddFile(std::string name, int size, bool isDir, std::functi
 void DirectoryPanel::Update(float dt) {
     Input& input = Input::Instance();
 
-    // Logika navigasi keyboard
+    // Keyboard navigation, wrapping at both ends
     if (input.GetKeyboard().IsTriggered(VK_UP)) {
         selectedIndex--;
         if (selectedIndex < 0) selectedIndex = (int)files.size() - 1;
@@ -72,11 +72,11 @@ void DirectoryPanel::Draw(BitmapFont* font) {
     for (int i = 0; i < files.size(); i++) {
         // Highlight logic
         if (i == selectedIndex) {
-            // Kuning kalau dipilih
+            // selected: yellow
             font->Draw(files[i].name.c_str(), x, currentY, 0.625f, 1.0f, 1.0f, 0.0f, 1.0f);
         }
         else {
-            // Putih biasa
+            // white
             font->Draw(files[i].name.c_str(), x, currentY, 0.625f, 1.0f, 1.0f, 1.0f, 1.0f);
         }
         currentY += lineSpacing;

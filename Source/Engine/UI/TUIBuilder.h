@@ -8,8 +8,7 @@
 #include "UIButtonPrimitive.h"
 #include "Primitive.h"
 
-// Struct untuk menyimpan tema visual (Warna & Ukuran)
-// Jadi kita bisa bikin tema: "Theme_DOS", "Theme_Hacker", "Theme_Error", dll.
+// Visual theme (colors and sizes) applied to every button the builder adds.
 struct TUITheme {
     ButtonStyle styleStandby;
     ButtonStyle styleHover;
@@ -24,24 +23,24 @@ struct TUITheme {
 class TUIBuilder
 {
 public:
-    // Builder butuh akses ke Manager (untuk simpan tombol) dan Batcher (untuk render)
+    // Both pointers are borrowed: the manager stores the buttons, the batcher draws them.
     TUIBuilder(ButtonManager* manager, Primitive* batcher);
     ~TUIBuilder() = default;
 
-    // 1. SETUP: Tentukan posisi awal dan gaya
+    // 1. SETUP: start position and style
     void SetStartPosition(float x, float y);
     void SetSpacing(float spacing);
     void SetButtonSize(float width, float height);
     void SetTheme(const TUITheme& theme);
 
-    // 2. BUILD: Fungsi utama untuk membuat tombol
-    // Mengembalikan pointer mentah agar Scene bisa menyimpan referensinya jika butuh logic khusus
+    // 2. BUILD: adds a button below the previous one.
+    // Returns a borrowed pointer for scenes that need to reach the button later.
     UIButtonPrimitive* AddButton(const std::string& text, std::function<void()> onClick);
 
-    // Tambahan: Untuk label/dekorasi yang tidak bisa diklik
+    // A label or decoration that cannot be clicked
     UIButtonPrimitive* AddDecoration(const std::string& text);
 
-    // Reset posisi kursor ke awal (berguna jika mau bikin kolom baru)
+    // Moves the layout cursor back to the start (for example to begin a new column).
     void ResetCursor();
 
 private:

@@ -5,7 +5,6 @@
 #include <memory>
 #include "Primitive.h"
 
-// Forward declaration untuk menghindari circular dependency
 class Mouse;
 
 class CursorBlock
@@ -14,17 +13,16 @@ public:
     CursorBlock(ID3D11Device* device);
     ~CursorBlock();
 
-    // Setup ukuran kursor
+    // Sets the cursor size
     void Initialize(float width, float height);
 
     // Reads the cursor position from Input's Mouse.
     void Update(float dt, Mouse& mouse);
     void Update(float dt, float rawX, float rawY);
 
-    // Render
     void Render(ID3D11DeviceContext* context, Primitive* primitiveBatcher);
 
-    // Opsi Retro
+    // Retro options
     void SetGridSnap(bool enable, float gridW, float gridH);
     void SetBlink(bool enable, float visibleTime = 0.8f, float invisibleTime = 0.2f);
     void SetSize(float w, float h);
@@ -46,8 +44,8 @@ private:
 
     bool useBlink = true;
     float blinkTimer = 0.0f;
-    float blinkVisibleTime = 0.5f;   // Lama waktu terlihat
-    float blinkInvisibleTime = 0.2f; // Lama waktu hilang
+    float blinkVisibleTime = 0.5f;   // seconds shown
+    float blinkInvisibleTime = 0.2f; // seconds hidden
     bool isVisible = true;
 
     float m_color[4] = { 0.96f, 0.80f, 0.23f, 1.0f };

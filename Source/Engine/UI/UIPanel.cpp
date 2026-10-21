@@ -28,13 +28,12 @@ void UIPanel::RecalculateTextLayout()
 {
     formattedLines.clear();
 
-    // Gunakan string stream untuk memecah teks berdasarkan karakter '\n'
+    // One line per '\n'; long lines are not wrapped.
     std::stringstream ss(rawMessage);
     std::string segment;
 
     while (std::getline(ss, segment, '\n'))
     {
-        // Masukkan mentah-mentah sesuai potongan baris kamu
         formattedLines.push_back(segment);
     }
 }
@@ -45,18 +44,18 @@ void UIPanel::AddButton(const std::string& label, float relX, float relY, float 
     btn->SetOnClick(onClick);
     btn->SetAlignment(TextAlignment::Center);
 
-    // Style Tombol (Sesuai request: Transparan + Border Kuning)
+    // Button styles
     DirectX::XMFLOAT4 transparent = { 0.0f, 0.0f, 0.0f, 0.0f };
     DirectX::XMFLOAT4 white = { 1.0f, 1.0f, 1.0f, 1.0f };
     DirectX::XMFLOAT4 blue = { 0.0f, 0.0f, 0.8f, 1.0f };
 
-    // Standby: Transparan, Border Kuning (dari style)
+    // Standby: transparent, text in the panel border color
     btn->SetStyle(ButtonState::STANDBY, { transparent, transparent, style.colorBorder });
 
-    // Hover: Biru, Border Biru, Teks Putih (Sesuai file lama kamu)
+    // Hover: blue, white text
     btn->SetStyle(ButtonState::HOVER,   { blue, blue, white });
 
-    // Pressed: Kuning Solid
+    // Pressed: solid border color, black text
     btn->SetStyle(ButtonState::PRESSED, { style.colorBorder, style.colorBorder, {0.0f, 0.0f, 0.0f, 1.0f} });
 
     buttons.push_back(std::move(btn));
@@ -73,24 +72,24 @@ void UIPanel::Render(ID3D11DeviceContext* dc)
     if (!isVisible) return;
 
     // =========================================================
-    // 1. GAMBAR KOTAK & BORDER
+    // 1. BOX AND BORDER
     // =========================================================
 
-    // A. Dimmer (Layar redup)
+    // A. Dim the whole screen
     primitive->Rect(0, 0, 1920, 1080, 0.0f, 0.0f, 0.0f,
         style.colorDimmer.x, style.colorDimmer.y, style.colorDimmer.z, style.colorDimmer.w);
 
-    // B. Background Panel Hitam (Sedikit lebih besar dari border)
+    // B. Panel background, slightly larger than the border
     primitive->Rect(x - 8.0f, y - 8.0f, width + 16.0f, height + 16.0f,
         0.0f, 0.0f, 0.0f,
         style.colorBg.x, style.colorBg.y, style.colorBg.z, style.colorBg.w);
 
-    // C. Border Kuning
+    // C. Border color
     primitive->Rect(x, y, width, height,
         0.0f, 0.0f, 0.0f,
         style.colorBorder.x, style.colorBorder.y, style.colorBorder.z, style.colorBorder.w);
 
-    // D. Border Dalam Hitam (Efek garis tipis)
+    // D. Inner fill, leaving a thin border line
     float th = style.borderThickness;
     primitive->Rect(x + th, y + th, width - (th * 2), height - (th * 2),
         0.0f, 0.0f, 0.0f,
@@ -99,59 +98,57 @@ void UIPanel::Render(ID3D11DeviceContext* dc)
     // =========================================================
     // 2. HEADER BLOCKER
     // =========================================================
-    // Fungsinya: Menimpa garis border kuning di tempat Judul berada
+    // Covers the border line where the title sits.
 
     BitmapFont* font = ResourceManager::Instance().GetFont("VGA_FONT");
     if (font)
     {
         DirectX::XMFLOAT2 titleSize = font->MeasureText(title, style.textScale);
 
-        // Offset +25.0f disamakan dengan posisi teks judul di bawah
+        // +25 matches the title x offset below
         float labelPad = 8.0f;
         float blockerX = (x + 25.0f) - labelPad;
         float blockerY = y - (th * 2.0f);
         float blockerW = titleSize.x + (labelPad * 2.0f);
-        float blockerH = th * 4.0f; // Tinggi cukup untuk nutup garis
+        float blockerH = th * 4.0f; // tall enough to cover the line
 
-        // Gambar kotak hitam kecil
         primitive->Rect(blockerX, blockerY, blockerW, blockerH,
             0.0f, 0.0f, 0.0f,
             style.colorBg.x, style.colorBg.y, style.colorBg.z, style.colorBg.w);
     }
 
-    // PENTING: Flush (Gambar) semua kotak sebelum teks
+    // Flush the boxes before drawing text
     primitive->Render(dc);
 
     // =========================================================
-    // 3. RENDER TEKS
+    // 3. TEXT
     // =========================================================
 
     if (font)
     {
-        // A. Judul Panel (Kiri Atas + Offset 25px)
+        // A. Title (top left, offset 25 px)
         font->Draw(title.c_str(), x + 25.0f, y - 8.0f, style.textScale,
             style.colorText.x, style.colorText.y, style.colorText.z, style.colorText.w);
 
-        // B. Pesan Body (CENTER)
-        float startY = y + 80.0f; // Jarak dari atas
+        // B. Body text, centered
+        float startY = y + 80.0f; // from the panel top
 
         for (const auto& line : formattedLines)
         {
             DirectX::XMFLOAT2 lineSize = font->MeasureText(line, style.textScale);
 
-            // RUMUS CENTER MURNI:
-            // Posisi X = Awal Panel + (Setengah Sisa Ruang Kosong)
+            // X = panel left + half the free space
             float lineX = x + (width - lineSize.x) / 2.0f;
 
             font->Draw(line.c_str(), lineX, startY, style.textScale,
                 style.colorText.x, style.colorText.y, style.colorText.z, style.colorText.w);
 
-            startY += 25.0f; // Pindah baris
+            startY += 25.0f; // next line
         }
     }
 
     // =========================================================
-    // 4. RENDER TOMBOL
+    // 4. BUTTONS
     // =========================================================
     for (auto& btn : buttons)
     {

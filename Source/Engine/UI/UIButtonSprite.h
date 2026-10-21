@@ -14,18 +14,17 @@ public:
         sprite = std::make_unique<Sprite>(Graphics::Instance().GetDevice(), texturePath);
     }
 
-    // Implementasi khusus Sprite
     void Render(ID3D11DeviceContext* dc, Camera* camera) override
     {
         if (!sprite) return;
 
-        // Pilih warna berdasarkan state dari Parent
+        // Tint by state
         float r = 1, g = 1, b = 1;
         switch (currentState)
         {
         case ButtonState::STANDBY: r = 1.0f; g = 1.0f; b = 1.0f; break;
-        case ButtonState::HOVER:   r = 1.2f; g = 1.2f; b = 1.2f; break; // Lebih terang
-        case ButtonState::PRESSED: r = 0.7f; g = 0.7f; b = 0.7f; break; // Lebih gelap
+        case ButtonState::HOVER:   r = 1.2f; g = 1.2f; b = 1.2f; break; // brighter
+        case ButtonState::PRESSED: r = 0.7f; g = 0.7f; b = 0.7f; break; // darker
         }
 
         sprite->Render(dc, camera,

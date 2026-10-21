@@ -10,19 +10,17 @@ class UILabel
 public:
     UILabel(Primitive* primRenderer) : primitive(primRenderer) {}
 
-    // Setup Tampilan
     void SetPosition(float x, float y) { this->x = x; this->y = y; }
     void SetColor(float r, float g, float b, float a) { textColor = { r, g, b, a }; }
     void SetBackgroundColor(float r, float g, float b, float a) { backColor = { r, g, b, a }; }
     void SetScale(float s) { scale = s; }
     void SetPadding(float p) { padding = p; }
 
-    // Set Text (Otomatis hitung ulang ukuran background)
+    // Sets the text and re-measures it for the background
     void SetText(const std::string& newText)
     {
         text = newText;
 
-        // Hitung lebar teks untuk background
         BitmapFont* font = ResourceManager::Instance().GetFont("VGA_FONT");
         if (font)
         {
@@ -36,22 +34,20 @@ public:
     {
         if (text.empty() || !primitive) return;
 
-        // 1. Gambar Background (Kotak Hitam untuk menimpa border panel)
-        // Lebar kotak = Lebar Teks + Padding Kiri Kanan
+        // 1. Background box, drawn over the panel border
+        // text width plus padding on both sides, minus 7 px
         float bgWidth = textWidth + (padding * 2.0f) - 7;
-        float bgHeight = textHeight; // Tinggi pas body text
+        float bgHeight = textHeight;
 
-        // Kita gambar Rect solid
         primitive->Rect(x, y, bgWidth, bgHeight, 0.0f, 0, 0.0f,
             backColor.x, backColor.y, backColor.z, backColor.w);
 
         primitive->Render(dc);
 
-        // 2. Gambar Teks di atasnya
+        // 2. Text on top
         BitmapFont* font = ResourceManager::Instance().GetFont("VGA_FONT");
         if (font)
         {
-            // Posisi teks digeser sedikit (Padding) dari X background
             font->Draw(text.c_str(), x + padding, y, scale,
                 textColor.x, textColor.y, textColor.z, textColor.w);
         }
@@ -67,8 +63,8 @@ private:
 
     // Styling Default
     float scale = 0.625f;
-    float padding = 4.0f; // Jarak teks dari pinggir kotak hitam
+    float padding = 4.0f; // gap between the text and the box edge
 
-    DirectX::XMFLOAT4 textColor = { 0.96f, 0.80f, 0.23f, 1.0f }; // Kuning Default
-    DirectX::XMFLOAT4 backColor = { 0.0f, 0.0f, 0.0f, 1.0f };    // Hitam Pekat (PENTING)
+    DirectX::XMFLOAT4 textColor = { 0.96f, 0.80f, 0.23f, 1.0f }; // yellow
+    DirectX::XMFLOAT4 backColor = { 0.0f, 0.0f, 0.0f, 1.0f };    // opaque black, so it hides the border behind it
 };

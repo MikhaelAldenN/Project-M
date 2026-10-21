@@ -3,7 +3,6 @@
 TUIBuilder::TUIBuilder(ButtonManager* manager, Primitive* batcher)
     : m_manager(manager), m_batcher(batcher)
 {
-    // Default values agar tidak crash jika lupa set
     m_theme.textScale = 0.625f;
 }
 
@@ -37,7 +36,7 @@ void TUIBuilder::ResetCursor()
 
 UIButtonPrimitive* TUIBuilder::AddButton(const std::string& text, std::function<void()> onClick)
 {
-    // 1. Buat Button Baru
+    // 1. Create the button
     auto btn = std::make_unique<UIButtonPrimitive>(
         m_batcher,
         text,
@@ -47,12 +46,12 @@ UIButtonPrimitive* TUIBuilder::AddButton(const std::string& text, std::function<
         m_btnHeight
     );
 
-    // 2. Terapkan Style dari Theme
+    // 2. Theme styles
     btn->SetStyle(ButtonState::STANDBY, m_theme.styleStandby);
     btn->SetStyle(ButtonState::HOVER, m_theme.styleHover);
     btn->SetStyle(ButtonState::PRESSED, m_theme.stylePress);
 
-    // 3. Terapkan Layout Properties
+    // 3. Layout properties
     btn->SetTextScale(m_theme.textScale);
     btn->SetPadding(m_theme.padding);
     btn->SetVerticalAdjustment(m_theme.verticalAdj);
@@ -63,13 +62,13 @@ UIButtonPrimitive* TUIBuilder::AddButton(const std::string& text, std::function<
         btn->SetOnClick(onClick);
     }
 
-    // 5. Simpan pointer mentah sebelum ownership dipindah ke Manager
+    // 5. Keep a raw pointer before ownership moves to the manager
     UIButtonPrimitive* rawPtr = btn.get();
 
-    // 6. Masukkan ke Manager
+    // 6. Hand the button to the manager
     m_manager->AddButton(std::move(btn));
 
-    // 7. Update posisi Y untuk tombol berikutnya (Auto-Layout)
+    // 7. Advance Y for the next button
     m_currentY += (m_btnHeight + m_spacing);
 
     return rawPtr;
@@ -77,7 +76,6 @@ UIButtonPrimitive* TUIBuilder::AddButton(const std::string& text, std::function<
 
 UIButtonPrimitive* TUIBuilder::AddDecoration(const std::string& text)
 {
-    // Dekorasi mirip tombol tapi biasanya interaksinya beda
-    // Untuk simplifikasi, kita anggap sama tapi tanpa callback onClick
+    // A decoration is a button without an onClick callback.
     return AddButton(text, nullptr);
 }

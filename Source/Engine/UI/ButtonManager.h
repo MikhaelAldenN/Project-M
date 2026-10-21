@@ -6,7 +6,7 @@
 class ButtonManager
 {
 public:
-    // Polymorphism magic: Kita simpan pointer ke Base Class (UIButton)
+    // Takes ownership; buttons are stored through their UIButton base.
     void AddButton(std::unique_ptr<UIButton> button)
     {
         buttons.push_back(std::move(button));
@@ -25,6 +25,6 @@ public:
     void Clear() { buttons.clear(); }
 
 private:
-    // Vector ini bisa menampung SpriteButton MAUPUN PrimitiveButton
+    // sprite and primitive buttons alike
     std::vector<std::unique_ptr<UIButton>> buttons;
 };

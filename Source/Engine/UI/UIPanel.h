@@ -9,12 +9,12 @@
 #include "BitmapFont.h"
 #include "ResourceManager.h"
 
-// Struct Style biar profesional & gampang ganti tema
+// Panel colors and sizes
 struct PanelStyle {
-    DirectX::XMFLOAT4 colorBg = { 0.0f, 0.0f, 0.0f, 1.0f };       // Hitam
-    DirectX::XMFLOAT4 colorBorder = { 0.96f, 0.80f, 0.23f, 1.0f };    // Kuning
-    DirectX::XMFLOAT4 colorText = { 0.96f, 0.80f, 0.23f, 1.0f };    // Kuning
-    DirectX::XMFLOAT4 colorDimmer = { 0.0f, 0.0f, 0.0f, 0.2f };       // Redup belakang
+    DirectX::XMFLOAT4 colorBg = { 0.0f, 0.0f, 0.0f, 1.0f };       // black
+    DirectX::XMFLOAT4 colorBorder = { 0.96f, 0.80f, 0.23f, 1.0f };    // yellow
+    DirectX::XMFLOAT4 colorText = { 0.96f, 0.80f, 0.23f, 1.0f };    // yellow
+    DirectX::XMFLOAT4 colorDimmer = { 0.0f, 0.0f, 0.0f, 0.2f };       // dims the screen behind the panel
     float borderThickness = 2.5f;
     float textScale = 0.625f;
 };
@@ -29,7 +29,7 @@ public:
     void Hide();
     bool IsVisible() const { return isVisible; }
 
-    void SetMessage(const std::string& msg); // Support Auto-Wrap
+    void SetMessage(const std::string& msg); // one line per '\n'; no word wrap
     void AddButton(const std::string& label, float relX, float relY, float w, float h, std::function<void()> onClick);
     void SetOnClose(std::function<void()> callback) { onClose = callback; }
 
@@ -37,7 +37,7 @@ public:
     void Render(ID3D11DeviceContext* dc);
 
 private:
-    void RecalculateTextLayout(); // Helper potong kata otomatis
+    void RecalculateTextLayout(); // splits rawMessage into formattedLines
 
     Primitive* primitive;
     float x, y, width, height;

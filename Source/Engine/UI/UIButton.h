@@ -19,25 +19,22 @@ public:
 
     virtual ~UIButton() = default;
 
-    // --- PURE VIRTUAL (Anak Wajib Implementasi) ---
-    // Setiap anak harus menggambar dirinya sendiri dengan caranya masing-masing
+    // --- Drawing (each subclass) ---
     virtual void Render(ID3D11DeviceContext* dc, class Camera* camera) = 0;
 
-    // --- SHARED LOGIC (Semua anak pakai logika yang sama) ---
+    // --- Shared input logic ---
     void Update()
     {
-        // 1. Jika tombol ini Terpilih (Selected), PAKSA state jadi PRESSED
-        // Ini memastikan visualnya tetap "Mencet" walaupun mouse pergi.
+        // 1. A selected button always shows as PRESSED, even when the mouse is away.
         if (isSelected)
         {
             currentState = ButtonState::PRESSED;
 
-            // Kita tetap butuh cek klik mouse jika ingin logic "Re-click"
-            // Tapi untuk visual, kita return di sini agar tidak ditimpa logic hover di bawah.
+            // Returning here keeps the hover logic below from overriding the state.
             return;
         }
 
-        // 2. Standard Mouse Logic (Hanya jalan jika TIDAK Selected)
+        // 2. Mouse logic, only while not selected
         Mouse& mouse = Input::Instance().GetMouse();
         POINT mousePos = { mouse.GetPositionX(), mouse.GetPositionY() };
 
@@ -49,7 +46,7 @@ public:
             if (isMouseDown) currentState = ButtonState::PRESSED;
             else
             {
-                // Logic klik terjadi saat mouse dilepas (Mouse Up) di dalam area
+                // A click fires on release inside the button.
                 if (currentState == ButtonState::PRESSED && callback) callback();
                 currentState = ButtonState::HOVER;
             }
@@ -66,7 +63,6 @@ public:
     void SetOnClick(OnClickCallback cb) { callback = cb; }
     ButtonState GetState() const { return currentState; }
 
-    // Di dalam class UIButton, bagian Public:
     float GetX() const { return (float)rect.left; }
     float GetY() const { return (float)rect.top; }
     float GetWidth() const { return width; }
@@ -84,7 +80,6 @@ public:
     {
         width = w;
         height = h;
-        // Kita harus hitung ulang batas kanan dan bawah rect berdasarkan ukuran baru
         rect.right = rect.left + (long)width;
         rect.bottom = rect.top + (long)height;
     }

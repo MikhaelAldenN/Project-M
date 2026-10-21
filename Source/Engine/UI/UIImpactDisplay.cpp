@@ -7,13 +7,12 @@ UIImpactDisplay::~UIImpactDisplay() {}
 
 void UIImpactDisplay::Initialize(ID3D11Device* device)
 {
-    // Init Primitive untuk Flash & Background
+    // Primitive for the flash and the background
     m_primitive = std::make_unique<Primitive>(device);
 
     auto LoadSprite = [&](ImpactType type, const char* path) {
         auto sprite = std::make_unique<Sprite>(device, path);
-        // Sesuaikan ukuran sprite (Contoh 1920x1080 atau sesuai gambar aslimu)
-        // Kalau gambarmu kecil, sesuaikan w dan h ini agar tidak gepeng
+        // Every sprite is drawn at 1920 x 1080, whatever the image size.
         float w = 1920.0f;
         float h = 1080.0f;
         m_sprites[type] = std::move(sprite);
@@ -27,7 +26,6 @@ void UIImpactDisplay::Initialize(ID3D11Device* device)
     LoadSprite(ImpactType::RendaSeyo, "Data/Sprite/Scene Breaker/Sprite_Text_RENDASEYO.png");
     LoadSprite(ImpactType::Bougyo, "Data/Sprite/Scene Breaker/Sprite_Text_BOUGYO.png");
     LoadSprite(ImpactType::Kougeki, "Data/Sprite/Scene Breaker/Sprite_Text_KOUGEKI.png");
-    // Pastikan status awal bersih
     ResetAnim();
 }
 
@@ -41,22 +39,21 @@ void UIImpactDisplay::Show(ImpactType type, float duration)
     m_anim.currentType = type;
 
     // Setup Animation
-    m_anim.currentScale = 5.0f; // Mulai dari sangat besar
+    m_anim.currentScale = 5.0f; // starts very large
     m_anim.currentAlpha = 1.0f;
     m_anim.currentRotation = 0.0f;
-    m_anim.flashAlpha = 0.5f;   // Kilatan cahaya di awal
+    m_anim.flashAlpha = 0.5f;   // flash at the start
 }
 
 void UIImpactDisplay::ShowSequence(const std::vector<ImpactEvent>& sequence)
 {
-    // Kosongkan antrian lama
     m_eventQueue.clear();
-    // Isi antrian baru
+    // Replaces any queued events.
     for (const auto& evt : sequence) {
         m_eventQueue.push_back(evt);
     }
 
-    // Jika sedang diam, langsung mainkan yang pertama
+    // Starts the first event at once when nothing is playing.
     if (!m_anim.isActive && !m_eventQueue.empty()) {
         ImpactEvent next = m_eventQueue.front();
         m_eventQueue.pop_front();
@@ -66,17 +63,14 @@ void UIImpactDisplay::ShowSequence(const std::vector<ImpactEvent>& sequence)
 
 void UIImpactDisplay::Update(float elapsedTime)
 {
-    // [LOGIKA ANTRIAN]
-    // Jika animasi sekarang mati/selesai, cek apakah ada antrian berikutnya?
+    // When nothing is playing, start the next queued event.
     if (!m_anim.isActive)
     {
         if (!m_eventQueue.empty())
         {
-            // Ambil antrian paling depan
             ImpactEvent next = m_eventQueue.front();
             m_eventQueue.pop_front();
 
-            // Mainkan!
             Show(next.type, next.duration);
         }
         return;
@@ -84,18 +78,18 @@ void UIImpactDisplay::Update(float elapsedTime)
 
     m_anim.timer += elapsedTime;
 
-    // Logic Flash (Kilatan Putih)
+    // White flash fades out
     if (m_anim.flashAlpha > 0.0f)
     {
         m_anim.flashAlpha -= elapsedTime * 8.0f;
         if (m_anim.flashAlpha < 0.0f) m_anim.flashAlpha = 0.0f;
     }
 
-    float impactTime = 0.15f; // Waktu "Slam"
+    float impactTime = 0.15f; // "slam" duration
 
     if (m_anim.timer < impactTime)
     {
-        // FASE 1: SLAM (Membesar ke Normal dengan cepat)
+        // PHASE 1: SLAM (shrinks quickly to normal size)
         float t = m_anim.timer / impactTime;
         float k = 15.0f;
         float scaleFactor = exp(-k * t);
@@ -103,12 +97,12 @@ void UIImpactDisplay::Update(float elapsedTime)
     }
     else if (m_anim.timer < m_anim.totalDuration)
     {
-        // FASE 2: SLOW ZOOM OUT (Pelan banget menjauh)
+        // PHASE 2: SLOW ZOOM OUT
         float timeAfterImpact = m_anim.timer - impactTime;
         float zoomSpeed = 0.05f;
         m_anim.currentScale = 1.0f - (timeAfterImpact * zoomSpeed);
 
-        // Fade out di akhir durasi
+        // Fade out over the last 0.2 s
         float timeLeft = m_anim.totalDuration - m_anim.timer;
         if (timeLeft < 0.2f)
         {
@@ -117,7 +111,6 @@ void UIImpactDisplay::Update(float elapsedTime)
     }
     else
     {
-        // Animasi Selesai -> Reset
         ResetAnim();
     }
 }
@@ -126,17 +119,16 @@ void UIImpactDisplay::Render(ID3D11DeviceContext* dc)
 {
     if (!m_anim.isActive) return;
 
-    // 1. LAYER BACKGROUND (Hitam Transparan)
+    // 1. BACKGROUND (translucent black)
     float bgAlpha = 0.3f;
     if (m_anim.currentAlpha < 1.0f) {
         bgAlpha *= m_anim.currentAlpha;
     }
 
-    // Gambar Kotak Hitam Fullscreen
     m_primitive->Rect(0.0f, 0.0f, m_screenW, m_screenH, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, bgAlpha);
     m_primitive->Render(dc);
 
-    // 2. LAYER FLASH (Putih Transparan)
+    // 2. FLASH (translucent white)
     if (m_anim.flashAlpha > 0.0f)
     {
         m_primitive->Rect(0.0f, 0.0f, m_screenW, m_screenH, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, m_anim.flashAlpha);
@@ -153,7 +145,6 @@ void UIImpactDisplay::Render(ID3D11DeviceContext* dc)
         float finalW = dim.w * m_anim.currentScale;
         float finalH = dim.h * m_anim.currentScale;
 
-        // Hitung Center Screen
         float centerX = m_screenW * 0.5f;
         float centerY = m_screenH * 0.5f;
 
