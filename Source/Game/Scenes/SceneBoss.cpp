@@ -552,51 +552,11 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
     auto dc = Graphics::Instance().GetDeviceContext();
     auto rs = Graphics::Instance().GetRenderState();
 
-    // Detect whether this render call is targeting a transparent sub-window
-    bool isTransparentWindow = false;
-    if (m_windowSystem)
-    {
-        for (const auto& tracked : m_windowSystem->GetWindows())
-        {
-            if (!tracked->isActive) continue;
+    const bool isTransparentWindow{ IsTransparentWindowCamera(camera) };
 
-            if (tracked->camera.get() == camera &&
-                tracked->window &&
-                tracked->window->IsTransparent())
-            {
-                isTransparentWindow = true;
-                break;
-            }
-        }
-    }
-
-    // =========================================================
-    // CLEAR COLOR OVERRIDE FOR NON-TRANSPARENT WINDOWS
-    // =========================================================
     if (!isTransparentWindow)
     {
-        ID3D11RenderTargetView* currentRTV = nullptr;
-        ID3D11DepthStencilView* currentDSV = nullptr;
-
-        // Ambil Render Target dan Depth Stencil yang saat ini sedang diikat oleh WindowManager
-        dc->OMGetRenderTargets(1, &currentRTV, &currentDSV);
-
-        if (currentRTV)
-        {
-            // Bersihkan ulang menggunakan warna kustom dari SceneBoss
-            float clearColor[4] = { m_clearColor.x, m_clearColor.y, m_clearColor.z, m_clearColor.w };
-            dc->ClearRenderTargetView(currentRTV, clearColor);
-
-            // Wajib di-release karena OMGetRenderTargets menaikkan tingkat referensi (COM AddRef)
-            currentRTV->Release();
-        }
-
-        if (currentDSV)
-        {
-            // Bersihkan ulang depth buffer agar kalkulasi depth 3D tidak rusak
-            dc->ClearDepthStencilView(currentDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-            currentDSV->Release();
-        }
+        ClearBoundTargets(dc);
     }
 
     // Transparent windows need TransparentWindow blend state so the alpha
@@ -610,36 +570,7 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
     dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestAndWrite), 0);
     dc->RSSetState(rs->GetRasterizerState(RasterizerState::SolidCullBack));
 
-    // =========================================================
-    // POST-PROCESS VIGNETTE (Only applied to Main Window)
-    // =========================================================
-    const INaviPhase* activePhase{ m_navi ? m_navi->GetCurrentPhase() : nullptr };
-
-    // 2. Determine if Windowkill is active AND the boss is NOT dead
-    const bool isWindowkillAndAlive{ IsWindowkill(activePhase) && !activePhase->IsDead() };
-
-    // 3. Use the updated boolean to gate post-processing
-    bool usePostProcess = (!isTransparentWindow &&
-        targetCam == m_mainCamera.get() &&
-        m_postProcess &&
-        isWindowkillAndAlive);
-
-    if (usePostProcess)
-    {
-        m_postProcess->SetEnabled(true);
-        UberShader::UberData& activeData = m_postProcess->GetData();
-        activeData = m_uberParams;
-
-        // Turn off unneeded filters just to be safe
-        activeData.glitchStrength = 0.0f;
-        activeData.distortion = 0.0f;
-        activeData.chromaticAberration = 0.0f;
-        activeData.scanlineStrength = 0.0f;
-        activeData.bloomIntensity = 0.0f;
-        activeData.psxEnabled = false;
-
-        m_postProcess->BeginCapture();
-    }
+    const bool usePostProcess{ BeginMainCameraPostProcess(targetCam, isTransparentWindow) };
 
     RenderScene(elapsedTime, targetCam, isTransparentWindow);
 
@@ -657,6 +588,93 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
             D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
     }
 
+    RenderShapesAndHitboxes(dc, targetCam);
+
+    RenderFadeOverlays(dc, rs);
+}
+
+bool SceneBoss::IsTransparentWindowCamera(const Camera* camera) const
+{
+    if (!m_windowSystem) return false;
+
+    for (const auto& tracked : m_windowSystem->GetWindows())
+    {
+        if (!tracked->isActive) continue;
+
+        if (tracked->camera.get() == camera &&
+            tracked->window &&
+            tracked->window->IsTransparent())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void SceneBoss::ClearBoundTargets(ID3D11DeviceContext* dc)
+{
+    ID3D11RenderTargetView* currentRTV = nullptr;
+    ID3D11DepthStencilView* currentDSV = nullptr;
+
+    // Ambil Render Target dan Depth Stencil yang saat ini sedang diikat oleh WindowManager
+    dc->OMGetRenderTargets(1, &currentRTV, &currentDSV);
+
+    if (currentRTV)
+    {
+        // Bersihkan ulang menggunakan warna kustom dari SceneBoss
+        float clearColor[4] = { m_clearColor.x, m_clearColor.y, m_clearColor.z, m_clearColor.w };
+        dc->ClearRenderTargetView(currentRTV, clearColor);
+
+        // Wajib di-release karena OMGetRenderTargets menaikkan tingkat referensi (COM AddRef)
+        currentRTV->Release();
+    }
+
+    if (currentDSV)
+    {
+        // Bersihkan ulang depth buffer agar kalkulasi depth 3D tidak rusak
+        dc->ClearDepthStencilView(currentDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+        currentDSV->Release();
+    }
+}
+
+bool SceneBoss::BeginMainCameraPostProcess(const Camera* targetCam, bool isTransparentWindow)
+{
+    // =========================================================
+    // POST-PROCESS VIGNETTE (Only applied to Main Window)
+    // =========================================================
+    const INaviPhase* activePhase{ m_navi ? m_navi->GetCurrentPhase() : nullptr };
+
+    // 2. Determine if Windowkill is active AND the boss is NOT dead
+    const bool isWindowkillAndAlive{ IsWindowkill(activePhase) && !activePhase->IsDead() };
+
+    // 3. Use the updated boolean to gate post-processing
+    const bool usePostProcess = (!isTransparentWindow &&
+        targetCam == m_mainCamera.get() &&
+        m_postProcess &&
+        isWindowkillAndAlive);
+
+    if (!usePostProcess) return false;
+
+    m_postProcess->SetEnabled(true);
+    UberShader::UberData& activeData = m_postProcess->GetData();
+    activeData = m_uberParams;
+
+    // Turn off unneeded filters just to be safe
+    activeData.glitchStrength = 0.0f;
+    activeData.distortion = 0.0f;
+    activeData.chromaticAberration = 0.0f;
+    activeData.scanlineStrength = 0.0f;
+    activeData.bloomIntensity = 0.0f;
+    activeData.psxEnabled = false;
+
+    m_postProcess->BeginCapture();
+
+    return true;
+}
+
+void SceneBoss::RenderShapesAndHitboxes(ID3D11DeviceContext* dc, Camera* targetCam)
+{
     auto shapeRenderer = Graphics::Instance().GetShapeRenderer();
     if (m_showHitboxes)
     {
@@ -687,7 +705,10 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
 
     Graphics::Instance().GetShapeRenderer()->Render(
         dc, targetCam->GetView(), targetCam->GetProjection());
+}
 
+void SceneBoss::RenderFadeOverlays(ID3D11DeviceContext* dc, RenderState* rs)
+{
     // =========================================================
     // FADE SPRITE OVERLAY 
     // =========================================================

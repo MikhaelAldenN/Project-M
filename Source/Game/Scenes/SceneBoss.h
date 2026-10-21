@@ -27,6 +27,7 @@
 
 class BossPhase01;
 class CollisionManager;
+class RenderState;
 class EnemyManager;
 class ItemManager;
 class Stage;
@@ -65,6 +66,16 @@ private:
     void UpdateSubWindows(float elapsedTime);
     // --- Render Pipeline ---
     void RenderScene(float elapsedTime, Camera* camera, bool isTransparentWindow);
+    // Render steps, called in this order by Render.
+    // True when camera belongs to an active transparent sub-window.
+    [[nodiscard]] bool IsTransparentWindowCamera(const Camera* camera) const;
+    // Re-clears the render target and depth stencil bound by WindowManager.
+    void ClearBoundTargets(ID3D11DeviceContext* dc);
+    // Starts the post-process capture on the main camera while Windowkill runs and Navi is alive.
+    // Returns true when a capture was started and must be ended after the scene.
+    [[nodiscard]] bool BeginMainCameraPostProcess(const Camera* targetCam, bool isTransparentWindow);
+    void RenderShapesAndHitboxes(ID3D11DeviceContext* dc, Camera* targetCam);
+    void RenderFadeOverlays(ID3D11DeviceContext* dc, RenderState* rs);
 
     // --- Initialization ---
     void InitializeSubWindows();
