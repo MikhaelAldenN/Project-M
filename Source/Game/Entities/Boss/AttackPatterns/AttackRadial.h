@@ -14,11 +14,11 @@ struct RadialParams {
     int   count = 55;
     float speed = 22.14f;
     float burstDelay = 0.156f;  // Seconds between each of the bursts
-    int   burstCount = 3;       // Total bursts per trigger (Dipakai jika activeDuration == 0)
+    int   burstCount = 3;       // Total bursts per trigger (used when activeDuration == 0)
     int   damage = 1;
     float sfxVolume = 1.0f;
     DirectX::XMFLOAT4 color = { 1.0f, 0.2f, 0.2f, 1.0f };
-    float activeDuration = 0.0f; // Jika > 0, akan menyembur terus selama X detik
+    float activeDuration = 0.0f; // If > 0, fires continuously for this many seconds instead
 };
 
 class AttackRadial : public IBossAttackPattern {

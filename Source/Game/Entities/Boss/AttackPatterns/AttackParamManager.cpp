@@ -113,7 +113,6 @@ void AttackParamManager::ParseRainParams(const json& j, RainParams& out) {
 void AttackParamManager::ParseUltimateParams(const json& j, UltimateParams& out) {
     if (j.contains("laserDuration")) out.laserDuration = j["laserDuration"];
     if (j.contains("shootSpeed")) out.shootSpeed = j["shootSpeed"];
-    // (Bisa kamu tambah field lain jika ada)
     if (j.contains("ballColor") && j["ballColor"].is_array() && j["ballColor"].size() == 4) {
         out.ballColor = { j["ballColor"][0], j["ballColor"][1], j["ballColor"][2], j["ballColor"][3] };
     }
@@ -140,7 +139,7 @@ void AttackParamManager::ParseMeteorParams(const json& j, MeteorParams& out) {
     if (j.contains("radius")) out.radius = j["radius"];
     if (j.contains("visualScale")) out.visualScale = j["visualScale"];
 
-    // Konfigurasi Anchor
+    // Anchors
     if (j.contains("startX")) out.startX = j["startX"];
     if (j.contains("startZ")) out.startZ = j["startZ"];
     if (j.contains("targetX")) out.targetX = j["targetX"];

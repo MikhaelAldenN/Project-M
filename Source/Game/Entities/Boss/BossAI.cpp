@@ -15,7 +15,7 @@
 #include <cmath>
 
 // ========================================================
-// IMPLEMENTASI AI PHASE 01
+// BOSS AI - PHASE 01
 // ========================================================
 BossAI_Phase01::BossAI_Phase01(BossPhase01* phase, Player* target)
     : m_phase(phase), m_target(target) {}
@@ -25,21 +25,20 @@ BossAI_Phase01::AttackSequence BossAI_Phase01::GetNextTacticianAttack() {
     AttackSequence nextAttack;
 
     if (m_isNextMainAttack) {
-        // Giliran Main Attack (Wave -> Phalanx -> Meteor -> Targeted Rain)
+        // Main attack rotation: Wave -> Phalanx -> Meteor -> Targeted Rain
         switch (m_mainAttackIndex) {
         case 0: nextAttack = AttackSequence::Wave; break;
         case 1: nextAttack = AttackSequence::Phalanx; break;
         case 2: nextAttack = AttackSequence::Meteor; break;
         case 3: nextAttack = AttackSequence::Rain; break;
         }
-        m_mainAttackIndex = (m_mainAttackIndex + 1) % 4; // Ulangi ke 0 jika mencapai 4
+        m_mainAttackIndex = (m_mainAttackIndex + 1) % 4;
     }
     else {
         // The filler is always Radial; Direct and Fan are out of the filler rotation.
         nextAttack = AttackSequence::Radial;
     }
 
-    // Tukar status agar serangan berikutnya bergantian
     m_isNextMainAttack = !m_isNextMainAttack;
 
     return nextAttack;
@@ -48,7 +47,6 @@ BossAI_Phase01::AttackSequence BossAI_Phase01::GetNextTacticianAttack() {
 void BossAI_Phase01::Update(float dt, Boss* boss) {
     if (!m_enabled || !m_target || !m_phase) return;
 
-    // Tunggu sampai serangan utama dan hujan selesai sebelum melancarkan serangan berikutnya
     if (m_phase->HasActiveAttacks() || m_phase->HasRainActive()) return;
 
     m_cooldownTimer -= dt;
@@ -60,7 +58,7 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
         // One-time transition when the boss enters Chaos Mode (HP <= 50%)
         if (isEnraged && !m_isEnraged) {
             m_isEnraged = true;
-            m_currentAttack = AttackSequence::Phalanx; // Memulai combo pertama dari Phalanx
+            m_currentAttack = AttackSequence::Phalanx; // the Chaos cycle starts with Phalanx
         }
 
         DirectX::XMFLOAT3 pPos = m_target->GetPosition();
@@ -99,9 +97,9 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
         case AttackSequence::Phalanx:
             m_phase->AddPhalanx(std::make_unique<AttackPhalanx>(AttackParamManager::Instance().GetPhalanxParams(), m_target));
             if (isEnraged) {
-                // Eksekusi Combo Rain secara bersamaan
+                // Chaos Mode: a Rain runs alongside every main attack.
                 m_phase->TriggerRain(AttackParamManager::Instance().GetRainParams(), RainMode::VerticalSweep, m_target->GetPosition().x > 0);
-                m_currentAttack = AttackSequence::Wave; // Siklus Chaos berikutnya
+                m_currentAttack = AttackSequence::Wave; // next attack in the Chaos cycle
             }
             else {
                 m_currentAttack = GetNextTacticianAttack();
@@ -137,7 +135,7 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
             m_phase->AddUltimate(std::make_unique<AttackUltimate>(AttackParamManager::Instance().GetUltimateParams(), m_target));
             if (isEnraged) {
                 m_phase->TriggerRain(AttackParamManager::Instance().GetRainParams(), RainMode::VerticalSweep, m_target->GetPosition().x > 0);
-                m_currentAttack = AttackSequence::Phalanx; // Kembali ke awal siklus Chaos
+                m_currentAttack = AttackSequence::Phalanx; // back to the start of the Chaos cycle
             }
             else {
                 m_currentAttack = GetNextTacticianAttack();
@@ -149,7 +147,7 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
             // THE RAIN MANAGER (Tactician = Targeted)
             // ========================================================
         case AttackSequence::Rain:
-            // Karena Rain Vertical Sweep sudah jadi Combo, state ini hanya dipanggil oleh Tactician Mode
+            // Only Tactician Mode reaches this state; in Chaos Mode the Rain comes with each main attack.
             m_phase->TriggerRain(AttackParamManager::Instance().GetRainTargetedParams(), RainMode::Targeted, true);
             m_cooldownTimer = 1.0f;
             m_currentAttack = GetNextTacticianAttack();
@@ -157,29 +155,28 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
 
         case AttackSequence::RadialContinuos:
         case AttackSequence::FanContinuos:
-            // Kosongkan atau biarkan jika sewaktu-waktu ingin dipakai lagi
+            // Not scheduled by either mode.
             break;
         }
     }
 }
 
 // ========================================================
-// IMPLEMENTASI AI PHASE 02
+// BOSS AI - PHASE 02 (WINDOWKILL)
 // ========================================================
 BossAI_Phase02::BossAI_Phase02(BossPhase02* phase, Player* target)
     : m_phase(phase), m_target(target) {}
 
 void BossAI_Phase02::Update(float dt, Boss* boss) {
-    // Jangan serang player jika masih terjebak di kandang
+    // No attacks while the player is still caged.
     if (!m_enabled || !m_target || !m_phase || m_phase->IsPlayerCaged()) return;
 
-    // Tunggu sampai serangan saat ini selesai
     if (m_phase->HasActiveAttacks()) return;
 
     m_cooldownTimer -= dt;
 
     if (m_cooldownTimer <= 0.0f) {
-        // Eksekusi serangan Windowkill (MENGGUNAKAN PARAM MANAGER)
+        // Rotation: Bouncing -> Boomerang -> Blaster -> Spear
         switch (m_currentAttack) {
         case AttackSequence::Bouncing:
             m_phase->AddAttack(std::make_unique<AttackBouncing>(AttackParamManager::Instance().GetBouncingParams()));
@@ -194,7 +191,7 @@ void BossAI_Phase02::Update(float dt, Boss* boss) {
             break;
 
         case AttackSequence::Blaster:
-            // Menembak Laser Orbital ke arah Player
+            // Blasters aimed at the player's current X
             m_phase->AddAttack(std::make_unique<AttackBlasters>(AttackParamManager::Instance().GetBlasterParams(), true, m_target->GetPosition().x));
             m_cooldownTimer = 2.0f;
             m_currentAttack = AttackSequence::Spear;

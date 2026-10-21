@@ -5,7 +5,6 @@
 #include <memory>
 #include <string>
 
-// Reusing your BlasterParams structure.
 struct BlasterParams {
     float cannonWindowSize = 200.0f;
     float cannonVisualScale = 2.0f;

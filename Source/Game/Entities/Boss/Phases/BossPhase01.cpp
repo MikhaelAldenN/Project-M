@@ -107,10 +107,8 @@ void BossPhase01::Enter(Boss* boss) {
         boss->SetFaceSpriteVisible(true);
     }
 
-    // Aktifkan AI
     m_aiEnabled = false;
 
-    // Buka kunci kontrol Player
     if (m_aiTarget) {
         m_aiTarget->SetInputEnabled(true);
     }
@@ -319,7 +317,6 @@ void BossPhase01::AddUltimate(std::unique_ptr<AttackUltimate> attack) {
     TriggerRain(p, RainMode::DualPillar, true, 1.0f);
 }
 
-// Implementasi fungsi TriggerRain baru
 void BossPhase01::TriggerRain(const RainParams& params, RainMode mode, bool isPositiveSide, float sweepDir) {
     if (HasRainActive() || !m_ai) return;
     m_rainAttack = std::make_unique<AttackRain>(params, mode, isPositiveSide, sweepDir, m_aiTarget);

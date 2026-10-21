@@ -6,8 +6,8 @@
 // ============================================================
 // AttackMeteor - Phase 1 attack pattern.
 //
-// Menembakkan peluru berukuran besar secara berurutan (bergantian) 
-// dari sudut kanan atas layar menuju sudut kiri bawah secara diagonal.
+// Fires large bullets one after another. With the default anchors they
+// cross the screen diagonally from the top-right corner to the bottom-left.
 // ============================================================
 
 struct MeteorParams {

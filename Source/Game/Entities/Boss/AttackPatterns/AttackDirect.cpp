@@ -23,7 +23,7 @@ void AttackDirect::Start(Boss* boss, ProjectilePool* pool) {
     m_isTriggerWaiting = false;
     m_triggerTimer = 0.0f;
 
-    // Set agar peluru pertama langsung meluncur
+    // Full, so the first bullet fires on the first Update.
     m_spawnTimer = m_params.spawnDelay;
 }
 
@@ -60,7 +60,7 @@ void AttackDirect::Update(float dt, Boss* boss) {
 }
 
 void AttackDirect::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
-    // Render ditangani terpusat
+    // Bullets are rendered by the phase's central render loop
 }
 
 void AttackDirect::Stop(Boss* boss) {

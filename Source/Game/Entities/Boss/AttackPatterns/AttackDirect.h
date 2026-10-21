@@ -6,21 +6,20 @@
 // ============================================================
 // AttackDirect - Phase 1 attack pattern.
 //
-// Menembakkan peluru satu per satu lurus ke arah pemain.
-// Arah tembakan selalu diperbarui mengikuti posisi pemain 
-// secara real-time setiap kali peluru baru di-spawn.
+// Fires bullets one at a time straight at the player. The aim is
+// taken again for every bullet, so the stream follows the player.
 // ============================================================
 
 struct DirectParams {
-    int   count = 10;           // Jumlah peluru yang ditembakkan
-    float spawnDelay = 0.2f;    // Jeda antar tembakan
-    float speed = 45.0f;        // Kecepatan peluru
-    float radius = 0.35f;       // Ukuran hitbox
-    float visualScale = 1.5f;   // Skala visual
+    int   count = 10;           // bullets per trigger
+    float spawnDelay = 0.2f;    // seconds between shots
+    float speed = 45.0f;
+    float radius = 0.35f;       // hitbox radius
+    float visualScale = 1.5f;
     int   damage = 2;
     float sfxVolume = 1.0f;
 
-    int   triggerCount = 1;     // Untuk AI Combo
+    int   triggerCount = 1;     // used by the combo AI
     float triggerDelay = 1.0f;
 };
 

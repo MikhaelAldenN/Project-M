@@ -18,7 +18,7 @@ struct RainParams {
     float damagePerSecond = 12.0f; // HP per second while the player stands in an active zone
     float sfxVolume = 1.0f;
 
-    int   triggerCount = 1;     // Berapa kali hujan turun
+    int   triggerCount = 1;     // number of zones, triggerDelay apart
     float triggerDelay = 0.5f;
 };
 
@@ -44,7 +44,7 @@ public:
 
     bool IsFinished() const override;
 
-    // State query — disesuaikan agar membaca dari zona pertama (Aman untuk BossPhase01)
+    // State of the first zone (the one BossPhase01 reads)
     int               GetState()   const { return m_zones.empty() ? 0 : m_zones[0].state; }
     DirectX::XMFLOAT3 GetCenter()  const { return m_zones.empty() ? DirectX::XMFLOAT3(0, 0, 0) : m_zones[0].center1; }
     DirectX::XMFLOAT3 GetCenter2() const { return m_zones.empty() ? DirectX::XMFLOAT3(0, 0, 0) : m_zones[0].center2; }

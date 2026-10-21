@@ -16,8 +16,8 @@ void AttackWave::Start(Boss* boss, ProjectilePool* pool) {
     m_boss = boss;
     m_active = true;
     m_wavesFired = 0;
-    m_waveTimer = m_params.waveDelay; // Set penuh agar langsung nembak di frame pertama
-    m_nextIsRight = true;             // Gelombang pertama dari kanan
+    m_waveTimer = m_params.waveDelay; // full, so the first wave fires on the first Update
+    m_nextIsRight = true;             // the first wave comes from the right
 }
 
 void AttackWave::Update(float dt, Boss* boss) {
@@ -29,7 +29,7 @@ void AttackWave::Update(float dt, Boss* boss) {
 
         FireWave(m_nextIsRight);
 
-        m_nextIsRight = !m_nextIsRight; // Balikkan arah untuk gelombang berikutnya
+        m_nextIsRight = !m_nextIsRight;
 
         if (++m_wavesFired >= m_params.waves) {
             m_active = false;
@@ -38,7 +38,7 @@ void AttackWave::Update(float dt, Boss* boss) {
 }
 
 void AttackWave::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
-    // Peluru di-render oleh BossPhase01 secara terpusat
+    // Bullets are rendered by the phase's central render loop
 }
 
 void AttackWave::Stop(Boss* boss) {

@@ -29,18 +29,18 @@ void AttackFan::Start(Boss* boss, ProjectilePool* pool) {
 void AttackFan::Update(float dt, Boss* boss) {
     if (!m_active || !m_pool) return;
 
-    // 1. Jika sedang dalam jeda antar trigger (nunggu untuk trigger berikutnya)
+    // 1. Between triggers: wait for the next one
     if (m_isTriggerWaiting) {
         m_triggerTimer += dt;
         if (m_triggerTimer >= m_params.triggerDelay) {
             m_isTriggerWaiting = false;
-            m_wavesFired = 0; // Reset wave untuk trigger baru
+            m_wavesFired = 0;
             m_waveTimer = m_params.waveDelay;
         }
         return;
     }
 
-    // 2. Logika tembakan normal
+    // 2. Fire waves
     m_waveTimer += dt;
     if (m_waveTimer >= m_params.waveDelay) {
         m_waveTimer -= m_params.waveDelay;
@@ -53,15 +53,14 @@ void AttackFan::Update(float dt, Boss* boss) {
 
         FireWave(boss);
 
-        // Jika satu set tembakan (semua wave) sudah selesai
+        // A trigger ends after all of its waves.
         if (++m_wavesFired >= m_params.waves) {
-            m_currentTrigger++; // Hitung trigger selesai
+            m_currentTrigger++;
 
             if (m_currentTrigger >= m_params.triggerCount) {
-                m_active = false; // Serangan benar-benar selesai
+                m_active = false;
             }
             else {
-                // Masuk ke mode tunggu untuk trigger berikutnya
                 m_isTriggerWaiting = true;
                 m_triggerTimer = 0.0f;
             }

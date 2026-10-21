@@ -17,7 +17,7 @@ using namespace DirectX;
 AttackRain::AttackRain(const RainParams& params, RainMode mode, bool isPositiveSide, float sweepDir, Player* target)
     : m_params(params), m_mode(mode), m_isPositiveSide(isPositiveSide), m_sweepDir(sweepDir), m_target(target)
 {
-    // Reservasi handle VFX untuk setiap zona agar tidak bentrok
+    // One VFX handle per drop in every zone, so zones never share a handle.
     int maxDrops = (mode == RainMode::DualPillar) ? 800 : 400;
     m_vfxHandles.assign(params.triggerCount * maxDrops, -1);
 }
@@ -32,7 +32,7 @@ void AttackRain::Start(Boss* boss, ProjectilePool* pool) {
     m_zonePrimitive = std::make_unique<Primitive>(device);
 
     m_zones.clear();
-    // Buat zona sebanyak nilai TriggerCount
+    // One zone per trigger, each delayed by triggerDelay.
     for (int i = 0; i < m_params.triggerCount; i++) {
         RainZone z;
         z.state = 0;
@@ -56,7 +56,7 @@ void AttackRain::Update(float dt, Boss* boss) {
     DirectX::XMFLOAT3 pPos = (m_target) ? m_target->GetPosition() : DirectX::XMFLOAT3(0, 0, 0);
     constexpr float PLAYER_RADIUS = 0.3f;
 
-    // Fungsi pengecek hitbox manual (Sama persis seperti aslimu)
+    // Player circle against the zone rect: the rect is grown by the player radius.
     auto isInsideZone = [&](const DirectX::XMFLOAT3& center) {
         float minX = center.x - halfW - PLAYER_RADIUS;
         float maxX = center.x + halfW + PLAYER_RADIUS;
@@ -69,13 +69,13 @@ void AttackRain::Update(float dt, Boss* boss) {
         if (zone.state == 4) continue;
         allFinished = false;
 
-        if (zone.state == 0) { // Tunggu Delay
+        if (zone.state == 0) { // Waiting
             zone.waitTimer -= dt;
             if (zone.waitTimer <= 0.0f) {
                 zone.state = 1;
                 zone.stateTimer = 0.0f;
 
-                // Hitung posisi saat baru muncul
+                // The zone position is fixed when the zone appears.
                 if (m_mode == RainMode::DualPillar) {
                     zone.center1 = { -16.0f, 0.0f,  0.0f };
                     zone.center2 = { 16.0f, 0.0f,  0.0f };
@@ -99,14 +99,13 @@ void AttackRain::Update(float dt, Boss* boss) {
                 zone.stateTimer = 0.0f;
                 CameraController::Instance().AddTrauma(0.5f);
                 AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Rain_01.wav", 0.07f * m_params.sfxVolume);
-                m_sfxTimer = 999.0f; // Paksa masuk ke trigger loop SFX
+                m_sfxTimer = 999.0f; // start the SFX loop at once
             }
         }
         else if (zone.state == 2) { // Active
             anyActiveOrDissipating = true;
             zone.stateTimer += dt;
 
-            // Cek Collision
             if (m_mode == RainMode::DualPillar) {
                 if (isInsideZone(zone.center1) || isInsideZone(zone.center2)) isHit = true;
             }
@@ -123,7 +122,6 @@ void AttackRain::Update(float dt, Boss* boss) {
             anyActiveOrDissipating = true;
             zone.stateTimer += dt;
 
-            // Cek Collision
             if (m_mode == RainMode::DualPillar) {
                 if (isInsideZone(zone.center1) || isInsideZone(zone.center2)) isHit = true;
             }
@@ -137,7 +135,7 @@ void AttackRain::Update(float dt, Boss* boss) {
         }
     }
 
-    // Jika ada hujan yang sedang aktif/menghilang
+    // While any zone is active or fading out
     if (anyActiveOrDissipating) {
         CameraController::Instance().AddTrauma(1.0f * dt);
 
@@ -155,7 +153,7 @@ void AttackRain::Update(float dt, Boss* boss) {
             m_sfxTimer = 0.0f;
         }
 
-        // Terapkan damage HANYA 1 KALI per update meskipun banyak area hujan menumpuk
+        // Damage is applied once per update, even where zones overlap.
         if (isHit && m_target && m_target->GetHP() > 0) {
             // Why accumulate: damage is whole HP, but one frame is worth less than 1 HP.
             // The fraction is carried over so the total follows elapsed time at any frame rate.
@@ -206,7 +204,7 @@ void AttackRain::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss
     for (const auto& zone : m_zones) {
         if (zone.state == 1 || zone.state == 2 || zone.state == 3) {
 
-            // 1. GAMBAR KOTAK MERAH 2D (Render Primitive Original)
+            // 1. Zone rect (blinks during the warning)
             float alpha = 0.0f;
             if (zone.state == 1) {
                 float blink = (sinf(zone.stateTimer * 20.0f) + 1.0f) * 0.5f;
@@ -223,9 +221,9 @@ void AttackRain::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss
             if (m_mode == RainMode::DualPillar) drawRect(zone.center2, alpha);
             m_zonePrimitive->Render(context);
 
-            // 2. GAMBAR HUJAN VFX 3D
+            // 2. Rain VFX
             if (zone.state == 2 || zone.state == 3) {
-                std::mt19937 gen(1337 + zoneIndex); // Seed berbeda tiap zona agar tidak numpuk
+                std::mt19937 gen(1337 + zoneIndex); // a different seed per zone, so the drops of two zones do not line up
                 std::uniform_real_distribution<float> distSpeed(m_params.minSpeed, m_params.maxSpeed);
                 std::uniform_real_distribution<float> distSpawn(0.0f, m_params.activeDuration);
 

@@ -6,23 +6,23 @@
 // ============================================================
 // AttackWave - Phase 1 attack pattern.
 //
-// Menembakkan peluru dari luar layar (Kiri/Kanan) secara lurus.
-// Tembakan akan berselang-seling: Sisi kanan mengisi track ganjil,
-// lalu sisi kiri mengisi track genap di gelombang berikutnya.
+// Fires straight lines of bullets from off screen, alternating sides:
+// a wave from the right fills the odd tracks, the next wave from the
+// left fills the even tracks.
 // ============================================================
 
 struct WaveParams {
-    int   trackCount = 10;      // Total jalur/track yang tersedia (misal 10)
-    int   bulletsPerWave = 5;   // Jumlah peluru yang ditembakkan per gelombang
-    int   waves = 6;            // Total gelombang (Kanan->Kiri->Kanan = 3)
-    float waveDelay = 0.8f;     // Jeda antar gelombang tembakan
-    float speed = 25.0f;        // Kecepatan peluru
-    float trackSpacing = 3.5f;  // Jarak antar track (Sumbu Z)
-    float startZ = -15.75f;     // Posisi awal Track 0 (Paling bawah/atas)
-    float spawnX = 40.0f;       // Jarak spawn dari tengah layar (di luar layar)
+    int   trackCount = 10;      // number of tracks
+    int   bulletsPerWave = 5;   // bullets per wave
+    int   waves = 6;            // waves in total, sides alternating
+    float waveDelay = 0.8f;     // seconds between waves
+    float speed = 25.0f;
+    float trackSpacing = 3.5f;  // Z distance between tracks
+    float startZ = -15.75f;     // Z of track 0, the bottom track
+    float spawnX = 40.0f;       // spawn distance from the arena centre, off screen
     int   damage = 2;
     float sfxVolume = 1.0f;
-    DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 0.0f, 1.0f }; // Warna default (Kuning)
+    DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 0.0f, 1.0f }; // yellow
 };
 
 class AttackWave : public IBossAttackPattern {
@@ -47,5 +47,5 @@ private:
     bool  m_active = false;
     int   m_wavesFired = 0;
     float m_waveTimer = 0.0f;
-    bool  m_nextIsRight = true; // Toggle selang-seling
+    bool  m_nextIsRight = true; // alternates every wave
 };

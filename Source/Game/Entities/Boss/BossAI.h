@@ -29,7 +29,6 @@ class Player;
 // ========================================================
 class BossAI_Phase01 {
 public:
-    // Enum tetap dipertahankan
     enum class AttackSequence {
         Radial, RadialContinuos, Fan, FanContinuos,
         Phalanx, Rain, Ultimate, Wave, Meteor, Direct
@@ -53,15 +52,15 @@ private:
     // Tactician Mode tracker (HP > 50%)
     // ========================================================
     int  m_mainAttackIndex = 0;     // 0: Wave, 1: Phalanx, 2: Meteor, 3: Rain (Targeted)
-    bool m_isNextMainAttack = true; // Karena dimulai dari Radial (Filler), next = Main Attack
+    bool m_isNextMainAttack = true; // starts with the Radial filler, so the next one is a main attack
 
     // ========================================================
     // Chaos Mode tracker (HP <= 50%)
     // ========================================================
-    bool m_isEnraged = false;       // Flag untuk mendeteksi awal transisi Phase 2
+    bool m_isEnraged = false;       // set once Chaos Mode starts
     int  m_enragedMainIndex = 1;    // 0: Phalanx, 1: Wave, 2: Meteor, 3: Ultimate
 
-    // Default mulai dari filler Radial
+    // The first attack is the Radial filler.
     AttackSequence m_currentAttack = AttackSequence::Radial;
     float m_cooldownTimer = 2.0f;
 };
@@ -91,7 +90,7 @@ private:
     Player* m_target = nullptr;
     bool          m_enabled = false;
 
-    // Sistem Antrean (Sequence)
+    // Next attack in the fixed rotation
     AttackSequence m_currentAttack = AttackSequence::Bouncing;
-    float m_cooldownTimer = 3.0f; // Jeda awal saat masuk fase
+    float m_cooldownTimer = 3.0f; // delay before the first attack of the phase
 };

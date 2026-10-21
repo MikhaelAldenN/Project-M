@@ -29,10 +29,10 @@ void AttackRadial::Update(float dt, Boss* boss) {
     if (!m_active || !m_pool) return;
 
     // ========================================================
-    // LOGIKA PENGHENTIAN SERANGAN (DURATION vs BURST COUNT)
+    // END CONDITION: DURATION OR BURST COUNT
     // ========================================================
     if (m_params.activeDuration > 0.0f) {
-        // Mode Stream: Berhenti jika waktu durasi sudah habis
+        // Stream mode: stop after activeDuration seconds
         m_lifeTimer += dt;
         if (m_lifeTimer >= m_params.activeDuration) {
             m_active = false;
@@ -40,7 +40,7 @@ void AttackRadial::Update(float dt, Boss* boss) {
         }
     }
     else {
-        // Mode Normal: Berhenti jika jumlah tembakan sudah mencapai batas
+        // Burst mode: stop after burstCount bursts
         if (m_burstsFired >= m_params.burstCount) {
             m_active = false;
             return;
@@ -48,7 +48,7 @@ void AttackRadial::Update(float dt, Boss* boss) {
     }
 
     // ========================================================
-    // LOGIKA PENEMBAKAN
+    // FIRING
     // ========================================================
     m_burstTimer += dt;
     if (m_burstTimer >= m_params.burstDelay) {

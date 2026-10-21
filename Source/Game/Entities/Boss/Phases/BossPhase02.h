@@ -178,7 +178,7 @@ private:
     float m_cageSizeWorld = 7.5f;
     std::string m_cageWindowName = "player_cage_window";
 
-    // HUD Renderer — dirender ke FX window
+    // HUD renderer, drawn into the FX window
     std::unique_ptr<HUDRenderer> m_hudRenderer;
 
     // Overdrive sprite

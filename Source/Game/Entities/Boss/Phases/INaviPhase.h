@@ -41,7 +41,6 @@ public:
     // Applies damage with hit feedback at `hitPos` (world space). Does nothing once dead.
     virtual DamageResult TakeDamage(const DamageInfo& damage) = 0;
     // False while player bullets must pass through without dealing damage.
-    // False while player bullets must pass through without dealing damage.
     [[nodiscard]] virtual bool IsVulnerable() const { return !IsDead(); }
     // Offers a live player bullet to the phase before it is tested against anything else.
     // Returns true when the phase consumed it (the caller then deactivates the bullet).

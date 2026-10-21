@@ -20,7 +20,7 @@ BossPhase02::BossPhase02(Player* player) {
     m_aiTarget = player;
 }
 // =========================================================
-// [MAGIC] MEMORY MANAGEMENT & SPAWNING
+// ENTER
 // =========================================================
 void BossPhase02::Enter(Boss* boss) {
     if (!boss || !boss->GetWindowSystem()) return;
@@ -31,7 +31,7 @@ void BossPhase02::Enter(Boss* boss) {
     if (mainWindow && mainWindow->GetSDLWindow()) {
         SDL_Window* sdlWin = mainWindow->GetSDLWindow();
 
-        // Sembunyikan window utama agar fokus ke window mekanik Windowkill
+        // Windowkill plays on the desktop, so the main window is hidden.
         SDL_HideWindow(sdlWin);
     }
 
@@ -56,7 +56,7 @@ void BossPhase02::Enter(Boss* boss) {
     EffectManager::Instance().PreloadEffect(blasterParams.chargeEffectPath);
     EffectManager::Instance().PreloadEffect(blasterParams.fireEffectPath);
 
-    m_bossRef = boss; // Simpan referensi boss untuk dipakai saat jendela hancur    m_bossMaxHP = 4000;
+    m_bossRef = boss;
     m_bossHP = m_bossMaxHP;
     m_hitFlashTimer = 0.0f;
     m_aiEnabled = false;
@@ -100,7 +100,7 @@ void BossPhase02::UpdateOverlaySizeFromDisplay() {
 }
 
 void BossPhase02::CreateFxWindow(WindowTrackingSystem& windowSystem) {
-    // Ciptakan jendela FX SECARA DINAMIS hanya ketika fase ini dimulai!
+    // Created when the phase starts, not preloaded.
     TrackedWindowConfig fxCfg = { "navi_fx", "N.A.V.I - FX", (int)m_screenW, (int)m_screenH, 3 };
     fxCfg.role = WindowRole::SUB_VIEWPORT;
     fxCfg.isTransparent = true;
@@ -122,11 +122,10 @@ void BossPhase02::CreateFxWindow(WindowTrackingSystem& windowSystem) {
 }
 
 void BossPhase02::InitializeWings(ID3D11Device* device) {
-    // Load tekstur sayap ke VRAM hanya di fase ini
+    // Wing textures are loaded only for this phase.
     m_wingSprite = std::make_unique<Sprite>(device, "Data/Sprite/Placeholder/[PLACEHOLDER]ErrorAtlas.png");
     m_overdriveSprite = std::make_unique<Sprite>(device, "Data/Sprite/txt_nagaoshi.png");
 
-    // Reset timer dan ciptakan array
     m_glitchTimer = 0.0f;
     m_wingState = WingState::Expanding;
     m_wingStateTimer = 0.0f;
@@ -138,14 +137,14 @@ void BossPhase02::CreatePlayerCage(WindowTrackingSystem& windowSystem) {
 
     m_isPlayerCaged = true;
     m_aiTarget->SetPosition(0, 0, -8.0f);
-    m_cageMaxHP = 600; // Sesuaikan dengan total HP yang kamu inginkan
+    m_cageMaxHP = 600;
     m_cageHP = m_cageMaxHP;
-    m_cagePos = m_aiTarget->GetPosition(); // Kunci posisi kandang di lokasi player saat ini
+    m_cagePos = m_aiTarget->GetPosition(); // the cage stays where the player stands now
     m_cageWindowPos = m_cagePos;
     m_cageShakeTimer = 0.0f;
     m_aiTarget->SetShootDelay(0.0f);
 
-    // Hitung ukuran asli di dunia 3D (300 pixel / ratio)
+    // Cage size in world units: the 300-pixel window divided by the pixel-to-unit ratio.
     m_cageSizeWorld = 300.0f / windowSystem.GetPixelToUnitRatio();
 
     TrackedWindowConfig cageCfg;
@@ -154,11 +153,11 @@ void BossPhase02::CreatePlayerCage(WindowTrackingSystem& windowSystem) {
     cageCfg.width = 300;
     cageCfg.height = 300;
     cageCfg.role = WindowRole::TRACKED_ENTITY;
-    cageCfg.priority = 100; // Pastikan selalu di atas
+    cageCfg.priority = 100;
     cageCfg.isTransparent = false;
 
     windowSystem.AddTrackedWindow(cageCfg,
-        [this]() { return m_cageWindowPos; }, // Posisinya STATIS, hanya jitter saat kena tembak
+        [this]() { return m_cageWindowPos; }, // fixed position; it only jitters when hit
         []() { return DirectX::XMFLOAT2(300.0f, 300.0f); }
     );
 
@@ -182,11 +181,11 @@ void BossPhase02::StartOpeningDialogue(WindowTrackingSystem& windowSystem) {
     {
         TrackedWindowConfig diagCfg;
         diagCfg.name = m_dialogueWindowName;
-        diagCfg.title = "N.A.V.I";            // Judul window bar atas
+        diagCfg.title = "N.A.V.I";
         diagCfg.width = (int)m_dialogueWindowW;
         diagCfg.height = (int)m_dialogueWindowH;
         diagCfg.role = WindowRole::TRACKED_ENTITY;
-        diagCfg.isTransparent = false;                // Solid — sama seperti kandang & bullet
+        diagCfg.isTransparent = false;                // opaque, like the cage window
         diagCfg.priority = 5;
 
         windowSystem.AddTrackedWindow(diagCfg,
@@ -198,18 +197,17 @@ void BossPhase02::StartOpeningDialogue(WindowTrackingSystem& windowSystem) {
         if (diagWin && diagWin->window) {
             m_dialogueWindow = diagWin->window;
             m_dialogueCamera = diagWin->camera;
-            m_dialogueWindow->SetBackgroundAlpha(1.0f); // Background solid
+            m_dialogueWindow->SetBackgroundAlpha(1.0f);
             m_dialogueWindow->SetClickThrough(false);
-            m_dialogueWindow->SetBorderVisible(true);   // Border OS tetap tampil
+            m_dialogueWindow->SetBorderVisible(true);
             m_dialogueWindow->SetDraggable(false);
         }
     }
 
     m_dialogueBox = std::make_unique<UIDialogueBox>();
     m_dialogueBox->Initialize();
-    m_dialogueBox->SetShowBackground(false);  // No background — teks melayang di window transparan
+    m_dialogueBox->SetShowBackground(false);  // text only; the window itself provides the background
 
-    // Autoadvance ON, strict OFF → player bebas gerak, dialog jalan sendiri
     m_dialogueBox->SetAutoAdvance(false);
     m_dialogueBox->StartDialogue({
         u8"ウィンドウを撃て"
@@ -218,7 +216,7 @@ void BossPhase02::StartOpeningDialogue(WindowTrackingSystem& windowSystem) {
     m_isDialogueActive = true;
     m_aiEnabled = false;
     if (m_aiTarget) {
-        m_aiTarget->SetInputEnabled(true); // Player tetap bisa gerak dari awal
+        m_aiTarget->SetInputEnabled(true); // the player can move from the start
     }
 
     m_cageFirstHitTriggered = false;
@@ -229,7 +227,7 @@ void BossPhase02::CreateClickBlocker(WindowTrackingSystem& windowSystem) {
     // =========================================================
     // INVISIBLE CLICK BLOCKER WINDOW
     // =========================================================
-    // Window ini selebar layar untuk menangkap klik nyasar ke OS
+    // Covers the whole monitor and catches clicks that would otherwise reach the desktop.
     TrackedWindowConfig blockerCfg;
     blockerCfg.name = "click_blocker";
     blockerCfg.title = "Invisible_Blocker";
@@ -237,8 +235,8 @@ void BossPhase02::CreateClickBlocker(WindowTrackingSystem& windowSystem) {
     blockerCfg.height = (int)m_screenH;
     blockerCfg.role = WindowRole::SUB_VIEWPORT;
 
-    // Priority 99 menjamin window ini berada di z-order tertinggi 
-    // (di atas dialog, cage, dan fx) karena WindowManager me-raise priority secara ascending (< 100).
+    // 99 is the highest priority WindowManager still orders (it raises windows
+    // below 100 in ascending order), so this goes above the dialogue and FX windows.
     blockerCfg.priority = 99;
     blockerCfg.isTransparent = true;
 
@@ -249,8 +247,8 @@ void BossPhase02::CreateClickBlocker(WindowTrackingSystem& windowSystem) {
 
     if (auto* blockerWin = windowSystem.GetTrackedWindow("click_blocker")) {
         if (blockerWin->window) {
-            blockerWin->window->SetBackgroundAlpha(0.0f); // 100% tembus pandang
-            blockerWin->window->SetClickThrough(false);   // Tangkap semua klik OS!
+            blockerWin->window->SetBackgroundAlpha(0.0f);
+            blockerWin->window->SetClickThrough(false);   // not click-through: this window takes the clicks
             blockerWin->window->SetBorderVisible(false);
             blockerWin->window->SetDraggable(false);
             blockerWin->window->SetRenderScene(false);
@@ -261,7 +259,7 @@ void BossPhase02::CreateClickBlocker(WindowTrackingSystem& windowSystem) {
 void BossPhase02::Exit(Boss* boss) {
     m_deathCleanupDone = false;
 
-    // 1. BERSIH-BERSIH WINDOW UTAMA PHASE (Cage, FX, Dialog)
+    // 1. Remove the phase windows (FX, dialogue, cage)
     if (boss && boss->GetWindowSystem()) {
         boss->GetWindowSystem()->RemoveTrackedWindow("navi_fx");
         boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
@@ -274,13 +272,13 @@ void BossPhase02::Exit(Boss* boss) {
     }
     m_activeAttacks.clear();
 
-    // 3. BERSIH-BERSIH EFEK PARTIKEL (VFX) DEATH SCENE
+    // 3. Stop the death sequence VFX
     if (m_deathVfxHandle != -1) {
         EffectManager::Instance().Stop(m_deathVfxHandle);
         m_deathVfxHandle = -1;
     }
 
-    // 4. RESET POINTER & STATE PHASE
+    // 4. Reset pointers and phase state
     m_fxWindow = nullptr;
     m_fxCamera.reset();
     m_dialogueWindow = nullptr;
@@ -292,7 +290,7 @@ void BossPhase02::Exit(Boss* boss) {
     m_rightWingData.clear();
     m_overdriveSprite.reset();
 
-    // 5. KEMBALIKAN MAIN WINDOW KE STATE NORMAL
+    // 5. Show the main window again and restore its window order
     Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
     if (mainWindow && mainWindow->GetSDLWindow()) {
         SDL_ShowWindow(mainWindow->GetSDLWindow());
@@ -311,7 +309,7 @@ void BossPhase02::Exit(Boss* boss) {
 }
 
 // =========================================================
-// WING LOGIC (Copas utuh dari versi sebelumnya)
+// WING LOGIC
 // =========================================================
 void BossPhase02::ReplayAnimation() {
     m_wingState = WingState::Expanding;
@@ -380,8 +378,6 @@ void BossPhase02::Update(float dt, Boss* boss) {
 
     if (m_aiTarget && m_aiTarget->GetHP() <= 0) {
         StopForDeadPlayer(boss);
-
-        // Return segera agar logika boss/AI di bawahnya tidak dieksekusi
         return;
     }
 
@@ -432,10 +428,9 @@ void BossPhase02::RaiseClickBlocker(Boss* boss) {
 }
 
 void BossPhase02::StopForDeadPlayer(Boss* boss) {
-    // Hentikan semua BGM yang sedang berjalan
     AudioManager::Instance().StopMusic();
 
-    // Sembunyikan main window boss jika perlu agar transisi bersih
+    // Hide the boss main window so the transition is clean.
     if (boss && boss->GetMainWindow()) {
         SDL_HideWindow(boss->GetMainWindow()->GetSDLWindow());
     }
@@ -689,7 +684,7 @@ void BossPhase02::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
     }
 
     // =========================================================
-    // RENDER HUD (HP BAR PLAYER & BOSS) — hanya di FX window
+    // HUD (player and boss HP bars), FX window only
     // =========================================================
     if (isFXCam && m_hudRenderer)
     {
@@ -698,7 +693,7 @@ void BossPhase02::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
         if (m_aiTarget)
         {
             playerHP = m_aiTarget->GetHP();
-            playerMaxHP = 100; // HP maksimal player standar
+            playerMaxHP = 100; // standard player max HP
         }
         m_hudRenderer->Render(context,
             playerHP, playerMaxHP,
@@ -706,8 +701,8 @@ void BossPhase02::Render(ID3D11DeviceContext* context, Camera* currentCamera, Bo
     }
 
     // =========================================================
-    // 1. RENDER SAYAP
-    // Normalnya hanya di FX cam, tapi saat mati juga di main cam
+    // 2. WINGS
+    // FX window only, plus the main window during the death sequence
     // =========================================================
     if (isFXCam || isDeathMainCam) {
         std::vector<Sprite::Sprite3DBatchData> batchData;
@@ -811,7 +806,7 @@ void BossPhase02::DamageCage(int dmg) {
     }
 
     // =========================================================
-    // PICU PLAYER OVERDRIVE / UNCAPPED (HP <= 50%)
+    // RELEASE THE PLAYER POWER CAP AT HALF CAGE HP
     // =========================================================
     if (m_cageHP <= 300 && m_aiTarget) {
         if (!m_aiTarget->IsPowerUncapped()) {
@@ -824,7 +819,7 @@ void BossPhase02::DamageCage(int dmg) {
     }
 
     // =========================================================
-    // JIKA KANDANG HANCUR (HP <= 0)
+    // CAGE BROKEN (HP <= 0)
     // =========================================================
     if (m_cageHP <= 0) {
         m_isPlayerCaged = false;
@@ -844,7 +839,7 @@ void BossPhase02::DamageCage(int dmg) {
 
 void BossPhase02::TriggerCageFirstHitDialogue(Boss* boss)
 {
-    // Dialog tidak dibutuhkan — fungsi dikosongkan dengan sengaja.
+    // Intentionally empty: this phase has no first-hit dialogue.
 }
 
 DamageResult BossPhase02::TakeDamage(const DamageInfo& damage) {

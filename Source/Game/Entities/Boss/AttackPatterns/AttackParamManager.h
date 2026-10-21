@@ -86,7 +86,7 @@ public:
 private:
     AttackParamManager() = default;
 
-    // Fungsi Internal Parser
+    // One parser per params struct
     void ParseRadialParams(const json& j, RadialParams& outParams);
     void ParseFanParams(const json& j, FanParams& outParams);
     void ParsePhalanxParams(const json& j, PhalanxParams& outParams);

@@ -97,13 +97,13 @@ void AttackBoomerangs::Update(float dt, Boss* boss) {
 
         DirectX::XMFLOAT3 pos = projectile->position;
 
-        if (bw.state == 0) { // MODE MASUK
+        if (bw.state == 0) { // entering
             if ((bw.spawnSide == 1 && pos.x <= bw.targetX) || (bw.spawnSide == -1 && pos.x >= bw.targetX)) {
                 bw.state = 1;
                 bw.targetVelX = bw.spawnSide * m_params.speed; // Switch direction
             }
         }
-        else if (bw.state == 1) { // MODE KELUAR
+        else if (bw.state == 1) { // returning
             if ((bw.spawnSide == 1 && pos.x >= bw.startX) || (bw.spawnSide == -1 && pos.x <= bw.startX)) {
                 boss->GetWindowSystem()->RemoveTrackedWindow(bw.windowName);
                 m_pool->Despawn(bw.projectile);
