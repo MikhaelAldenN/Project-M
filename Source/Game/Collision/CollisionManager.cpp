@@ -61,15 +61,18 @@ void CollisionManager::CheckPlayerProjectilesVsBoss()
     constexpr float k_halfDepth{ 2.5f };
     const DirectX::XMFLOAT3 bossPos{ m_Boss->GetPosition() };
 
-    for (auto& bullet : m_player->GetProjectiles()) {
-        if (!bullet->IsActive()) continue;
+    ProjectilePool& projectiles{ m_player->GetProjectiles() };
+    const std::vector<Projectile>& slots{ projectiles.Slots() };
+    for (std::size_t i{ 0 }; i < slots.size(); ++i) {
+        if (!slots[i].isActive) continue;
 
-        const DirectX::XMFLOAT3 bPos{ bullet->GetMovement()->GetPosition() };
+        const DirectX::XMFLOAT3 bPos{ slots[i].position };
         if (bPos.x > (bossPos.x - k_halfWidth) && bPos.x < (bossPos.x + k_halfWidth) &&
             bPos.z >(bossPos.z - k_halfDepth) && bPos.z < (bossPos.z + k_halfDepth))
         {
-            bullet->SetActive(false);
-            phase->TakeDamage(DamageInfo{ bullet->GetDamage(), bPos });
+            const int damage{ slots[i].damage };
+            projectiles.Despawn(i);
+            phase->TakeDamage(DamageInfo{ damage, bPos });
         }
     }
 }
@@ -358,19 +361,21 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
     // meskipun tidak ada musuh (atau m_enemyManager belum siap)
     if (!m_player) return;
 
-    auto& projectiles{ m_player->GetProjectiles() };
+    ProjectilePool& projectiles{ m_player->GetProjectiles() };
 
     constexpr float BULLET_HITBOX_RADIUS = 1.0f;
 
-    for (auto& bullet : projectiles)
+    std::vector<Projectile>& slots{ projectiles.Slots() };
+    for (std::size_t i{ 0 }; i < slots.size(); ++i)
     {
-        if (!bullet || !bullet->IsActive()) continue;
+        const Projectile& bullet{ slots[i] };
+        if (!bullet.isActive) continue;
 
-        const DirectX::XMFLOAT3 currentPos{ bullet->GetMovement()->GetPosition() };
+        const DirectX::XMFLOAT3 currentPos{ bullet.position };
 
         if (INaviPhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr }) {
-            if (phase->TryAbsorbPlayerBullet(currentPos, bullet->GetDamage())) {
-                bullet->SetActive(false);
+            if (phase->TryAbsorbPlayerBullet(currentPos, bullet.damage)) {
+                projectiles.Despawn(i);
                 continue;
             }
         }
@@ -381,7 +386,7 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
         if (!m_enemyManager) continue; // Cek musuh di sini agar aman
         const auto& enemies{ m_enemyManager->GetEnemies() };
 
-        const DirectX::XMFLOAT3 velocity{ bullet->GetVelocity() };
+        const DirectX::XMFLOAT3 velocity{ bullet.velocity };
 
         // Calculate where the bullet was last frame
         const DirectX::XMFLOAT3 prevPos{
@@ -416,8 +421,8 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
             // 4. NARROW-PHASE: The expensive exact math (Only runs if broad-phase passes)
             if (CheckSphereCollision(currentPos, ePos, BULLET_HITBOX_RADIUS + enemyRadius))
             {
-                enemy->TakeDamage(DamageInfo{ bullet->GetDamage(), currentPos });
-                bullet->SetActive(false);
+                enemy->TakeDamage(DamageInfo{ bullet.damage, currentPos });
+                projectiles.Despawn(i);
                 break; // Stop checking this bullet against other enemies
             }
         }
@@ -483,20 +488,18 @@ void CollisionManager::CheckPlayerProjectilesVsNavi(const float elapsedTime)
     // Fast fail: Early exit prevents unnecessary pointer dereferencing
     if (!m_player || !m_navi || !m_navi->IsAlive() || !m_navi->IsPotioned()) return;
 
-    // Reference binding to avoid copying the container
-    const auto& projectiles{ m_player->GetProjectiles() };
+    ProjectilePool& projectiles{ m_player->GetProjectiles() };
     const DirectX::XMFLOAT3 naviPos{ m_navi->GetMovement()->GetPosition() };
 
     constexpr float NAVI_HITBOX_RADIUS_XZ{ 0.8f };
 
-    // CPU Optimization: Range-based for loop
-    for (const auto& bullet : projectiles)
+    const std::vector<Projectile>& slots{ projectiles.Slots() };
+    for (std::size_t i{ 0 }; i < slots.size(); ++i)
     {
-        // Null and active state guard
-        if (!bullet || !bullet->IsActive()) continue;
+        if (!slots[i].isActive) continue;
 
-        const DirectX::XMFLOAT3 currentPos{ bullet->GetMovement()->GetPosition() };
-        const DirectX::XMFLOAT3 vel{ bullet->GetVelocity() };
+        const DirectX::XMFLOAT3 currentPos{ slots[i].position };
+        const DirectX::XMFLOAT3 vel{ slots[i].velocity };
 
         const DirectX::XMFLOAT3 prevPos{
             currentPos.x - (vel.x * elapsedTime),
@@ -512,7 +515,7 @@ void CollisionManager::CheckPlayerProjectilesVsNavi(const float elapsedTime)
         {
             m_navi->TakeDamage(DamageInfo{ m_damageConfig.playerBulletToNavi, currentPos });
             EffectManager::Instance().Play("Data/Effect/Hit.efk", naviPos, 1.0f);
-            bullet->SetActive(false); // Instantly recycle the bullet into the object pool
+            projectiles.Despawn(i);
         }
     }
 }

@@ -5,6 +5,7 @@
 #include "Character.h"
 #include "DamageTypes.h"
 #include "PlayerConstants.h"
+#include "ProjectilePool.h"
 #include "Weapon.h"
 #include <array>
 #include <deque>
@@ -118,7 +119,7 @@ public:
     DirectX::XMFLOAT3* GetPlayerBulletOffsetRot() { return &m_playerbulletOffsetRot; }
     DirectX::XMFLOAT3* GetPlayerBulletOffsetScale() { return &m_playerbulletOffsetScale; }
     DirectX::XMFLOAT4* GetPlayerBulletColor() { return &m_playerbulletColor; }
-    std::deque<std::unique_ptr<Bullet>>& GetProjectiles() { return m_projectiles; }
+    ProjectilePool& GetProjectiles() { return m_projectiles; }
 
     // --- Debug ---
     void DrawDebugGUI();
@@ -206,7 +207,7 @@ private:
     void UpdateAimConstraint(float dt, float& inOutSmoothedYaw, bool& outShouldAim, float& outRelativeAngle);
     void UpdateAimConstraint(float& inOutSmoothedYaw, bool& outShouldAim, float& outRelativeAngle);
     void ApplyWorldMatrix(float smoothedYaw, bool shouldAim, float relativeAngle);
-    void UpdateProjectiles(float dt, Camera* camera);
+    void UpdateProjectiles(float dt);
 
     // --- Owned components ---
     std::unique_ptr<StateMachine>        stateMachine;
@@ -274,7 +275,7 @@ private:
     DirectX::XMFLOAT3 m_playerbulletOffsetRot{ 0.000f, 0.000f, 0.000f };
     DirectX::XMFLOAT3 m_playerbulletOffsetScale{ 20.000f, 20.000f, 70.000f };
     DirectX::XMFLOAT4 m_playerbulletColor{ 4.000f, 4.000f, 4.000f, 1.000f };
-    std::deque<std::unique_ptr<Bullet>> m_projectiles;
+    ProjectilePool m_projectiles{ static_cast<std::size_t>(PlayerConst::MaxBullets) };
     float m_bulletSpeed = PlayerConst::BulletSpeed;
 
     float m_shootDelay = PlayerConst::ShootDuration;

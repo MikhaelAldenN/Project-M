@@ -1588,7 +1588,7 @@ void SceneBoss::AddLog(const std::string& message)
                 m_player->GetStateMachine()->ChangeState(m_player.get(), std::make_unique<PlayerIdle>());
             }
 
-            m_player->GetProjectiles().clear();
+            m_player->GetProjectiles().Clear();
             m_player->RestoreShootDelay();
             m_player->SetAimLocked(false);
         }

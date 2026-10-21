@@ -233,7 +233,7 @@ void Player::Update(float elapsedTime, Camera* camera)
     }
 
     ApplyWorldMatrix(smoothedYaw, shouldAim, relativeAngle);
-    UpdateProjectiles(elapsedTime, camera);
+    UpdateProjectiles(elapsedTime);
 
     // =========================================================
     // Keep the Dash Ready VFX attached to the player
@@ -814,30 +814,31 @@ void Player::ApplyWorldMatrix(float smoothedYaw, bool shouldAim, float relativeA
     }
 }
 
-void Player::UpdateProjectiles(float dt, Camera* camera)
+void Player::UpdateProjectiles(float dt)
 {
+    // Player bullets fly straight, so there is no target to steer toward.
+    m_projectiles.Update(dt, ProjectileTargets{});
+
     DirectX::XMFLOAT3 myPos = movement->GetPosition();
 
     // Max distance before the bullet vanishes
     constexpr float DESPAWN_DISTANCE = 55.0f;
     constexpr float DESPAWN_DIST_SQ = DESPAWN_DISTANCE * DESPAWN_DISTANCE;
 
-    for (auto& bullet : m_projectiles)
+    const std::vector<Projectile>& slots{ m_projectiles.Slots() };
+    for (std::size_t i{ 0 }; i < slots.size(); ++i)
     {
-        if (!bullet->IsActive()) continue;
-
-        bullet->Update(dt, camera);
+        if (!slots[i].isActive) continue;
 
         // Despawn bullets that fly too far from the player.
-        DirectX::XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
+        DirectX::XMFLOAT3 bPos = slots[i].position;
         float dx = myPos.x - bPos.x;
         float dz = myPos.z - bPos.z;
 
         if ((dx * dx + dz * dz) > DESPAWN_DIST_SQ)
         {
             // The bullet missed and flew off-screen.
-            // DO NOT ERASE IT! Turn it off so we can recycle its memory later!
-            bullet->SetActive(false);
+            m_projectiles.Despawn(i);
         }
     }
 }
@@ -872,70 +873,44 @@ void Player::FireProjectile()
         myPos.z + fwd.z * PlayerConst::BulletSpawnFwd
     };
 
-    // --------------------------------------------------------
-    // TRUE OBJECT POOL (Zero Allocation on normal fire)
-    // --------------------------------------------------------
-    for (const auto& bullet : m_projectiles)
-    {
-        if (!bullet->IsActive())
-        {
-            bullet->Fire(spawnPos, fwd, m_bulletSpeed);
-            bullet->SetDamage(m_bulletDamage);
-            return;
-        }
-    }
-
-    // Only allocate memory if EVERY bullet is currently flying on-screen.
-    auto newBullet{ std::make_unique<Bullet>() };
-    newBullet->Fire(spawnPos, fwd, m_bulletSpeed);
-    newBullet->SetDamage(m_bulletDamage);
-    m_projectiles.push_back(std::move(newBullet));
-
-    // Prevent memory leak compounding if the pool gets ridiculously large.
-    for (int i = 0; i < PlayerConst::MaxBullets; ++i) {
-        auto b{ std::make_unique<Bullet>() };
-        b->SetActive(false);
-        m_projectiles.push_back(std::move(b));
-    }
+    Projectile* bullet{ m_projectiles.Get(m_projectiles.Spawn()) };
+    if (!bullet) return; // PlayerConst::MaxBullets bullets are already in flight
+    ProjectilePool::Launch(*bullet, spawnPos, fwd, m_bulletSpeed);
+    bullet->damage = m_bulletDamage;
 }
 
 void Player::RenderProjectiles(ModelRenderer* renderer)
 {
-    for (auto& bullet : m_projectiles)
+    if (!m_playerbulletModel) return;
+
+    for (const Projectile& bullet : m_projectiles.Slots())
     {
-        if (!bullet->IsActive()) continue;
+        if (!bullet.isActive) continue;
 
-        if (m_playerbulletModel)
-        {
-            DirectX::XMFLOAT3 bPos = bullet->GetMovement()->GetPosition();
-            DirectX::XMFLOAT3 bVel = bullet->GetVelocity();
-            float yaw = atan2f(bVel.x, bVel.z);
+        DirectX::XMFLOAT3 bPos = bullet.position;
+        DirectX::XMFLOAT3 bVel = bullet.velocity;
+        float yaw = atan2f(bVel.x, bVel.z);
 
-            DirectX::XMMATRIX S = DirectX::XMMatrixScaling(
-                m_playerbulletOffsetScale.x,
-                m_playerbulletOffsetScale.y,
-                m_playerbulletOffsetScale.z
-            );
+        DirectX::XMMATRIX S = DirectX::XMMatrixScaling(
+            m_playerbulletOffsetScale.x,
+            m_playerbulletOffsetScale.y,
+            m_playerbulletOffsetScale.z
+        );
 
-            DirectX::XMMATRIX R = DirectX::XMMatrixRotationRollPitchYaw(
-                DirectX::XMConvertToRadians(m_playerbulletOffsetRot.x),
-                DirectX::XMConvertToRadians(m_playerbulletOffsetRot.y),
-                DirectX::XMConvertToRadians(m_playerbulletOffsetRot.z)
-            );
-            DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(m_playerbulletOffsetPos.x, m_playerbulletOffsetPos.y, m_playerbulletOffsetPos.z);
+        DirectX::XMMATRIX R = DirectX::XMMatrixRotationRollPitchYaw(
+            DirectX::XMConvertToRadians(m_playerbulletOffsetRot.x),
+            DirectX::XMConvertToRadians(m_playerbulletOffsetRot.y),
+            DirectX::XMConvertToRadians(m_playerbulletOffsetRot.z)
+        );
+        DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(m_playerbulletOffsetPos.x, m_playerbulletOffsetPos.y, m_playerbulletOffsetPos.z);
 
-            DirectX::XMMATRIX bulletRot = DirectX::XMMatrixRotationY(yaw);
-            DirectX::XMMATRIX bulletTrans = DirectX::XMMatrixTranslation(bPos.x, bPos.y, bPos.z);
+        DirectX::XMMATRIX bulletRot = DirectX::XMMatrixRotationY(yaw);
+        DirectX::XMMATRIX bulletTrans = DirectX::XMMatrixTranslation(bPos.x, bPos.y, bPos.z);
 
-            DirectX::XMFLOAT4X4 worldMatrix;
-            DirectX::XMStoreFloat4x4(&worldMatrix, S * R * T * bulletRot * bulletTrans);
+        DirectX::XMFLOAT4X4 worldMatrix;
+        DirectX::XMStoreFloat4x4(&worldMatrix, S * R * T * bulletRot * bulletTrans);
 
-            renderer->Draw(ShaderId::Phong, m_playerbulletModel, m_playerbulletColor, worldMatrix);
-        }
-        else
-        {
-            renderer->Draw(ShaderId::Phong, bullet->GetModel(), { 1.0f, 1.0f, 1.0f, 1.0f });
-        }
+        renderer->Draw(ShaderId::Phong, m_playerbulletModel, m_playerbulletColor, worldMatrix);
     }
 }
 

@@ -764,7 +764,7 @@ void SceneGame::StartNaviDefeatSequence()
         m_player->SetInputEnabled(false);
         m_player->SetAimLocked(true);
         m_player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f });
-        m_player->GetProjectiles().clear();
+        m_player->GetProjectiles().Clear();
     }
 }
 
@@ -861,7 +861,7 @@ void SceneGame::ResetLevel()
         m_player->SetInputEnabled(false);
         m_player->scale = { 1.0f, 1.0f, 1.0f };
         m_player->GetStateMachine()->ChangeState(m_player.get(), std::make_unique<PlayerIdle>());
-        m_player->GetProjectiles().clear();
+        m_player->GetProjectiles().Clear();
     }
 
     // 3. Reset Enemies & Items
