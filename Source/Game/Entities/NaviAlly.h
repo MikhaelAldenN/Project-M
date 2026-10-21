@@ -3,6 +3,8 @@
 #include "Character.h"
 #include "Bullet.h"
 #include "DamageTypes.h"
+#include "ProjectileMesh.h"
+#include "ProjectilePool.h"
 #include <DirectXMath.h>
 #include <memory>
 #include <deque>
@@ -28,7 +30,7 @@ public:
     void RenderDebug(ShapeRenderer* shapeRenderer);
 
     void RenderProjectiles(ModelRenderer* renderer);
-    std::deque<std::unique_ptr<Bullet>>& GetProjectiles() { return m_projectiles; }
+    ProjectilePool& GetProjectiles() { return m_projectiles; }
 
     enum class PotionAttackPattern { Radial, Fan };
     PotionAttackPattern m_currentPattern{ PotionAttackPattern::Radial };
@@ -60,7 +62,7 @@ public:
 private:
     void UpdateHoverLogic(float elapsedTime);
     void UpdateShootingLogic(float elapsedTime, Camera* camera);
-    void UpdateProjectiles(float elapsedTime, Camera* camera);
+    void UpdateProjectiles(float elapsedTime);
     void UpdateAttackDelay(float dt) noexcept;
     void FireAtTarget(const DirectX::XMFLOAT3& targetPos);
     float GetRandomFloat(float min, float max);
@@ -77,8 +79,9 @@ private:
     DirectX::XMFLOAT4 m_color{ 1.0f, 1.0f, 1.0f, 1.0f };
     float m_lazyHoverYaw{ 0.0f };
 
-    // True Object Pool for Navi's Bullets
-    std::deque<std::unique_ptr<Bullet>> m_projectiles{};
+    // Navi's bullets. When every slot is in flight, a new bullet replaces the oldest one.
+    ProjectilePool m_projectiles{ static_cast<std::size_t>(MAX_BULLETS) };
+    ProjectileMesh m_projectileMesh; // one model drawn for every bullet
 
 	// Potion State
     bool m_isPotioned{ false }; // Track the state
@@ -116,6 +119,7 @@ private:
 
     static constexpr int   MAX_BULLETS{ 128 };
     static constexpr float BULLET_SPEED{ 25.0f };
+    static constexpr float BULLET_SCALE{ 0.7f };
     static constexpr float DESPAWN_DIST_SQ{ 2500.0f }; 
     static constexpr float BOSS_ATTACK_COOLDOWN{ 2.5f };
     static constexpr float BOSS_BULLET_SPEED{ 12.0f };

@@ -433,18 +433,19 @@ void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
 {
     if (!m_navi || !m_enemyManager) return;
 
-    auto& projectiles = m_navi->GetProjectiles();
+    ProjectilePool& projectiles{ m_navi->GetProjectiles() };
     auto& enemies = m_enemyManager->GetEnemies();
 
     constexpr float BULLET_HITBOX_RADIUS = 0.1f;
 
 
-    for (auto& bullet : projectiles)
+    const std::vector<Projectile>& slots{ projectiles.Slots() };
+    for (std::size_t i{ 0 }; i < slots.size(); ++i)
     {
-        if (!bullet || !bullet->IsActive()) continue;
+        if (!slots[i].isActive) continue;
 
-        DirectX::XMFLOAT3 currentPos = bullet->GetMovement()->GetPosition();
-        DirectX::XMFLOAT3 vel = bullet->GetVelocity();
+        DirectX::XMFLOAT3 currentPos = slots[i].position;
+        DirectX::XMFLOAT3 vel = slots[i].velocity;
 
         // Reconstruct last frame's position for the swept check.
         DirectX::XMFLOAT3 prevPos = {
@@ -476,7 +477,7 @@ void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
             if (distToPath <= exactHitDistance)
             {
                 enemy->TakeDamage(DamageInfo{ m_damageConfig.naviBulletToEnemy, currentPos });
-                bullet->SetActive(false); // Send back to Object Pool instantly
+                projectiles.Despawn(i);
                 break; // Stop checking this bullet against other enemies
             }
         }
@@ -526,17 +527,18 @@ void CollisionManager::CheckNaviAllyProjectilesVsPlayer(const float elapsedTime)
     if (!m_player || !m_navi || m_player->GetHP() <= 0 || !m_navi->IsPotioned() || m_player->IsInvincible()) return;
 
     // Reference bindings (No copying)
-    const auto& projectiles{ m_navi->GetProjectiles() };
+    ProjectilePool& projectiles{ m_navi->GetProjectiles() };
     const DirectX::XMFLOAT3 playerPos{ m_player->GetMovement()->GetPosition() };
 
     constexpr float PLAYER_HURTBOX_RADIUS{ 0.3f };
 
-    for (const auto& bullet : projectiles)
+    const std::vector<Projectile>& slots{ projectiles.Slots() };
+    for (std::size_t i{ 0 }; i < slots.size(); ++i)
     {
-        if (!bullet || !bullet->IsActive()) continue;
+        if (!slots[i].isActive) continue;
 
-        const DirectX::XMFLOAT3 currentPos{ bullet->GetMovement()->GetPosition() };
-        const DirectX::XMFLOAT3 vel{ bullet->GetVelocity() };
+        const DirectX::XMFLOAT3 currentPos{ slots[i].position };
+        const DirectX::XMFLOAT3 vel{ slots[i].velocity };
 
         const DirectX::XMFLOAT3 prevPos{
             currentPos.x - (vel.x * elapsedTime),
@@ -545,11 +547,11 @@ void CollisionManager::CheckNaviAllyProjectilesVsPlayer(const float elapsedTime)
         };
 
         const float distToPath{ DistancePointToLineSegment2D(prevPos, currentPos, playerPos) };
-        const float combinedRadius{ PLAYER_HURTBOX_RADIUS + bullet->GetRadius() };
+        const float combinedRadius{ PLAYER_HURTBOX_RADIUS + slots[i].radius };
 
         if (distToPath <= combinedRadius)
         {
-            bullet->SetActive(false); // Destroy the bullet
+            projectiles.Despawn(i); // Destroy the bullet
 
             m_player->TakeDamage(DamageInfo{ m_damageConfig.naviBulletToPlayer, currentPos });
         }

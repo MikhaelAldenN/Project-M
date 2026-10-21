@@ -212,6 +212,23 @@ void ProjectilePool::Clear()
     }
 }
 
+std::size_t ProjectilePool::CountActive() const
+{
+    return static_cast<std::size_t>(std::count_if(m_slots.begin(), m_slots.end(),
+        [](const Projectile& projectile) { return projectile.isActive; }));
+}
+
+void ProjectilePool::DespawnOldest()
+{
+    std::size_t oldest{ m_slots.size() };
+    for (std::size_t i{ 0 }; i < m_slots.size(); ++i)
+    {
+        if (!m_slots[i].isActive) continue;
+        if ((oldest == m_slots.size()) || (m_slots[i].age > m_slots[oldest].age)) oldest = i;
+    }
+    if (oldest < m_slots.size()) Despawn(oldest);
+}
+
 void ProjectilePool::AttachVfx(std::size_t index, const char* path, float scale)
 {
     assert(index < m_slots.size());

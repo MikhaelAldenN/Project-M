@@ -98,6 +98,11 @@ public:
     void Despawn(ProjectileHandle handle);
     void Clear();
 
+    [[nodiscard]] std::size_t CountActive() const;
+    // Despawns the active projectile with the largest age; the lowest index wins a tie.
+    // Does nothing when no projectile is active.
+    void DespawnOldest();
+
     // Plays `path` at the projectile and keeps it on the projectile until the effect ends.
     void AttachVfx(std::size_t index, const char* path, float scale);
     void StopVfx(std::size_t index);

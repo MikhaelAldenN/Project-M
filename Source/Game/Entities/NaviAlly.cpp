@@ -38,6 +38,8 @@ NaviAlly::NaviAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* ene
 
     m_animator->Play("Armature|Flying", true, 0.2f);
 
+    m_projectileMesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");
+
     if (m_targetPlayer)
     {
         XMFLOAT3 startPos{ m_targetPlayer->GetPosition() };
@@ -52,7 +54,7 @@ NaviAlly::NaviAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* ene
 void NaviAlly::Reset() noexcept
 {
     m_hp = MAX_HP;          
-    m_projectiles.clear();  
+    m_projectiles.Clear();  
     m_pulseTimer = 0.0f;    
 }
 
@@ -81,7 +83,7 @@ void NaviAlly::Update(float elapsedTime, Camera* camera)
     }
     UpdateHoverLogic(elapsedTime);
     UpdateShootingLogic(elapsedTime, camera);
-    UpdateProjectiles(elapsedTime, camera);
+    UpdateProjectiles(elapsedTime);
 }
 
 void NaviAlly::UpdateHoverLogic(float elapsedTime)
@@ -210,22 +212,12 @@ void NaviAlly::UpdateHoverLogic(float elapsedTime)
 
 void NaviAlly::SpawnBullet(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& fwd, float speed) noexcept
 {
-    // TRUE OBJECT POOL: Recycle dead bullets first (Zero Allocation)
-    for (auto& bullet : m_projectiles)
-    {
-        if (!bullet->IsActive())
-        {
-            bullet->Fire(pos, fwd, speed);
-            return;
-        }
-    }
+    if (m_projectiles.CountActive() >= m_projectiles.Slots().size()) m_projectiles.DespawnOldest();
 
-    auto newBullet{ std::make_unique<Bullet>() };
-    newBullet->scale = { 0.7f, 0.7f, 0.7f };
-    newBullet->Fire(pos, fwd, speed);
-    m_projectiles.push_back(std::move(newBullet));
-
-    if (m_projectiles.size() > MAX_BULLETS) m_projectiles.pop_front();
+    Projectile* bullet{ m_projectiles.Get(m_projectiles.Spawn()) };
+    if (!bullet) return;
+    bullet->visualScale = BULLET_SCALE;
+    ProjectilePool::Launch(*bullet, pos, fwd, speed);
 }
 
 void NaviAlly::FireAtTarget(const DirectX::XMFLOAT3& targetPos)
@@ -369,24 +361,26 @@ void NaviAlly::UpdateShootingLogic(float elapsedTime, Camera* camera)
     }
 }
 
-void NaviAlly::UpdateProjectiles(float elapsedTime, Camera* camera)
+void NaviAlly::UpdateProjectiles(float elapsedTime)
 {
+    // Navi's bullets fly straight, so there is no target to steer toward.
+    m_projectiles.Update(elapsedTime, ProjectileTargets{});
+
     XMFLOAT3 myPos{ movement->GetPosition() };
 
-    for (auto& bullet : m_projectiles)
+    const std::vector<Projectile>& slots{ m_projectiles.Slots() };
+    for (std::size_t i{ 0 }; i < slots.size(); ++i)
     {
-        if (!bullet->IsActive()) continue;
-
-        bullet->Update(elapsedTime, camera);
+        if (!slots[i].isActive) continue;
 
         // INFINITE FLIGHT GUARD: Turn off (recycle) if it flies too far
-        XMFLOAT3 bPos{ bullet->GetMovement()->GetPosition() };
+        XMFLOAT3 bPos{ slots[i].position };
         float dx{ myPos.x - bPos.x };
         float dz{ myPos.z - bPos.z };
 
         if ((dx * dx + dz * dz) > DESPAWN_DIST_SQ)
         {
-            bullet->SetActive(false);
+            m_projectiles.Despawn(i);
         }
     }
 }
@@ -403,7 +397,7 @@ DamageResult NaviAlly::TakeDamage(const DamageInfo& damage)
 
     if (m_hp <= 0)
     {
-        m_projectiles.clear();
+        m_projectiles.Clear();
         return DamageResult::killed;
     }
     return DamageResult::damaged;
@@ -456,11 +450,11 @@ void NaviAlly::RenderProjectiles(ModelRenderer* renderer)
 
     const DirectX::XMFLOAT4 navibulletColor{ 6.0f, 6.0f, 6.0f, 6.0f };
 
-    for (auto& bullet : m_projectiles)
+    for (const Projectile& bullet : m_projectiles.Slots())
     {
-        if (bullet && bullet->IsActive())
+        if (bullet.isActive)
         {
-            renderer->Draw(ShaderId::Phong, bullet->GetModel(), navibulletColor);
+            m_projectileMesh.Draw(*renderer, ShaderId::Phong, navibulletColor, bullet.position, bullet.visualScale, 0.0f);
         }
     }
 }

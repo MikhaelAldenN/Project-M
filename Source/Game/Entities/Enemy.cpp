@@ -328,18 +328,9 @@ void Enemy::UpdateProjectiles(float elapsedTime, const ProjectileTargets& target
 
 void Enemy::FireProjectile(const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& direction, bool isAimed)
 {
-    if (isAimed)
+    if (isAimed && (m_projectiles.CountActive() >= static_cast<std::size_t>(MAX_PROJECTILES)))
     {
-        const std::vector<Projectile>& slots{ m_projectiles.Slots() };
-        std::size_t liveCount{ 0 };
-        std::size_t oldest{ 0 };
-        for (std::size_t i{ 0 }; i < slots.size(); ++i)
-        {
-            if (!slots[i].isActive) continue;
-            if ((liveCount == 0) || (slots[i].age > slots[oldest].age)) oldest = i;
-            ++liveCount;
-        }
-        if (liveCount >= static_cast<std::size_t>(MAX_PROJECTILES)) m_projectiles.Despawn(oldest);
+        m_projectiles.DespawnOldest();
     }
 
     Projectile* bullet{ m_projectiles.Get(m_projectiles.Spawn()) };
