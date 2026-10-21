@@ -1,6 +1,5 @@
 #pragma once
 #include "IBossAttackPattern.h"
-#include "Bullet.h"
 #include <DirectXMath.h>
 
 // ============================================================

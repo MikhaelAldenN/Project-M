@@ -1,6 +1,5 @@
 #pragma once
 #include "IBossAttackPattern.h"
-#include "Bullet.h"
 #include <DirectXMath.h>
 
 // ============================================================
@@ -24,6 +23,8 @@ struct FanParams {
     int triggerCount = 1;
     float triggerDelay = 1.0f;
 };
+
+class Player;
 
 class AttackFan :public IBossAttackPattern {
 public:

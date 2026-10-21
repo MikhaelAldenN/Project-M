@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "IBossAttackPattern.h"
-#include "Bullet.h"
 #include "Primitive.h"
 #include <DirectXMath.h>
 #include <vector>
@@ -29,6 +28,8 @@ enum class RainMode {
     DualPillar,
     Targeted
 };
+
+class Player;
 
 class AttackRain : public IBossAttackPattern 
 {

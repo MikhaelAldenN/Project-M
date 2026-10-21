@@ -1,7 +1,6 @@
 #pragma once
 #include "AnimationController.h"
 #include "Character.h"
-#include "Bullet.h"
 #include "DamageTypes.h"
 #include "ProjectileMesh.h"
 #include "ProjectilePool.h"

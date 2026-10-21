@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "Bullet.h"
 #include "CapeSimulator.h"
 #include "Character.h"
 #include "DamageTypes.h"
@@ -8,6 +7,7 @@
 #include "ProjectilePool.h"
 #include "Weapon.h"
 #include <array>
+#include <cmath>
 #include <deque>
 #include <memory>
 #include <DirectXMath.h>

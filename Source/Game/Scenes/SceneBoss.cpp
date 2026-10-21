@@ -15,6 +15,7 @@
 #include "ItemManager.h"
 #include "Stage.h"
 #include <random>
+#include "Boss.h"
 #include "BossPhase02.h"
 #include "BossPhase01.h"
 #include "HUDRenderer.h"

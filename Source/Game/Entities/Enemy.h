@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Bullet.h"
 #include "Character.h"
 #include "DamageTypes.h"
 #include "EffectManager.h"

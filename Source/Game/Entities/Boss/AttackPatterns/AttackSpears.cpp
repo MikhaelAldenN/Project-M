@@ -3,6 +3,7 @@
 #include "WindowTrackingSystem.h"
 #include "WindowManager.h"
 #include "Player.h"
+#include "System/Graphics.h"
 #include <algorithm>
 #include <cassert>
 #include <random>

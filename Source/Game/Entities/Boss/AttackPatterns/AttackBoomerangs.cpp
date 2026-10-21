@@ -1,6 +1,7 @@
 #include "AttackBoomerangs.h"
 #include "Boss.h"
 #include "WindowTrackingSystem.h"
+#include "System/Graphics.h"
 #include "CameraController.h"
 #include <SDL3/SDL.h>
 #include <cassert>

@@ -1,6 +1,7 @@
 #include "AttackBouncing.h"
 #include "Boss.h"
 #include "WindowTrackingSystem.h"
+#include "System/Graphics.h"
 #include "System/AudioManager.h"
 #include "CameraController.h"
 #include <SDL3/SDL.h>

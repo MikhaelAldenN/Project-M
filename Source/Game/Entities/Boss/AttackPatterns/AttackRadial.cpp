@@ -4,6 +4,7 @@
 #include "ProjectilePool.h"
 #include "System/AudioManager.h"
 #include <DirectXMath.h>
+#include <cmath>
 
 using namespace DirectX;
 
