@@ -376,114 +376,153 @@ void BossPhase02::AddAttack(std::unique_ptr<IBossAttackPattern> attack) {
 void BossPhase02::Update(float dt, Boss* boss) {
     m_glitchTimer += dt;
     
-    if (boss && boss->GetWindowSystem()) {
-        if (auto* blockerWin = boss->GetWindowSystem()->GetTrackedWindow("click_blocker")) {
-            if (blockerWin->window && blockerWin->window->GetSDLWindow()) {
-                SDL_RaiseWindow(blockerWin->window->GetSDLWindow());
-            }
-        }
-    }
+    RaiseClickBlocker(boss);
 
     if (m_aiTarget && m_aiTarget->GetHP() <= 0) {
-        // Hentikan semua BGM yang sedang berjalan
-        AudioManager::Instance().StopMusic();
-
-        // Sembunyikan main window boss jika perlu agar transisi bersih
-        if (boss && boss->GetMainWindow()) {
-            SDL_HideWindow(boss->GetMainWindow()->GetSDLWindow());
-        }
+        StopForDeadPlayer(boss);
 
         // Return segera agar logika boss/AI di bawahnya tidak dieksekusi
         return;
     }
 
-    // =========================================================
-    // [DEATH SEQUENCE] Boss Mati
-    // =========================================================
-    if (m_bossHP <= 0) {
-        if (!m_isDying) {
-            m_isDying = true;
-            m_deathTimer = 0.0f;
-            m_aiEnabled = false;
-
-            DirectX::XMFLOAT3 deathVfxPos = boss->GetPosition();
-            deathVfxPos.y += 5.0f;
-            m_deathVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Boss_Death.efk", deathVfxPos, 2.0f);
-            if (m_deathVfxHandle != -1) {
-                float rotX = DirectX::XMConvertToRadians(90.0f);
-                EffectManager::Instance().SetRotation(m_deathVfxHandle, { rotX, 0.0f, 0.0f });
-            }
-        }
-
-        m_deathTimer += dt;
-
-        if (m_deathVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_deathVfxHandle)) {
-            DirectX::XMFLOAT3 trackPos = boss->GetPosition();
-            trackPos.y += 5.0f;
-            EffectManager::Instance().SetPosition(m_deathVfxHandle, trackPos);
-        }
-
-        if (m_deathTimer >= 7.0f) {
-            if (!m_deathCleanupDone) {
-                m_deathCleanupDone = true;
-                if (m_deathVfxHandle != -1) {
-                    EffectManager::Instance().Stop(m_deathVfxHandle);
-                    m_deathVfxHandle = -1;
-                }
-                AudioManager::Instance().StopMusic();
-
-                if (boss && boss->GetWindowSystem() && boss->GetWindowSystem()->GetTrackedWindow("navi_head")) {
-                    boss->GetWindowSystem()->RemoveTrackedWindow("navi_head");
-                }
-
-                if (boss && boss->GetMainWindow() && boss->GetMainWindow()->GetSDLWindow()) {
-                    SDL_HideWindow(boss->GetMainWindow()->GetSDLWindow());
-                }
-            }
-            return;
-        }
-
-        Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
-        if (mainWindow && mainWindow->GetSDLWindow()) {
-            SDL_Window* sdlWin = mainWindow->GetSDLWindow();
-            SDL_ShowWindow(sdlWin);
-            SDL_SetWindowAlwaysOnTop(sdlWin, true);
-
-            mainWindow->SetPriority(0);
-            WindowManager::Instance().MarkPriorityDirty();
-        }
-
-        if (m_fxWindow) {
-            m_fxWindow->SetPriority(10);
-            WindowManager::Instance().MarkPriorityDirty();
-        }
-
-        m_deathWindowRaised = true;
-    }
+    if (UpdateBossDeath(dt, boss)) return;
 
     if (m_hitFlashTimer > 0.0f) {
         m_hitFlashTimer -= dt;
         if (m_hitFlashTimer < 0.0f) m_hitFlashTimer = 0.0f;
     }
 
-    if (m_isDialogueActive && m_dialogueBox) {
-        m_dialogueBox->Update(dt);
-        if (!m_isPlayerCaged || m_overdriveAlpha > 0.0f) {
-            m_isDialogueActive = false;
-            if (boss && boss->GetWindowSystem()) {
-                boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
-            }
-            m_dialogueWindow = nullptr;
-            m_dialogueCamera.reset();
-            m_dialogueBox.reset();
-            m_aiEnabled = (m_aiTarget != nullptr);
-        }
-    }
+    UpdateOpeningDialogue(dt, boss);
 
     if (m_bossHP <= 0) {
         m_aiEnabled = false;
     }
 
+    UpdateCageShake(dt);
+
+    UpdateOverdrive(dt, boss);
+
+    ClampPlayerToCage();
+
+    UpdateBossPosition(boss);
+
+    UpdateWingState(dt);
+
+    UpdateWingNodes(dt);
+
+    // =========================================================
+    // UPDATE AI DECISIONS
+    // =========================================================
+    if (m_ai) {
+        m_ai->SetEnabled(m_aiEnabled);
+        m_ai->Update(dt, boss);
+    }
+
+    UpdateAttacks(dt, boss);
+}
+
+void BossPhase02::RaiseClickBlocker(Boss* boss) {
+    if (!boss || !boss->GetWindowSystem()) return;
+
+    if (auto* blockerWin = boss->GetWindowSystem()->GetTrackedWindow("click_blocker")) {
+        if (blockerWin->window && blockerWin->window->GetSDLWindow()) {
+            SDL_RaiseWindow(blockerWin->window->GetSDLWindow());
+        }
+    }
+}
+
+void BossPhase02::StopForDeadPlayer(Boss* boss) {
+    // Hentikan semua BGM yang sedang berjalan
+    AudioManager::Instance().StopMusic();
+
+    // Sembunyikan main window boss jika perlu agar transisi bersih
+    if (boss && boss->GetMainWindow()) {
+        SDL_HideWindow(boss->GetMainWindow()->GetSDLWindow());
+    }
+}
+
+bool BossPhase02::UpdateBossDeath(float dt, Boss* boss) {
+    if (m_bossHP > 0) return false;
+
+    if (!m_isDying) {
+        m_isDying = true;
+        m_deathTimer = 0.0f;
+        m_aiEnabled = false;
+
+        DirectX::XMFLOAT3 deathVfxPos = boss->GetPosition();
+        deathVfxPos.y += 5.0f;
+        m_deathVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Boss_Death.efk", deathVfxPos, 2.0f);
+        if (m_deathVfxHandle != -1) {
+            float rotX = DirectX::XMConvertToRadians(90.0f);
+            EffectManager::Instance().SetRotation(m_deathVfxHandle, { rotX, 0.0f, 0.0f });
+        }
+    }
+
+    m_deathTimer += dt;
+
+    if (m_deathVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_deathVfxHandle)) {
+        DirectX::XMFLOAT3 trackPos = boss->GetPosition();
+        trackPos.y += 5.0f;
+        EffectManager::Instance().SetPosition(m_deathVfxHandle, trackPos);
+    }
+
+    if (m_deathTimer >= 7.0f) {
+        if (!m_deathCleanupDone) {
+            m_deathCleanupDone = true;
+            if (m_deathVfxHandle != -1) {
+                EffectManager::Instance().Stop(m_deathVfxHandle);
+                m_deathVfxHandle = -1;
+            }
+            AudioManager::Instance().StopMusic();
+
+            if (boss && boss->GetWindowSystem() && boss->GetWindowSystem()->GetTrackedWindow("navi_head")) {
+                boss->GetWindowSystem()->RemoveTrackedWindow("navi_head");
+            }
+
+            if (boss && boss->GetMainWindow() && boss->GetMainWindow()->GetSDLWindow()) {
+                SDL_HideWindow(boss->GetMainWindow()->GetSDLWindow());
+            }
+        }
+        return true;
+    }
+
+    Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
+    if (mainWindow && mainWindow->GetSDLWindow()) {
+        SDL_Window* sdlWin = mainWindow->GetSDLWindow();
+        SDL_ShowWindow(sdlWin);
+        SDL_SetWindowAlwaysOnTop(sdlWin, true);
+
+        mainWindow->SetPriority(0);
+        WindowManager::Instance().MarkPriorityDirty();
+    }
+
+    if (m_fxWindow) {
+        m_fxWindow->SetPriority(10);
+        WindowManager::Instance().MarkPriorityDirty();
+    }
+
+    m_deathWindowRaised = true;
+
+    return false;
+}
+
+void BossPhase02::UpdateOpeningDialogue(float dt, Boss* boss) {
+    if (!m_isDialogueActive || !m_dialogueBox) return;
+
+    m_dialogueBox->Update(dt);
+    if (!m_isPlayerCaged || m_overdriveAlpha > 0.0f) {
+        m_isDialogueActive = false;
+        if (boss && boss->GetWindowSystem()) {
+            boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
+        }
+        m_dialogueWindow = nullptr;
+        m_dialogueCamera.reset();
+        m_dialogueBox.reset();
+        m_aiEnabled = (m_aiTarget != nullptr);
+    }
+}
+
+void BossPhase02::UpdateCageShake(float dt) {
     m_cageWindowPos = m_cagePos;
     if (m_isPlayerCaged && m_cageShakeTimer > 0.0f) {
         m_cageShakeTimer -= dt;
@@ -493,7 +532,9 @@ void BossPhase02::Update(float dt, Boss* boss) {
         float offsetZ = (((rand() % 200) / 100.0f) - 1.0f) * strength;
         m_cageWindowPos = { m_cagePos.x + offsetX, m_cagePos.y, m_cagePos.z + offsetZ };
     }
+}
 
+void BossPhase02::UpdateOverdrive(float dt, Boss* boss) {
     if (m_aiTarget && m_aiTarget->IsPowerUncapped() && m_isPlayerCaged) {
         m_overdriveAlpha += m_overdriveFadeSpeed * dt;
         if (m_overdriveAlpha > 1.0f) m_overdriveAlpha = 1.0f;
@@ -511,34 +552,39 @@ void BossPhase02::Update(float dt, Boss* boss) {
     else {
         m_overdriveAlpha = 0.0f;
     }
+}
 
-    if (m_isPlayerCaged && m_aiTarget) {
-        DirectX::XMFLOAT3 pPos = m_aiTarget->GetPosition();
-        float halfSize = (m_cageSizeWorld * 0.5f) - 0.5f;
-        bool isClamped = false;
+void BossPhase02::ClampPlayerToCage() {
+    if (!m_isPlayerCaged || !m_aiTarget) return;
 
-        if (pPos.x > m_cagePos.x + halfSize) { pPos.x = m_cagePos.x + halfSize; isClamped = true; }
-        if (pPos.x < m_cagePos.x - halfSize) { pPos.x = m_cagePos.x - halfSize; isClamped = true; }
-        if (pPos.z > m_cagePos.z + halfSize) { pPos.z = m_cagePos.z + halfSize; isClamped = true; }
-        if (pPos.z < m_cagePos.z - halfSize) { pPos.z = m_cagePos.z - halfSize; isClamped = true; }
+    DirectX::XMFLOAT3 pPos = m_aiTarget->GetPosition();
+    float halfSize = (m_cageSizeWorld * 0.5f) - 0.5f;
+    bool isClamped = false;
 
-        if (isClamped) {
-            m_aiTarget->GetMovement()->SetPosition(pPos);
-            m_aiTarget->SetPosition(pPos);
-        }
+    if (pPos.x > m_cagePos.x + halfSize) { pPos.x = m_cagePos.x + halfSize; isClamped = true; }
+    if (pPos.x < m_cagePos.x - halfSize) { pPos.x = m_cagePos.x - halfSize; isClamped = true; }
+    if (pPos.z > m_cagePos.z + halfSize) { pPos.z = m_cagePos.z + halfSize; isClamped = true; }
+    if (pPos.z < m_cagePos.z - halfSize) { pPos.z = m_cagePos.z - halfSize; isClamped = true; }
+
+    if (isClamped) {
+        m_aiTarget->GetMovement()->SetPosition(pPos);
+        m_aiTarget->SetPosition(pPos);
     }
+}
 
-    if (boss) {
-        float centerX = 0.0f;
-        float centerZ = 7.0f;
-        float rangeX = 2.0f;
-        float rangeZ = 1.0f;
-        float newX = centerX + sinf(m_glitchTimer * 0.6f) * rangeX;
-        float newZ = centerZ + cosf(m_glitchTimer * 0.4f) * rangeZ;
-        boss->SetPosition({ newX, 0.0f, newZ });
-    }
+void BossPhase02::UpdateBossPosition(Boss* boss) {
+    if (!boss) return;
 
-    // UPDATE WINGS ANIMATION
+    float centerX = 0.0f;
+    float centerZ = 7.0f;
+    float rangeX = 2.0f;
+    float rangeZ = 1.0f;
+    float newX = centerX + sinf(m_glitchTimer * 0.6f) * rangeX;
+    float newZ = centerZ + cosf(m_glitchTimer * 0.4f) * rangeZ;
+    boss->SetPosition({ newX, 0.0f, newZ });
+}
+
+void BossPhase02::UpdateWingState(float dt) {
     if (m_wingState == WingState::Expanding) {
         m_wingStateTimer += dt;
         if (m_wingStateTimer >= WING_EXPAND_DURATION) {
@@ -562,7 +608,9 @@ void BossPhase02::Update(float dt, Boss* boss) {
             }
         }
     }
+}
 
+void BossPhase02::UpdateWingNodes(float dt) {
     auto updateNodeAnimations = [&](std::vector<WingNode>& wingData) {
         int nodeToMoveToTop = -1;
         for (int i = 0; i < wingData.size(); ++i) {
@@ -608,18 +656,9 @@ void BossPhase02::Update(float dt, Boss* boss) {
         node.localOffset.y += (node.targetOffset.y - node.localOffset.y) * dt * 2.0f;
         node.localOffset.x += sinf(m_glitchTimer * m_wingFlapSpeed + node.flapOffset) * m_wingFlapIntensity;
     }
+}
 
-    // =========================================================
-    // UPDATE AI DECISIONS
-    // =========================================================
-    if (m_ai) {
-        m_ai->SetEnabled(m_aiEnabled);
-        m_ai->Update(dt, boss);
-    }
-
-    // =========================================================
-    // UPDATE ACTIVE ATTACK PATTERNS
-    // =========================================================
+void BossPhase02::UpdateAttacks(float dt, Boss* boss) {
     for (auto it = m_activeAttacks.begin(); it != m_activeAttacks.end(); ) {
         (*it)->Update(dt, boss);
 

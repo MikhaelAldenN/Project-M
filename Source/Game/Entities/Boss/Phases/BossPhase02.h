@@ -109,6 +109,21 @@ private:
     void StartOpeningDialogue(WindowTrackingSystem& windowSystem);
     void CreateClickBlocker(WindowTrackingSystem& windowSystem);
 
+    // Update steps, called in this order by Update.
+    void RaiseClickBlocker(Boss* boss);
+    void StopForDeadPlayer(Boss* boss);
+    // Runs the boss death sequence while HP is zero or below. Returns true on
+    // every frame after the 7 s sequence has ended; Update must stop then.
+    [[nodiscard]] bool UpdateBossDeath(float dt, Boss* boss);
+    void UpdateOpeningDialogue(float dt, Boss* boss);
+    void UpdateCageShake(float dt);
+    void UpdateOverdrive(float dt, Boss* boss);
+    void ClampPlayerToCage();
+    void UpdateBossPosition(Boss* boss);
+    void UpdateWingState(float dt);
+    void UpdateWingNodes(float dt);
+    void UpdateAttacks(float dt, Boss* boss);
+
 private:
     Beyond::Window* m_fxWindow = nullptr;
     std::shared_ptr<Camera> m_fxCamera;
