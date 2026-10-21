@@ -6,6 +6,7 @@
 #include "EffectManager.h"
 #include "EnemyManager.h"
 #include <cmath>
+#include <cstdint>
 #include <deque>
 #include <DirectXMath.h>
 #include <memory>
@@ -81,6 +82,11 @@ public:
     void SetKilledPlayer(bool k) { m_killedPlayer = k; }
     bool HasKilledPlayer() const { return m_killedPlayer; }
 
+    // Names this activation of the enemy. EnemyManager assigns a new id each time the enemy
+    // becomes active, so a recycled enemy never matches an id handed out before.
+    void SetId(std::uint32_t id) { m_id = id; }
+    [[nodiscard]] std::uint32_t GetId() const { return m_id; }
+
 private:
     void UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos, bool allowAttack);
 
@@ -130,4 +136,5 @@ private:
     bool m_killedPlayer = false;
 
     int m_hp = 30;
+    std::uint32_t m_id{ 0 }; // 0 until EnemyManager activates the enemy
 };

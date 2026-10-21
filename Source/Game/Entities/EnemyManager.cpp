@@ -1,5 +1,6 @@
 #include "Enemy.h"
 #include "EnemyManager.h"
+#include <algorithm>
 
 using namespace DirectX;
 
@@ -76,6 +77,7 @@ void EnemyManager::SpawnEnemy(const EnemySpawnConfig& config)
         pooledEnemy->SetScale(finalScale);
         pooledEnemy->SetBaseMoveSpeed(config.BaseSpeed);
         pooledEnemy->SetMaxHP(finalHP); 
+        pooledEnemy->SetId(m_nextEnemyId++);
 
         m_enemies.push_back(std::move(pooledEnemy));
     }
@@ -92,6 +94,7 @@ void EnemyManager::SpawnEnemy(const EnemySpawnConfig& config)
         newEnemy->SetScale(finalScale);
         newEnemy->SetBaseMoveSpeed(config.BaseSpeed);
         newEnemy->SetMaxHP(finalHP); 
+        newEnemy->SetId(m_nextEnemyId++);
 
         m_enemies.push_back(std::move(newEnemy));
     }
@@ -209,6 +212,7 @@ void EnemyManager::ReviveKamikazes()
             // Fully heal it and revive it
             (*it)->SetMaxHP(70);
             (*it)->SetActive(true);
+            (*it)->SetId(m_nextEnemyId++);
 
             // Snap it back to its original spawn position
             (*it)->SetPosition((*it)->GetOriginalPosition());
@@ -226,4 +230,13 @@ void EnemyManager::ReviveKamikazes()
             ++it;
         }
     }
+}
+
+Enemy* EnemyManager::FindActiveEnemy(std::uint32_t id) const
+{
+    if (id == 0) return nullptr;
+
+    const auto found{ std::find_if(m_enemies.begin(), m_enemies.end(),
+        [id](const std::unique_ptr<Enemy>& enemy) { return (enemy->GetId() == id) && enemy->IsActive(); }) };
+    return (found != m_enemies.end()) ? found->get() : nullptr;
 }

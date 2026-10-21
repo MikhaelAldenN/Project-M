@@ -1,5 +1,6 @@
 #pragma once
 #include <DirectXMath.h> 
+#include <cstdint>
 #include <memory>
 #include <vector>
 #include <array>
@@ -125,7 +126,11 @@ public:
     void SpawnEnemy(const EnemySpawnConfig& config);
 
     std::vector<std::unique_ptr<Enemy>>& GetEnemies() { return m_enemies; }
+
+    // The active enemy with this id, or null when it has died or been recycled since.
+    [[nodiscard]] Enemy* FindActiveEnemy(std::uint32_t id) const;
 private:
     std::vector<std::unique_ptr<Enemy>> m_enemies{};
     std::vector<std::unique_ptr<Enemy>> m_enemyPool{};
+    std::uint32_t m_nextEnemyId{ 1 }; // 0 is reserved for "no enemy"
 };
