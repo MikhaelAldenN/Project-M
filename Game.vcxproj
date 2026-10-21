@@ -196,7 +196,6 @@
     <ClInclude Include="Source\Game\Entities\Boss\Phases\BossPhase01.h" />
     <ClInclude Include="Source\Game\Entities\Boss\Phases\BossPhase02.h" />
     <ClInclude Include="Source\Game\Entities\Boss\Phases\INaviPhase.h" />
-    <ClInclude Include="Source\Game\Entities\Bullet.h" />
     <ClInclude Include="Source\Game\Entities\Character.h" />
     <ClInclude Include="Source\Game\Entities\CharacterMovement.h" />
     <ClInclude Include="Source\Game\Entities\DamageTypes.h" />
@@ -316,7 +315,6 @@
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackUltimate.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\Phases\BossPhase01.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\Phases\BossPhase02.cpp" />
-    <ClCompile Include="Source\Game\Entities\Bullet.cpp" />
     <ClCompile Include="Source\Game\Entities\Character.cpp" />
     <ClCompile Include="Source\Game\Entities\CharacterMovement.cpp" />
     <ClCompile Include="Source\Game\Entities\Enemy.cpp" />
