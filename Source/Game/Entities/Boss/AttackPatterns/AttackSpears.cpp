@@ -4,6 +4,7 @@
 #include "WindowManager.h"
 #include "Player.h"
 #include <algorithm>
+#include <cassert>
 #include <random>
 
 using namespace DirectX;
@@ -11,7 +12,11 @@ using namespace DirectX;
 AttackSpears::AttackSpears(const UndyneSpearParams& params, Player* target)
     : m_params(params), m_playerTarget(target) {}
 
-void AttackSpears::Start(Boss* boss, BossBulletPool* /*pool*/) {
+void AttackSpears::Start(Boss* boss, BossBulletPool* pool) {
+    assert(pool && "AttackSpears needs the phase's projectile pool");
+    m_pool = pool;
+    if (!m_mesh.IsLoaded()) m_mesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");
+
     m_isSpawning = true;
     m_spawnedCount = 0;
     m_spawnTimer = 0.0f;
@@ -48,20 +53,27 @@ void AttackSpears::Update(float dt, Boss* boss) {
             };
 
             UndyneSpearWindow spear;
-            spear.bullet = std::make_unique<Bullet>();
-            spear.bullet->SetActive(true);
-            spear.bullet->ApplyMovement(spawnPos, { 0, 0, 0 });
-            spear.bullet->SetDamage(m_params.damage);
-            spear.bullet->SetRadius(0.8f);
+            spear.projectile = m_pool->Spawn();
+            // Why: a full pool leaves this spear out; the attack still ends on schedule.
+            if (Projectile* projectile{ m_pool->Get(spear.projectile) }) {
+                projectile->position = spawnPos;
+                projectile->damage = m_params.damage;
+                projectile->radius = 0.8f;
+                // A hovering spear is shown but harmless until it launches.
+                projectile->hitsPlayer = false;
 
-            spear.windowName = "Spear_" + std::to_string(rand() % 100000) + "_" + std::to_string(m_spawnedCount);
+                spear.windowName = "Spear_" + std::to_string(rand() % 100000) + "_" + std::to_string(m_spawnedCount);
 
-            TrackedWindowConfig config = { spear.windowName, "Spear.exe", 100, 100, 10 };
-            boss->GetWindowSystem()->AddTrackedWindow(config, [raw = spear.bullet.get()]() {
-                return raw->GetMovement()->GetPosition();
+                TrackedWindowConfig config = { spear.windowName, "Spear.exe", 100, 100, 10 };
+                boss->GetWindowSystem()->AddTrackedWindow(config, [pool = m_pool, index = spear.projectile.index]() {
+                    // Why the slot and not Get: a collision can despawn the projectile before the
+                    // window updates; the window then keeps its last position until this attack
+                    // removes the window on its next Update.
+                    return pool->Slots()[index].position;
                 });
 
-            m_spears.push_back(std::move(spear));
+                m_spears.push_back(std::move(spear));
+            }
 
             if (++m_spawnedCount >= m_params.count) {
                 m_isSpawning = false;
@@ -73,8 +85,15 @@ void AttackSpears::Update(float dt, Boss* boss) {
     for (auto& spear : m_spears) {
         if (spear.isPreparedForDestroy) continue;
 
+        Projectile* projectile{ m_pool->Get(spear.projectile) };
+        // A spear that hit the player leaves the same way as one that flew off the arena.
+        if (!projectile) {
+            RetireSpear(spear, boss);
+            continue;
+        }
+
         spear.timer += dt;
-        DirectX::XMFLOAT3 bPos = spear.bullet->GetMovement()->GetPosition();
+        DirectX::XMFLOAT3 bPos = projectile->position;
 
         if (spear.state == 0 && m_playerTarget) {
             DirectX::XMFLOAT3 pPos = m_playerTarget->GetPosition();
@@ -84,44 +103,42 @@ void AttackSpears::Update(float dt, Boss* boss) {
 
             if (dist > 0.001f) {
                 spear.lockDir = { dx / dist, 0.0f, dz / dist };
-                spear.bullet->GetMovement()->SetRotationY(XMConvertToDegrees(atan2f(dx, dz)));
+                projectile->yawDegrees = XMConvertToDegrees(atan2f(dx, dz));
             }
 
             if (spear.timer >= m_params.hoverDuration) {
                 spear.state = 2; // Launch!
                 spear.timer = 0.0f;
                 spear.currentSpeed = m_params.startSpeed;
+                projectile->hitsPlayer = true;
             }
         }
         else if (spear.state == 2) {
             spear.currentSpeed += m_params.acceleration * dt;
             if (spear.currentSpeed > m_params.maxSpeed) spear.currentSpeed = m_params.maxSpeed;
 
-            spear.bullet->ApplyMovement(bPos, {
+            projectile->velocity = {
                 spear.lockDir.x * spear.currentSpeed,
                 0.0f,
                 spear.lockDir.z * spear.currentSpeed
-                });
-            spear.bullet->Update(dt, nullptr);
+            };
+            ProjectilePool::Advance(*projectile, dt);
 
             if (bPos.x < -40.0f || bPos.x > 40.0f || bPos.z < -40.0f || bPos.z > 40.0f) {
-                spear.isPreparedForDestroy = true;
-                spear.bullet->SetActive(false);
-
-                auto extracted = boss->GetWindowSystem()->ExtractForPool(spear.windowName);
-                if (extracted && extracted->window) {
-                    WindowManager::Instance().DestroyWindow(extracted->window);
-                }
+                RetireSpear(spear, boss);
             }
         }
     }
 }
 
 void AttackSpears::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+    if (!m_pool || !m_mesh.IsLoaded()) return;
     auto modelRenderer = Graphics::Instance().GetModelRenderer();
-    for (auto& spear : m_spears) {
-        if (!spear.isPreparedForDestroy && spear.bullet && spear.bullet->IsActive()) {
-            modelRenderer->Draw(ShaderId::Phong, spear.bullet->GetModel(), { 0.0f, 0.8f, 1.0f, 1.0f });
+    for (const auto& spear : m_spears) {
+        if (spear.isPreparedForDestroy) continue;
+        if (const Projectile* projectile{ m_pool->Get(spear.projectile) }) {
+            m_mesh.Draw(*modelRenderer, ShaderId::Phong, { 0.0f, 0.8f, 1.0f, 1.0f },
+                projectile->position, projectile->visualScale, XMConvertToRadians(projectile->yawDegrees));
         }
     }
 }
@@ -133,6 +150,9 @@ void AttackSpears::Stop(Boss* boss) {
                 boss->GetWindowSystem()->RemoveTrackedWindow(spear.windowName);
             }
         }
+    }
+    if (m_pool) {
+        for (const auto& spear : m_spears) m_pool->Despawn(spear.projectile);
     }
     m_spears.clear();
     m_isSpawning = false;
@@ -146,12 +166,12 @@ bool AttackSpears::IsFinished() const {
     return true;
 }
 
-std::vector<Bullet*> AttackSpears::GetActiveProjectiles() const {
-    std::vector<Bullet*> activeBullets;
-    for (const auto& spear : m_spears) {
-        if (!spear.isPreparedForDestroy && spear.bullet && spear.bullet->IsActive() && spear.state == 2) {
-            activeBullets.push_back(spear.bullet.get());
-        }
+void AttackSpears::RetireSpear(UndyneSpearWindow& spear, Boss* boss) {
+    spear.isPreparedForDestroy = true;
+    m_pool->Despawn(spear.projectile);
+
+    auto extracted = boss->GetWindowSystem()->ExtractForPool(spear.windowName);
+    if (extracted && extracted->window) {
+        WindowManager::Instance().DestroyWindow(extracted->window);
     }
-    return activeBullets;
 }

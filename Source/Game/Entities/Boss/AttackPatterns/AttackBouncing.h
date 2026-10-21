@@ -1,6 +1,8 @@
 #pragma once
 #include "IBossAttackPattern.h"
 #include "Bullet.h"
+#include "ProjectileMesh.h"
+#include "ProjectilePool.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -29,17 +31,19 @@ public:
     void Stop(Boss* boss) override;
 
     bool IsFinished() const override;
-    std::vector<Bullet*> GetActiveProjectiles() const override;
+    std::vector<Bullet*> GetActiveProjectiles() const override { return {}; }
 
 private:
     struct BouncingWindowBullet {
-        std::unique_ptr<Bullet> bullet;
+        ProjectileHandle projectile;
         std::string windowName;
         int bounceCount = 0;
         int maxBounces = 8;
     };
 
     BouncingBulletParams m_params;
+    BossBulletPool* m_pool = nullptr; // borrowed from the phase, set in Start
+    ProjectileMesh m_mesh;
     std::vector<BouncingWindowBullet> m_bullets;
 
     bool  m_isSpawning = false;
