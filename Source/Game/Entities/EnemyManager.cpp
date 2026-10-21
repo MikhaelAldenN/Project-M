@@ -165,14 +165,11 @@ void EnemyManager::Render(ModelRenderer* renderer, Camera* camera)
             // Enemy scale
             DirectX::XMFLOAT3 scale = enemy->GetScale();
 
-            // Cari nilai scale terbesar (misal kalau X=2, Y=1, Z=2 -> ambil 2)
             float maxScale = max(scale.x, max(scale.y, scale.z));
 
-            // Base radius 1.5f dikali scale. 
-            // Kalau scale 2.0, radius jadi 3.0. Kalau scale 100, radius jadi 150.
+            // Culling radius: 150 world units per unit of the largest scale axis.
             float cullingRadius = 150.0f * maxScale;
 
-            // Gunakan radius dinamis
             if (!camera->CheckSphere(pos.x, pos.y, pos.z, cullingRadius))
             {
                 isBodyVisible = false;
@@ -184,7 +181,7 @@ void EnemyManager::Render(ModelRenderer* renderer, Camera* camera)
             renderer->Draw(ShaderId::Phong, enemy->GetModel(), enemy->GetRenderColor());
         }
 
-        // Projectiles tetap dirender terpisah (selalu render)
+        // Bullets are drawn even when the body is culled.
         enemy->RenderProjectiles(renderer, m_projectileMesh);
     }
 }

@@ -109,7 +109,7 @@ Player::~Player()
         EffectManager::Instance().Stop(m_dashReadyVfxHandle);
     }
 
-    // Bersihkan efek standby jika player mendadak dihapus
+    // Stop the dash standby effect
     if (m_dashStandbyVfxHandle != -1) {
         EffectManager::Instance().Stop(m_dashStandbyVfxHandle);
     }
@@ -266,7 +266,7 @@ void Player::UpdateDashReadyVfx()
     {
         DirectX::XMFLOAT3 vfxPos = movement->GetPosition();
 
-        // Gunakan variabel offset dari GUI
+        // Y offset tuned in the Player panel
         vfxPos.y += m_dashReadyOffsetY;
 
         EffectManager::Instance().SetPosition(m_dashReadyVfxHandle, vfxPos);
@@ -277,7 +277,7 @@ void Player::UpdateDashStandbyVfx()
 {
     if (HasFullDash()) // standby VFX means "a full dash is available"
     {
-        // 1. Jika handle kosong atau efek sebelumnya sudah selesai (mati), putar lagi!
+        // 1. Start the effect when none is playing (first time, or the last one ended)
         if (m_dashStandbyVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
         {
             DirectX::XMFLOAT3 vfxPos = movement->GetPosition();
@@ -285,7 +285,7 @@ void Player::UpdateDashStandbyVfx()
             m_dashStandbyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Standby.efk", vfxPos, 0.7f);
         }
 
-        // 2. Selama efeknya hidup, terus update posisinya agar menempel ke player
+        // 2. Keep it on the player while it plays
         if (m_dashStandbyVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
         {
             DirectX::XMFLOAT3 trackPos = movement->GetPosition();
@@ -295,10 +295,10 @@ void Player::UpdateDashStandbyVfx()
     }
     else
     {
-        // 3. Jika dash sedang tidak bisa dipakai (cooldown), matikan efek standby!
+        // 3. No full dash: stop the standby effect
         if (m_dashStandbyVfxHandle != -1) {
             EffectManager::Instance().Stop(m_dashStandbyVfxHandle);
-            m_dashStandbyVfxHandle = -1; // Reset handle agar bisa spawn baru nanti
+            m_dashStandbyVfxHandle = -1;
         }
     }
 }
@@ -307,13 +307,13 @@ void Player::UpdateOverdriveVfx()
 {
     if (IsPowerUncapped())
     {
-        // 1. Matikan paksa Dash Standby jika kebetulan masih menyala
+        // 1. Overdrive replaces the dash standby effect
         if (m_dashStandbyVfxHandle != -1) {
             EffectManager::Instance().Stop(m_dashStandbyVfxHandle);
             m_dashStandbyVfxHandle = -1;
         }
 
-        // 2. Mainkan efek Overdrive jika belum hidup
+        // 2. Start the overdrive effect when it is not playing
         if (m_overdriveVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_overdriveVfxHandle))
         {
             DirectX::XMFLOAT3 vfxPos = movement->GetPosition();
@@ -321,7 +321,7 @@ void Player::UpdateOverdriveVfx()
             m_overdriveVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Overdrive.efk", vfxPos, 1.0f);
         }
 
-        // 3. Terus update posisinya mengikuti player
+        // 3. Keep it on the player
         if (m_overdriveVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_overdriveVfxHandle))
         {
             DirectX::XMFLOAT3 trackPos = movement->GetPosition();
@@ -331,13 +331,13 @@ void Player::UpdateOverdriveVfx()
     }
     else
     {
-        // 1. Matikan efek Overdrive jika player kehilangan status Uncapped
+        // 1. Stop the overdrive effect once the power cap is back
         if (m_overdriveVfxHandle != -1) {
             EffectManager::Instance().Stop(m_overdriveVfxHandle);
             m_overdriveVfxHandle = -1;
         }
 
-        // 2. Fallback ke logika normal Dash Standby
+        // 2. Same dash standby handling as UpdateDashStandbyVfx
         if (HasFullDash()) // standby VFX means "a full dash is available"
         {
             if (m_dashStandbyVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
@@ -1009,7 +1009,6 @@ void Player::SetPosition(float x, float y, float z)
 
 void Player::SetPosition(const DirectX::XMFLOAT3& pos)
 {
-    // Update komponen movement logical
     if (movement) movement->SetPosition(pos);
     StandOnGround();
 }
@@ -1020,12 +1019,12 @@ void Player::ReleasePowerCap()
     m_isPowerUncapped = true;
     m_uncapRegenAccumulator = 0.0f;
 
-    // Simpan nilai saat ini sebelum ditimpa, agar bisa dikembalikan nanti
+    // Keep the current values so RestorePowerCap can put them back.
     m_normalMoveSpeed = moveSpeed;
     m_normalDashSpeed = dashSpeed;
     m_normalColor = color;
 
-    // Terapkan atribut Overdrive
+    // Overdrive values
     moveSpeed = m_uncapMoveSpeed;
     dashSpeed = m_uncapDashSpeed;
     color = m_uncapColor;
@@ -1037,7 +1036,7 @@ void Player::RestorePowerCap()
     m_isPowerUncapped = false;
     m_uncapRegenAccumulator = 0.0f;
 
-    // Kembalikan atribut ke nilai normal
+    // Back to the values saved by ReleasePowerCap
     moveSpeed = m_normalMoveSpeed;
     dashSpeed = m_normalDashSpeed;
     color = m_normalColor;
