@@ -1,16 +1,13 @@
 #include "PostProcessManager.h"
 #include "System/Graphics.h"
-#include "Framework.h" // Untuk akses Window info jika perlu
+#include "Framework.h"
 
 PostProcessManager::PostProcessManager()
 {
-    // Ambil device dari Singleton Graphics
     auto device = Graphics::Instance().GetDevice();
 
-    // Inisialisasi Shader
     m_uberShader = std::make_unique<UberShader>(device);
 
-    // Set default data (bisa disesuaikan)
     m_data.enabled = true;
 }
 
@@ -27,7 +24,7 @@ void PostProcessManager::CreateBuffers(int width, int height)
 {
     auto device = Graphics::Instance().GetDevice();
 
-    // Reset Pointer lama sebelum membuat baru
+    // Release the old resources before creating new ones.
     m_renderTargetTexture.Reset();
     m_renderTargetView.Reset();
     m_shaderResourceView.Reset();
@@ -61,7 +58,7 @@ void PostProcessManager::CreateBuffers(int width, int height)
     hr = device->CreateShaderResourceView(m_renderTargetTexture.Get(), nullptr, m_shaderResourceView.GetAddressOf());
     if (FAILED(hr)) return;
 
-    // 2. Create Depth Buffer (Penting agar objek 3D di scene bisa di-sort depth-nya)
+    // 2. Create Depth Buffer (needed for depth testing the scene's 3D objects)
     textureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 

@@ -1,5 +1,5 @@
 #include "BitmapFont.h"
-#include "System/Graphics.h" // Untuk mengambil Device & Context
+#include "System/Graphics.h"
 #include "Camera.h"
 #include <fstream>
 #include <sstream>
@@ -53,7 +53,7 @@ namespace
 
 BitmapFont::BitmapFont(const std::string& texturePath, const std::string& fontDataPath)
 {
-    // 1. Ambil Device dan buat Sprite
+    // 1. Sprite for the font texture
     auto device = Graphics::Instance().GetDevice();
     sprite = std::make_unique<Sprite>(device, texturePath.c_str());
 
@@ -64,7 +64,7 @@ BitmapFont::BitmapFont(const std::string& texturePath, const std::string& fontDa
     std::string line;
     while (std::getline(file, line))
     {
-        // Kita hanya ambil baris yang mendefinisikan karakter ("char id=...")
+        // Only "char id=..." lines define glyphs.
         if (line.find("char id=") != std::string::npos)
         {
             CharData c;
@@ -82,7 +82,7 @@ BitmapFont::BitmapFont(const std::string& texturePath, const std::string& fontDa
     }
 }
 
-// Fungsi helper untuk mengambil angka dari string seperti "x=10"
+// Reads the integer after `key=` in an .fnt line (for example "x=10"). Returns 0 when missing.
 int BitmapFont::ParseValue(const std::string& line, const std::string& key)
 {
     std::string search = key + "=";
@@ -100,13 +100,12 @@ void BitmapFont::Draw(const std::string& text, float startX, float startY, float
 {
     if (!sprite) return;
 
-    // Ambil Context untuk render
     auto dc = Graphics::Instance().GetDeviceContext();
 
     float cursorX = startX;
     float cursorY = startY;
 
-    // Jarak antar baris (bisa disesuaikan manual atau ambil dari common lineHeight di .fnt)
+    // 38 px per line at scale 1; the .fnt "common lineHeight" is not read
     float lineHeight = 38.0f * scale;
 
     for (size_t offset = 0; offset < text.size(); )
@@ -115,36 +114,33 @@ void BitmapFont::Draw(const std::string& text, float startX, float startY, float
         const int id = DecodeUtf8Codepoint(text, offset, nextOffset);
         offset = nextOffset;
 
-        if (id == '\n') // Handle Enter/Baris Baru
+        if (id == '\n') // newline
         {
             cursorX = startX;
             cursorY += lineHeight;
             continue;
         }
 
-        // Jika huruf tidak ada di data, lewati
+        // skip characters missing from the font
         if (chars.find(id) == chars.end()) continue;
 
         CharData& data = chars[id];
 
-        // Hitung posisi visual di layar
         float drawX = cursorX + (data.xoffset * scale);
         float drawY = cursorY + (data.yoffset * scale);
 
-        // --- INI BAGIAN PENTINGNYA ---
-        // Kita panggil fungsi Render kamu yang support texture slicing (sx, sy, sw, sh)
+        // Draw the glyph's cell of the atlas (sx, sy, sw, sh)
         sprite->Render(
             dc,
-            drawX, drawY, 0.0f,                 // dx, dy, dz (Posisi Layar)
-            (float)data.width * scale,          // dw (Lebar di Layar)
-            (float)data.height * scale,         // dh (Tinggi di Layar)
-            (float)data.x, (float)data.y,       // sx, sy (Posisi Potong di Texture)
-            (float)data.width, (float)data.height, // sw, sh (Ukuran Potong di Texture)
+            drawX, drawY, 0.0f,                 // dx, dy, dz (screen position)
+            (float)data.width * scale,          // dw (screen width)
+            (float)data.height * scale,         // dh (screen height)
+            (float)data.x, (float)data.y,       // sx, sy (cell position in the texture)
+            (float)data.width, (float)data.height, // sw, sh (cell size in the texture)
             0.0f,                               // Angle
-            r, g, b, a                          // Warna
+            r, g, b, a                          // color
         );
 
-        // Geser kursor X untuk huruf berikutnya
         cursorX += data.xadvance * scale;
     }
 }
@@ -160,22 +156,21 @@ void BitmapFont::Draw3D(const std::string& text, const Camera* camera,
     // -------------------------------------------------------------
     auto rs = Graphics::Instance().GetRenderState();
 
-    // 1. Aktifkan Alpha Blending (Agar background hitam hilang)
+    // 1. Alpha blending, so the black background disappears
     dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
 
-    // 2. (Opsional tapi PENTING untuk 3D Text) Matikan Z-Write 
-    // Agar kotak transparan teks tidak "membolongi" objek di belakangnya
-    // Gunakan DepthRead (Test ON, Write OFF) kalau ada, atau biarkan default dulu.
+    // 2. Depth test on, depth write off, so the transparent quads
+    // do not cut holes in objects behind them
     dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::TestOnly), 0);
 
     // -------------------------------------------------------------
 
     using namespace DirectX;
 
-    // Matrix Rotasi untuk seluruh teks
+    // Rotation of the whole text
     XMMATRIX matRot = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
 
-    // Kursor awal (lokal)
+    // Cursor in text space
     float cursorX = 0.0f;
     float cursorY = 0.0f;
     float lineHeight = 38.0f * scale;
@@ -189,7 +184,7 @@ void BitmapFont::Draw3D(const std::string& text, const Camera* camera,
         if (id == '\n')
         {
             cursorX = 0.0f; // Reset X
-            cursorY -= lineHeight; // Di 3D, Y ke bawah itu negatif
+            cursorY -= lineHeight; // Y decreases downward in 3D
             continue;
         }
 
@@ -197,35 +192,34 @@ void BitmapFont::Draw3D(const std::string& text, const Camera* camera,
 
         CharData& data = chars[id];
 
-        // 1. Hitung Ukuran Huruf di Dunia
+        // 1. Glyph size in world units
         float w = data.width * scale;
         float h = data.height * scale;
 
-        // 2. Hitung Offset Lokal (Jarak dari titik tumpu teks ke huruf ini)
-        // Di 2D: Y positif ke bawah. Di 3D: Y positif ke atas. Kita balik Y-nya.
-        float localX = cursorX + (data.xoffset * scale) + (w / 2.0f); // +w/2 karena Sprite Render pivotnya di tengah
+        // 2. Offset from the text origin to this glyph
+        // Screen Y grows down and world Y grows up, so Y is flipped.
+        float localX = cursorX + (data.xoffset * scale) + (w / 2.0f); // +w/2: the sprite pivot is its centre
         float localY = cursorY - (data.yoffset * scale) - (h / 2.0f);
 
-        // 3. Transformasi Posisi Lokal -> Posisi World (Sesuai Rotasi Teks)
+        // 3. Text space to world space, with the text rotation
         XMFLOAT3 localPos = { localX, localY, 0.0f };
         XMVECTOR vLocal = XMLoadFloat3(&localPos);
-        vLocal = XMVector3TransformCoord(vLocal, matRot); // Putar offsetnya
+        vLocal = XMVector3TransformCoord(vLocal, matRot);
 
-        // Tambahkan ke posisi asal teks
         XMFLOAT3 finalPos;
         XMStoreFloat3(&finalPos, vLocal + XMLoadFloat3(&worldPos));
 
-        // 4. Render Huruf
+        // 4. Draw the glyph
         sprite->Render3D(dc, camera,
             finalPos.x, finalPos.y, finalPos.z,
             w, h,
             (float)data.x, (float)data.y,
             (float)data.width, (float)data.height,
-            rotation.x, rotation.y, rotation.z, // Huruf ikut rotasi teks
+            rotation.x, rotation.y, rotation.z, // the glyph turns with the text
             color.x, color.y, color.z, color.w
         );
 
-        // 5. Geser Kursor
+        // 5. Advance the cursor
         cursorX += data.xadvance * scale;
     }
 }
@@ -235,12 +229,10 @@ DirectX::XMFLOAT2 BitmapFont::MeasureText(const std::string& text, float scale)
     float width = 0.0f;
     float maxWidth = 0.0f;
     int lineCount = 1;
-    float lineHeight = 38.0f * scale; // Hardcoded sesuai Draw() kamu. Idealnya ini dibaca dari file .fnt ("common lineHeight")
+    float lineHeight = 38.0f * scale; // same 38 as Draw(); the .fnt "common lineHeight" is not read
 
-    // Kalau kosong, return 0
     if (text.empty()) return { 0.0f, 0.0f };
 
-    // Hitung Lebar
     for (size_t offset = 0; offset < text.size(); )
     {
         const size_t nextOffset = NextUtf8Offset(text, offset);
@@ -257,13 +249,11 @@ DirectX::XMFLOAT2 BitmapFont::MeasureText(const std::string& text, float scale)
 
         if (chars.find(id) != chars.end())
         {
-            // xadvance adalah jarak kursor berpindah ke huruf selanjutnya
+            // xadvance: distance from this glyph to the next
             width += chars[id].xadvance * scale;
         }
     }
     maxWidth = (std::max)(maxWidth, width);
 
-    // Untuk tinggi, tombol biasanya cuma 1 baris, jadi kita return tinggi font default
-    // Kalau mau support multiline, logicnya harus hitung berapa kali '\n' muncul.
     return { maxWidth, lineHeight * static_cast<float>(lineCount) };
 }

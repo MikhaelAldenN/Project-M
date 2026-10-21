@@ -101,21 +101,21 @@ void CameraController::Update(float elapsedTime)
     std::shared_ptr<Camera> camera = m_activeCamera.lock();
     if (!camera) return;
 
-    // Catatan: Gunakan dt murni (unscaled) agar kamera tetap bergetar meski waktu game berhenti (Hit Stop)
+    // Unscaled dt, so the camera keeps shaking during hit stop.
     if (m_trauma > 0.0f) {
         m_trauma -= m_traumaDecay * elapsedTime;
         if (m_trauma < 0.0f) m_trauma = 0.0f;
 
-        // Vlambeer Formula: getaran = trauma kuadrat (Membuat efek redanya sangat natural)
+        // Shake = trauma squared, so it fades out smoothly (Vlambeer's trauma model).
         float shake = m_trauma * m_trauma;
-        float maxOffset = 2.0f; // Kekuatan getaran maksimal (Unit 3D)
+        float maxOffset = 2.0f; // largest offset, world units
 
-        // Random generator sederhana (-1.0 sampai 1.0)
+        // Random values in [-1, 0.99]
         float rx = ((rand() % 200) - 100) / 100.0f;
         float rz = ((rand() % 200) - 100) / 100.0f;
 
         m_shakeOffset.x = rx * maxOffset * shake;
-        m_shakeOffset.y = 0.0f; // Sengaja dikunci agar layar tidak naik-turun terlalu pusing
+        m_shakeOffset.y = 0.0f; // Y stays 0 on purpose: vertical shake is too disorienting.
         m_shakeOffset.z = rz * maxOffset * shake;
     }
     else {
@@ -162,8 +162,7 @@ void CameraController::Update(float elapsedTime)
     // POST-UPDATE MODIFIERS (Shake, Sway, Headbob, etc.)
     // =========================================================
 
-    // 1. Ambil Data Offset dari JuiceEngine
-    // (Tidak perlu hitung logika di sini, cukup ambil hasilnya)
+    // 1. Shake offsets, already computed by JuiceEngine
     XMFLOAT3 shakePos = JuiceEngine::Instance().GetShakePosOffset();
     XMFLOAT3 shakeRot = JuiceEngine::Instance().GetShakeRotOffset();
 
@@ -197,22 +196,20 @@ void CameraController::UpdateSequence(float dt, std::shared_ptr<Camera>& camera)
     const CameraKeyframe& targetKey = m_sequenceQueue[m_currentKeyframeIdx];
     if (m_seqTimer == 0.0f)
     {
-        // Setup posisi awal interpolasi
+        // Start pose of the interpolation
         if (targetKey.isJumpCut)
         {
-            // MODE CUT & PAN:
-            // Paksa start point ke posisi Awal yang ditentukan Shot ini
+            // Jump cut: start from the shot's own start pose
             m_seqStartPos = targetKey.StartPosition;
             m_seqStartRot = targetKey.StartRotation;
 
-            // Langsung teleport kamera ke posisi start biar gak ada glitch visual 1 frame
+            // Move the camera there at once, so no frame shows the old pose.
             camera->SetPosition(m_seqStartPos);
             camera->SetRotation(m_seqStartRot);
         }
         else
         {
-            // MODE SAMBUNG (CONTINUOUS):
-            // Start point adalah posisi kamera saat ini (akhir dari shot sebelumnya)
+            // Continuous: start from the current pose, where the previous shot ended
             m_seqStartPos = camera->GetPosition();
             m_seqStartRot = camera->GetRotation();
         }
@@ -245,19 +242,18 @@ void CameraController::UpdateSequence(float dt, std::shared_ptr<Camera>& camera)
             {
                 // Sequence Finished
                 m_fixedPos = camera->GetPosition();
-                // 1. Ambil Rotasi Terakhir
+                // 1. Last rotation
                 XMFLOAT3 finalRot = camera->GetRotation();
 
-                // 2. Hitung Forward Vector dari Rotasi tersebut
+                // 2. Forward vector of that rotation
                 XMMATRIX rotMat = XMMatrixRotationRollPitchYaw(finalRot.x, finalRot.y, finalRot.z);
                 XMVECTOR vForward = XMVectorSet(0, 0, 1, 0); // Forward default
                 vForward = XMVector3TransformNormal(vForward, rotMat);
 
-                // 3. Proyeksikan Target baru di depan kamera (misal jarak 10 unit)
+                // 3. New target 10 units in front of the camera
                 XMVECTOR vPos = XMLoadFloat3(&m_fixedPos);
                 XMVECTOR vNewTarget = XMVectorAdd(vPos, XMVectorScale(vForward, 10.0f));
 
-                // 4. Simpan ke m_targetPos
                 XMStoreFloat3(&m_targetPos, vNewTarget);
                 // ===========================
 
@@ -279,9 +275,8 @@ void CameraController::UpdateSequence(float dt, std::shared_ptr<Camera>& camera)
         if (targetKey.Easing == EasingType::Step)
         {
             // HARD CUT / JUMP CUT MODE
-            // Abaikan interpolasi dari StartPos.
-            // Posisi LANGSUNG di Target sejak detik ke-0 frame ini.
-            // "Duration" sekarang berfungsi sebagai "Hold Time".
+            // Step easing: the camera sits on the target from the first frame,
+            // and Duration works as a hold time.
             newPos = targetKey.TargetPosition;
             newRot = targetKey.TargetRotation;
         }

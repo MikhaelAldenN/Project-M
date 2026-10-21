@@ -3,10 +3,10 @@
 #include <string>
 #include <map>
 #include <memory>
-#include "System/Sprite.h" // Menggunakan Sprite milikmu
+#include "System/Sprite.h"
 #include <DirectXMath.h>
 
-// Struktur data untuk menyimpan info huruf dari file .fnt
+// One glyph from the .fnt file
 struct CharData {
     int id;
     int x, y;
@@ -18,11 +18,11 @@ struct CharData {
 class BitmapFont
 {
 public:
-    // Constructor: Load gambar & parse data .fnt
+    // Loads the font texture and parses the .fnt data
     BitmapFont(const std::string& texturePath, const std::string& fontDataPath);
     ~BitmapFont() = default;
 
-    // Fungsi untuk menggambar teks
+    // Draws text in screen pixels
     void Draw(const std::string& text, float x, float y, float scale, float r = 1.0f, float g = 1.0f, float b = 1.0f, float a = 1.0f);
     DirectX::XMFLOAT2 MeasureText(const std::string& text, float scale);
 
@@ -34,9 +34,9 @@ public:
         DirectX::XMFLOAT4 color = { 1,1,1,1 });
 
 private:
-    std::unique_ptr<Sprite> sprite; // Pointer ke Sprite sistem kamu
-    std::map<int, CharData> chars;  // Database koordinat huruf
+    std::unique_ptr<Sprite> sprite;
+    std::map<int, CharData> chars;  // glyphs by code point
 
-    // Helper parsing sederhana
+    // Reads one integer field of an .fnt line
     int ParseValue(const std::string& line, const std::string& key);
 };

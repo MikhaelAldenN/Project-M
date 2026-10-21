@@ -49,11 +49,11 @@ enum class CameraControlMode {
 };
 
 struct CameraShakeSettings {
-    float Duration = 0.5f;          // Berapa lama getaran bertahan (detik)
-    float AmplitudePos = 0.5f;      // Kekuatan geseran posisi (Meters)
-    float AmplitudeRot = 2.0f;      // Kekuatan putaran sudut (Degrees) - Pitch/Yaw/Roll
-    float Frequency = 25.0f;        // Seberapa cepat getarannya (Hz)
-    float TraumaFalloff = 1.5f;     // Kecepatan hilangnya getaran (Higher = Faster stop)
+    float Duration = 0.5f;          // how long the shake lasts (s)
+    float AmplitudePos = 0.5f;      // position amplitude (meters)
+    float AmplitudeRot = 2.0f;      // rotation amplitude (degrees, pitch/yaw/roll)
+    float Frequency = 25.0f;        // frequency (Hz)
+    float TraumaFalloff = 1.5f;     // decay rate (higher = stops sooner)
 };
 
 class CameraController
@@ -100,19 +100,19 @@ public:
     bool IsSequencing() const { return m_controlMode == CameraControlMode::Sequence; }
 
     // --- JUICE: Camera Shake System ---
-    // Panggil ini saat ledakan, tabrakan, atau impact
+    // Call on explosions, collisions and impacts.
     void TriggerShake(const CameraShakeSettings& settings, float intensityMultiplier = 1.0f);
 
-    // Hentikan shake seketika (misal saat cutscene mulai)
+    // Stops the shake at once (for example when a cutscene starts).
     void StopShake();
 
-    // Helper struct untuk info waktu sequence
+    // Sequence timing info
     struct SequenceTimeInfo {
         bool IsPlaying;
         float CurrentTime;
         float TotalDuration;
-        size_t CurrentIndex; // TAMBAHAN: Index saat ini
-        size_t TotalShots;   // TAMBAHAN: Total jumlah shot
+        size_t CurrentIndex; // current shot index
+        size_t TotalShots;   // number of shots
         EasingType CurrentEasing;
     };
 
@@ -187,25 +187,25 @@ private:
     DirectX::XMFLOAT3 m_seqStartPos = { 0,0,0 };
     DirectX::XMFLOAT3 m_seqStartRot = { 0,0,0 };
 
-    // Internal Helper untuk kalkulasi math shake
+    // Shake math
     void UpdateShakeLogic(float dt);
 
-    // Mengembalikan offset posisi hasil kalkulasi frame ini
+    // Position offset computed this frame
     DirectX::XMFLOAT3 GetShakePosOffset() const { return m_shakeResultPos; }
 
-    // Mengembalikan offset rotasi hasil kalkulasi frame ini
+    // Rotation offset computed this frame
     DirectX::XMFLOAT3 GetShakeRotOffset() const { return m_shakeResultRot; }
 
     // --- Shake State Members ---
     CameraShakeSettings m_activeShakeSettings;
-    float m_shakeTrauma = 0.0f;     // Level trauma saat ini (0.0 to 1.0)
-    float m_shakeTimeCounter = 0.0f;// Untuk seed noise function
+    float m_shakeTrauma = 0.0f;     // current trauma (0 to 1)
+    float m_shakeTimeCounter = 0.0f;// time input of the noise function
 
     DirectX::XMFLOAT3 m_shakeResultPos = { 0,0,0 }; // Output Offset Pos
     DirectX::XMFLOAT3 m_shakeResultRot = { 0,0,0 }; // Output Offset Rot
 
     float m_trauma = 0.0f;
-    float m_traumaDecay = 1.5f; // Seberapa cepat getaran hilang per detik
+    float m_traumaDecay = 1.5f; // trauma lost per second
     DirectX::XMFLOAT3 m_shakeOffset = { 0.0f, 0.0f, 0.0f };
 
 #if defined(_DEBUG)

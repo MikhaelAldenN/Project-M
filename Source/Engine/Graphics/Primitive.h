@@ -11,35 +11,35 @@ public:
     Primitive(ID3D11Device* device);
     ~Primitive();
 
-    // --- High Level Wrapper (Sesuai requestmu) ---
-    // Menggambar Kotak (Float)
+    // --- High-level drawing ---
+    // Rectangle (floats)
     void Rect(float x, float y, float w, float h,
         float cx, float cy, float angle,
         float r, float g, float b, float a);
 
-    // Menggambar Kotak (Vector)
+    // Rectangle (vectors)
     void Rect(const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size,
         const DirectX::XMFLOAT2& center, float angle,
         const DirectX::XMFLOAT4& color);
 
-    // Menggambar Garis
+    // Line
     void Line(float x1, float y1, float x2, float y2,
         float width, float r, float g, float b, float a);
 
-    // Menggambar Lingkaran
+    // Circle (not implemented: draws nothing)
     void Circle(float x, float y, float radius,
         float r, float g, float b, float a, int segments = 32);
 
-    // Menggambar Segitiga  
+    // Triangle
     void Triangle(float x1, float y1, float x2, float y2, float x3, float y3,
         float r, float g, float b, float a);
 
-    // --- Core Rendering (Dipanggil di Scene::Render) ---
-    // PENTING: Panggil fungsi ini untuk menggambar batch primitive ke layar
+    // --- Rendering ---
+    // Draws the queued primitives and clears the queue.
     void Render(ID3D11DeviceContext* context);
 
 private:
-    // Internal struct untuk Shader
+    // Vertex layout of the primitive shader
     struct Vertex
     {
         DirectX::XMFLOAT3 position;
@@ -57,7 +57,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState;
 
-    // Batching System (Menampung antrian gambar)
+    // Queued vertices, drawn by Render
     std::vector<Vertex> batchVertices;
     const size_t MAX_VERTICES = 2048; // Buffer size
 };

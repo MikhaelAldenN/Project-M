@@ -4,13 +4,13 @@
 class FreeCameraController
 {
 public:
-	// カメラからコントローラーへパラメータを同期する
+	// Copies the camera's eye, focus, up and right into the controller.
 	void SyncCameraToController(const Camera& camera);
 
-	// コントローラーからカメラへパラメータを同期する
+	// Applies the controller's eye, focus and up to the camera.
 	void SyncControllerToCamera(Camera& camera);
 
-	// 更新処理
+	// Orbit, pan and zoom from ImGui mouse input.
 	void Update();
 
 private:

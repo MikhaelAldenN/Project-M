@@ -4,15 +4,11 @@
 #include <cmath>
 #include <cassert>
 #include <vector>
-#include <cstdio>  // Untuk FILE*, fopen, dll
-
-// Utility untuk load shader (Sesuaikan jika kamu punya class ShaderLoader sendiri)
-// Asumsi: Kamu punya file shader compiled (.cso) di folder Data/Shaders/
-// Jika tidak, kamu mungkin perlu membuatnya atau menggunakan basic shader string.
+#include <cstdio>
 
 Primitive::Primitive(ID3D11Device* device)
 {
-    // 1. Buat Vertex Buffer (Dynamic)
+    // 1. Dynamic vertex buffer
     D3D11_BUFFER_DESC bd = {};
     bd.Usage = D3D11_USAGE_DYNAMIC;
     bd.ByteWidth = sizeof(Vertex) * MAX_VERTICES;
@@ -20,9 +16,7 @@ Primitive::Primitive(ID3D11Device* device)
     bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     device->CreateBuffer(&bd, nullptr, vertexBuffer.GetAddressOf());
 
-    // 2. Load Shaders (Pastikan path ini benar di proyekmu!)
-    // Jika kamu memakai sistem resource manager, ganti bagian ini.
-    // Ini contoh manual loading binary shader file:
+    // 2. Load the compiled shaders
     auto LoadShader = [&](const std::wstring& filename, std::vector<char>& buffer) {
         FILE* fp = nullptr;
         _wfopen_s(&fp, filename.c_str(), L"rb");
@@ -37,7 +31,6 @@ Primitive::Primitive(ID3D11Device* device)
         };
 
     std::vector<char> vsBlob, psBlob;
-    // NOTE: Kamu butuh file "primitive_vs.cso" dan "primitive_ps.cso"
     if (LoadShader(L"Data/Shader/primitive_vs.cso", vsBlob)) {
         device->CreateVertexShader(vsBlob.data(), vsBlob.size(), nullptr, vertexShader.GetAddressOf());
 
@@ -68,7 +61,7 @@ Primitive::Primitive(ID3D11Device* device)
 
 Primitive::~Primitive() {}
 
-// --- IMPLEMENTASI WRAPPER (Seperti Requestmu) ---
+// --- Public drawing API ---
 
 void Primitive::Rect(float x, float y, float w, float h, float cx, float cy, float angle, float r, float g, float b, float a)
 {
@@ -77,27 +70,24 @@ void Primitive::Rect(float x, float y, float w, float h, float cx, float cy, flo
 
 void Primitive::Rect(const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size, const DirectX::XMFLOAT2& center, float angle, const DirectX::XMFLOAT4& color)
 {
-    // Kita langsung proses vertices di sini untuk dimasukkan ke batch
     DrawRectInternal(position, size, center, angle, color);
 }
 
 void Primitive::Line(float x1, float y1, float x2, float y2, float width, float r, float g, float b, float a)
 {
-    // Line digambar sebagai Rect tipis yang diputar
+    // A line is a thin rotated rect
     float dx = x2 - x1;
     float dy = y2 - y1;
     float len = sqrtf(dx * dx + dy * dy);
     float angle = atan2f(dy, dx);
 
-    // Center di kiri tengah (0, width/2) agar rotasi dari titik awal
+    // Pivot at the left middle (0, width/2), so it rotates about the start point
     Rect(x1, y1, len, width, 0, width * 0.5f, angle, r, g, b, a);
 }
 
 void Primitive::Circle(float x, float y, float radius, float r, float g, float b, float a, int segments)
 {
-    // Implementasi simple menggunakan GL_TRIANGLE_FAN logic tapi manual triangulasi
-    // Untuk saat ini, kita skip dulu implementasi kompleks circle batching
-    // agar kamu bisa fokus ke Background Kotak Kuning dulu.
+    // Not implemented: draws nothing.
 }
 
 void Primitive::Triangle(float x1, float y1, float x2, float y2, float x3, float y3, float r, float g, float b, float a)
@@ -118,7 +108,7 @@ void Primitive::DrawRectInternal(const DirectX::XMFLOAT2& pos, const DirectX::XM
     float cosA = cosf(angle);
     float sinA = sinf(angle);
 
-    // Hitung posisi relatif 4 sudut (Top-Left, Top-Right, Bottom-Left, Bottom-Right)
+    // Corners relative to the pivot
     // TL
     float x1 = -center.x;           float y1 = -center.y;
     // TR
@@ -145,12 +135,12 @@ void Primitive::DrawRectInternal(const DirectX::XMFLOAT2& pos, const DirectX::XM
     Vertex vBR = Transform(x4, y4);
 
     // PUSH 6 VERTEX (TRIANGLE LIST)
-    // Segitiga 1 (TL -> TR -> BL)
+    // Triangle 1 (TL -> TR -> BL)
     batchVertices.push_back(vTL);
     batchVertices.push_back(vTR);
     batchVertices.push_back(vBL);
 
-    // Segitiga 2 (TR -> BR -> BL)
+    // Triangle 2 (TR -> BR -> BL)
     batchVertices.push_back(vTR);
     batchVertices.push_back(vBR);
     batchVertices.push_back(vBL);
@@ -173,7 +163,7 @@ void Primitive::Render(ID3D11DeviceContext* context)
         for (const auto& v : batchVertices)
         {
             Vertex finalV = v;
-            // Konversi ke NDC
+            // Pixels to NDC
             finalV.position.x = (v.position.x / screenW) * 2.0f - 1.0f;
             finalV.position.y = -((v.position.y / screenH) * 2.0f - 1.0f);
             *ptr++ = finalV;
@@ -186,7 +176,6 @@ void Primitive::Render(ID3D11DeviceContext* context)
     context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
     context->IASetInputLayout(inputLayout.Get());
 
-    // UBAH DARI TRIANGLESTRIP KE TRIANGLELIST
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     context->VSSetShader(vertexShader.Get(), nullptr, 0);

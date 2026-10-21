@@ -118,7 +118,7 @@ void Camera::SetOrthographic(float viewWidth, float viewHeight, float nearZ, flo
 {
     this->nearZ = nearZ;
     this->farZ = farZ;
-    // Membuat matriks proyeksi ortografis (kotak, bukan piramida)
+    // Orthographic projection: a box instead of a frustum
     XMMATRIX matProj = XMMatrixOrthographicLH(viewWidth, viewHeight, nearZ, farZ);
     XMStoreFloat4x4(&projection, matProj);
 }
@@ -148,7 +148,7 @@ void Camera::UpdateViewMatrix()
 
 bool Camera::CheckSphere(float x, float y, float z, float radius)
 {
-    // 1. Hitung Matrix View * Projection (Frustum Matrix)
+    // 1. View * projection
     XMMATRIX matView = XMLoadFloat4x4(&view);
     XMMATRIX matProj = XMLoadFloat4x4(&projection);
     XMMATRIX matViewProj = XMMatrixMultiply(matView, matProj);
@@ -156,8 +156,8 @@ bool Camera::CheckSphere(float x, float y, float z, float radius)
     XMFLOAT4X4 M;
     XMStoreFloat4x4(&M, matViewProj);
 
-    // 2. Ekstrak 6 Bidang Frustum (Left, Right, Bottom, Top, Near, Far)
-    // Rumus: Plane = Row4 +/- RowX
+    // 2. The six frustum planes (left, right, bottom, top, near, far)
+    // Gribb-Hartmann: each plane is column 4 plus or minus column X
     float planes[6][4];
 
     // Left
@@ -173,19 +173,19 @@ bool Camera::CheckSphere(float x, float y, float z, float radius)
     // Far
     planes[5][0] = M._14 - M._13; planes[5][1] = M._24 - M._23; planes[5][2] = M._34 - M._33; planes[5][3] = M._44 - M._43;
 
-    // 3. Cek Jarak Sphere ke 6 Bidang
+    // 3. Sphere against each plane
     for (int i = 0; i < 6; ++i)
     {
-        // Normalisasi Plane (Penting agar radius akurat)
+        // Normalized, so the distance is in world units
         float length = sqrtf(planes[i][0] * planes[i][0] + planes[i][1] * planes[i][1] + planes[i][2] * planes[i][2]);
 
-        // Dot Product (Jarak titik ke bidang)
+        // Signed distance from the point to the plane
         float dist = (planes[i][0] * x + planes[i][1] * y + planes[i][2] * z + planes[i][3]) / length;
 
-        // Jika jarak < -radius, berarti bola sepenuhnya di BELAKANG bidang ini (luar layar)
+        // Below -radius the sphere lies entirely behind this plane (off screen).
         if (dist < -radius)
         {
-            return false; // Culling! Jangan render.
+            return false; // outside: cull
         }
     }
 
