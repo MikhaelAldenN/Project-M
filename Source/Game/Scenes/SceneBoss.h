@@ -52,6 +52,17 @@ public:
 private:
     // Queues SceneTitle and stops the rest of this scene's update logic.
     void RequestReturnToTitle();
+    // --- Update steps, called in this order by Update ---
+    void UpdatePlayerDeathSequence(float elapsedTime);
+    void UpdateNaviDefeatFade(float elapsedTime);
+    // Returns true when it requested the return to title; Update must stop.
+    [[nodiscard]] bool UpdateWindowkillMainWindow();
+    void UpdateArenaCamera(float elapsedTime);
+    void UpdatePlayerStretch(float scaledDt);
+    // Returns true when it requested the return to title; Update must stop.
+    [[nodiscard]] bool UpdateNavi(float scaledDt);
+    void UpdateEntitiesAndEffects(float scaledDt, Camera* activeCam);
+    void UpdateSubWindows(float elapsedTime);
     // --- Render Pipeline ---
     void RenderScene(float elapsedTime, Camera* camera, bool isTransparentWindow);
 

@@ -252,9 +252,41 @@ void SceneBoss::Update(float elapsedTime)
     float activeTimeScale = TimeManager::Instance().GetHitStopMultiplier();
     const float scaledDt = elapsedTime * activeTimeScale;
 
-    // =========================================================
-    // DEATH SEQUENCE LOGIC
-    // =========================================================
+    UpdatePlayerDeathSequence(elapsedTime);
+
+    Camera* activeCam = CameraController::Instance().GetActiveCamera().get();
+
+    UpdateNaviDefeatFade(elapsedTime);
+    if (UpdateWindowkillMainWindow()) return;
+
+    UpdateArenaCamera(elapsedTime);
+
+    // --- Player update ---
+    if (m_player)
+    {
+        m_player->Update(scaledDt, activeCam);
+    }
+
+    UpdatePlayerStretch(scaledDt);
+
+    if (UpdateNavi(scaledDt)) return;
+    if (m_isPendingSceneChange) return;
+    UpdateEntitiesAndEffects(scaledDt, activeCam);
+
+    UpdateSubWindows(elapsedTime);
+
+    PerformanceLogger::Instance().StopTimer(PerfBucket::Logic);
+    const int activeWins = m_windowSystem ? static_cast<int>(m_windowSystem->GetWindows().size()) : 0;
+    PerformanceLogger::Instance().EndFrameCheck(0.0f, activeWins);
+
+#if !defined(_DEBUG)
+    // Release keeps the floating window until ImGui is removed (beta).
+    DrawGUI();
+#endif
+}
+
+void SceneBoss::UpdatePlayerDeathSequence(float elapsedTime)
+{
     if (m_player && m_player->GetHP() <= 0 && !m_isDying && m_respawnTimer <= 0.0f)
     {
         StartPlayerDeathSequence();
@@ -320,54 +352,62 @@ void SceneBoss::Update(float elapsedTime)
         m_uberParams.intensity = FX_BASE_INTENSITY;
         m_fadeAlpha = 0.0f;
     }
+}
 
-    Camera* activeCam = CameraController::Instance().GetActiveCamera().get();
+void SceneBoss::UpdateNaviDefeatFade(float elapsedTime)
+{
+    if (!m_navi) return;
 
-    if (m_navi) {
-        const INaviPhase* phase{ m_navi->GetCurrentPhase() };
+    const INaviPhase* phase{ m_navi->GetCurrentPhase() };
 
-        // Trigger the start of the death sequence
-        if (IsWindowkill(phase) && phase->IsDead() && !m_isNaviDefeated)
+    // Trigger the start of the death sequence
+    if (IsWindowkill(phase) && phase->IsDead() && !m_isNaviDefeated)
+    {
+        m_isNaviDefeated = true;
+        m_naviDefeatTimer = 0.0f;
+        AddLog("Navi defeated. Starting death sequence.");
+    }
+
+    // Logic for the Fade-In
+    if (m_isNaviDefeated)
+    {
+        m_naviDefeatTimer += elapsedTime;
+        if (m_naviDefeatTimer > NAVI_DEATH_ANIM_DURATION)
         {
-            m_isNaviDefeated = true;
-            m_naviDefeatTimer = 0.0f;
-            AddLog("Navi defeated. Starting death sequence.");
+            float fadeTime = m_naviDefeatTimer - NAVI_DEATH_ANIM_DURATION;
+            m_whiteAlpha = std::clamp(fadeTime / WHITE_FADE_DURATION, 0.0f, 1.0f);
+        }
+    }
+}
+
+bool SceneBoss::UpdateWindowkillMainWindow()
+{
+    if (!m_navi) return false;
+
+    const INaviPhase* phase{ m_navi->GetCurrentPhase() };
+    Beyond::Window* mw = WindowManager::Instance().GetWindowByIndex(0);
+
+    if (IsWindowkill(phase)) {
+        // Visibility logic
+        if (!phase->IsDead()) {
+            if (mw && mw->GetSDLWindow()) SDL_HideWindow(mw->GetSDLWindow());
+        }
+        else {
+            if (mw && mw->GetSDLWindow()) SDL_ShowWindow(mw->GetSDLWindow());
         }
 
-        // Logic for the Fade-In
-        if (m_isNaviDefeated)
-        {
-            m_naviDefeatTimer += elapsedTime;
-            if (m_naviDefeatTimer > NAVI_DEATH_ANIM_DURATION)
-            {
-                float fadeTime = m_naviDefeatTimer - NAVI_DEATH_ANIM_DURATION;
-                m_whiteAlpha = std::clamp(fadeTime / WHITE_FADE_DURATION, 0.0f, 1.0f);
-            }
+        // ONLY change scene if the White Fade is complete!
+        if (m_whiteAlpha >= 1.0f && !m_isPendingSceneChange) {
+            RequestReturnToTitle();
+            return true;
         }
     }
 
-    // Windowkill Phase Logic (Check for Scene Change)
-    if (m_navi) {
-        const INaviPhase* phase{ m_navi->GetCurrentPhase() };
-        Beyond::Window* mw = WindowManager::Instance().GetWindowByIndex(0);
+    return false;
+}
 
-        if (IsWindowkill(phase)) {
-            // Visibility logic
-            if (!phase->IsDead()) {
-                if (mw && mw->GetSDLWindow()) SDL_HideWindow(mw->GetSDLWindow());
-            }
-            else {
-                if (mw && mw->GetSDLWindow()) SDL_ShowWindow(mw->GetSDLWindow());
-            }
-
-            // ONLY change scene if the White Fade is complete!
-            if (m_whiteAlpha >= 1.0f && !m_isPendingSceneChange) {
-                RequestReturnToTitle();
-                return;
-            }
-        }
-    }
-
+void SceneBoss::UpdateArenaCamera(float elapsedTime)
+{
     // --- Sync main window size ---
     Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
     if (mainWindow)
@@ -381,8 +421,6 @@ void SceneBoss::Update(float elapsedTime)
     m_targetZoom = 0.0f;
     m_currentZoom = 0.0f;
 
-    // Kunci Rasio Piksel ke default agar ukuran dunia stabil
-    float dynamicPixelRatio = k_pixelToUnitRatio;
     m_windowSystem->SetArenaRect(Framework::Instance()->GetGameImageRect());
 
     // =========================================================
@@ -401,115 +439,106 @@ void SceneBoss::Update(float elapsedTime)
 
     // Update the camera with unscaled time (elapsedTime) so it keeps shaking during hit stop.
     camCtrl.Update(elapsedTime);
-    // =========================================================
+}
 
-    // --- Player update ---
-    if (m_player)
+void SceneBoss::UpdatePlayerStretch(float scaledDt)
+{
+    if (!m_player) return;
+
+    const XMFLOAT3 vel = m_player->GetMovement()->GetVelocity();
+    const float    currentSpeedSq = vel.x * vel.x + vel.z * vel.z;
+    const float    dashThreshold = m_player->GetDashSpeed() * 0.8f;
+
+    XMFLOAT2 targetStretch = { 0.0f, 0.0f };
+    XMFLOAT2 targetOffset = { 0.0f, 0.0f };
+    constexpr float lerpSpeed = 10.0f;
+
+    if (currentSpeedSq > (dashThreshold * dashThreshold))
     {
-        m_player->Update(scaledDt, activeCam);
-    }
+        constexpr float kStretchX = 200.0f;
+        constexpr float kSquashY = 0.0f;
+        constexpr float kStretchZ = 0.0f;
+        constexpr float kSquashX = 0.0f;
 
-    // --- Squash & Stretch ---
-    if (m_player)
-    {
-        const XMFLOAT3 vel = m_player->GetMovement()->GetVelocity();
-        const float    currentSpeedSq = vel.x * vel.x + vel.z * vel.z;
-        const float    dashThreshold = m_player->GetDashSpeed() * 0.8f;
+        const float dashRatio = sqrtf(currentSpeedSq) / m_player->GetDashSpeed();
 
-        XMFLOAT2 targetStretch = { 0.0f, 0.0f };
-        XMFLOAT2 targetOffset = { 0.0f, 0.0f };
-        constexpr float lerpSpeed = 10.0f;
-
-        if (currentSpeedSq > (dashThreshold * dashThreshold))
+        if (std::abs(vel.x) > std::abs(vel.z))
         {
-            constexpr float kStretchX = 200.0f;
-            constexpr float kSquashY = 0.0f;
-            constexpr float kStretchZ = 0.0f;
-            constexpr float kSquashX = 0.0f;
-
-            const float dashRatio = sqrtf(currentSpeedSq) / m_player->GetDashSpeed();
-
-            if (std::abs(vel.x) > std::abs(vel.z))
-            {
-                targetStretch.x = dashRatio * kStretchX;
-                targetStretch.y = dashRatio * kSquashY;
-                const float signX = (vel.x > 0.0f) ? 1.0f : -1.0f;
-                // Gunakan dynamicPixelRatio
-                targetOffset.x = -signX * (targetStretch.x * 0.5f) / dynamicPixelRatio;
-            }
-            else
-            {
-                targetStretch.y = dashRatio * kStretchZ;
-                targetStretch.x = dashRatio * kSquashX;
-                const float signZ = (vel.z > 0.0f) ? 1.0f : -1.0f;
-                // Gunakan dynamicPixelRatio
-                targetOffset.y = -signZ * (targetStretch.y * 0.5f) / dynamicPixelRatio;
-            }
+            targetStretch.x = dashRatio * kStretchX;
+            targetStretch.y = dashRatio * kSquashY;
+            const float signX = (vel.x > 0.0f) ? 1.0f : -1.0f;
+            targetOffset.x = -signX * (targetStretch.x * 0.5f) / k_pixelToUnitRatio;
         }
-
-        m_currentStretch.x += (targetStretch.x - m_currentStretch.x) * lerpSpeed * scaledDt;
-        m_currentStretch.y += (targetStretch.y - m_currentStretch.y) * lerpSpeed * scaledDt;
-        m_stretchOffset.x += (targetOffset.x - m_stretchOffset.x) * lerpSpeed * scaledDt;
-        m_stretchOffset.y += (targetOffset.y - m_stretchOffset.y) * lerpSpeed * scaledDt;
-    }
-
-    // --- Entities & Collision Update ---
-    if (m_navi) {
-        // AI Director にプレイヤーのデータを渡す
-        // Why every frame: a phase created mid-fight has no target until the scene hands it one.
-        if (INaviPhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAITarget(m_player.get());
-
-        m_navi->Update(scaledDt);
-
-        // Why fetched here: Boss::Update can swap the phase, so an earlier pointer may be stale.
-        const INaviPhase* updatedPhase{ m_navi->GetCurrentPhase() };
-        if (updatedPhase && !m_isPendingSceneChange && updatedPhase->IsReadyToChangeScene()) {
-            RequestReturnToTitle();
-            return;
-        }
-
-        const bool isWindowkillPhase{ IsWindowkill(updatedPhase) };
-
-        if (isWindowkillPhase && !m_playerWindowTransparent) {
-            // Jika bos baru saja masuk Phase 2, nyalakan transparansi!
-            m_playerWindowTransparent = true;
-        }
-        else if (!isWindowkillPhase && m_playerWindowTransparent) {
-            // Jika bos kembali ke Phase 1 (atau respawn/mati), matikan transparansi!
-            m_playerWindowTransparent = false;
+        else
+        {
+            targetStretch.y = dashRatio * kStretchZ;
+            targetStretch.x = dashRatio * kSquashX;
+            const float signZ = (vel.z > 0.0f) ? 1.0f : -1.0f;
+            targetOffset.y = -signZ * (targetStretch.y * 0.5f) / k_pixelToUnitRatio;
         }
     }
-    if (m_isPendingSceneChange) return;
+
+    m_currentStretch.x += (targetStretch.x - m_currentStretch.x) * lerpSpeed * scaledDt;
+    m_currentStretch.y += (targetStretch.y - m_currentStretch.y) * lerpSpeed * scaledDt;
+    m_stretchOffset.x += (targetOffset.x - m_stretchOffset.x) * lerpSpeed * scaledDt;
+    m_stretchOffset.y += (targetOffset.y - m_stretchOffset.y) * lerpSpeed * scaledDt;
+}
+
+bool SceneBoss::UpdateNavi(float scaledDt)
+{
+    if (!m_navi) return false;
+
+    // AI Director にプレイヤーのデータを渡す
+    // Why every frame: a phase created mid-fight has no target until the scene hands it one.
+    if (INaviPhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAITarget(m_player.get());
+
+    m_navi->Update(scaledDt);
+
+    // Why fetched here: Boss::Update can swap the phase, so an earlier pointer may be stale.
+    const INaviPhase* updatedPhase{ m_navi->GetCurrentPhase() };
+    if (updatedPhase && !m_isPendingSceneChange && updatedPhase->IsReadyToChangeScene()) {
+        RequestReturnToTitle();
+        return true;
+    }
+
+    const bool isWindowkillPhase{ IsWindowkill(updatedPhase) };
+
+    if (isWindowkillPhase && !m_playerWindowTransparent) {
+        // Jika bos baru saja masuk Phase 2, nyalakan transparansi!
+        m_playerWindowTransparent = true;
+    }
+    else if (!isWindowkillPhase && m_playerWindowTransparent) {
+        // Jika bos kembali ke Phase 1 (atau respawn/mati), matikan transparansi!
+        m_playerWindowTransparent = false;
+    }
+
+    return false;
+}
+
+void SceneBoss::UpdateEntitiesAndEffects(float scaledDt, Camera* activeCam)
+{
     if (m_enemyManager) m_enemyManager->Update(scaledDt, activeCam, m_player->GetPosition(), true);
     if (m_itemManager) m_itemManager->Update(scaledDt, activeCam);
     if (m_collisionManager) m_collisionManager->Update(scaledDt);
 
     EffectManager::Instance().Update(scaledDt);
     WindowShatterManager::Instance().Update(scaledDt);
+}
 
-    // --- Sync sub-window cameras to match main camera ---
-    if (m_windowSystem)
+void SceneBoss::UpdateSubWindows(float elapsedTime)
+{
+    if (!m_windowSystem) return;
+
+    for (auto& tracked : m_windowSystem->GetWindows())
     {
-        for (auto& tracked : m_windowSystem->GetWindows())
-        {
-            if (!tracked->isActive) continue;
-            if (!tracked->camera || tracked->camera == m_mainCamera) continue;
+        if (!tracked->isActive) continue;
+        if (!tracked->camera || tracked->camera == m_mainCamera) continue;
 
-            tracked->camera->SetPosition(m_mainCamera->GetPosition());
-            tracked->camera->SetRotation(m_mainCamera->GetRotation());
-        }
-
-        m_windowSystem->Update(elapsedTime);
+        tracked->camera->SetPosition(m_mainCamera->GetPosition());
+        tracked->camera->SetRotation(m_mainCamera->GetRotation());
     }
 
-    PerformanceLogger::Instance().StopTimer(PerfBucket::Logic);
-    const int activeWins = m_windowSystem ? static_cast<int>(m_windowSystem->GetWindows().size()) : 0;
-    PerformanceLogger::Instance().EndFrameCheck(0.0f, activeWins);
-
-#if !defined(_DEBUG)
-    // Release keeps the floating window until ImGui is removed (beta).
-    DrawGUI();
-#endif
+    m_windowSystem->Update(elapsedTime);
 }
 
 
