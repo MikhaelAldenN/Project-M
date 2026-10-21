@@ -62,7 +62,6 @@ public:
 
     BossAI_Phase01* GetAI() const { return m_ai.get(); }
     const std::vector<std::unique_ptr<IBossAttackPattern>>& GetActiveAttacks() const { return m_activeAttacks; }
-    void AppendActiveProjectiles(std::vector<Bullet*>& out) const override;
     [[nodiscard]] ProjectilePool* GetProjectilePool() override { return &m_projectiles; }
     [[nodiscard]] const ProjectilePool* GetProjectilePool() const override { return &m_projectiles; }
 

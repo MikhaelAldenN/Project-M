@@ -799,12 +799,3 @@ DamageResult BossPhase02::TakeDamage(const DamageInfo& damage) {
 
     return (m_bossHP <= 0) ? DamageResult::killed : DamageResult::damaged;
 }
-
-void BossPhase02::AppendActiveProjectiles(std::vector<Bullet*>& out) const
-{
-    for (const auto& attack : m_activeAttacks)
-    {
-        const auto attackBullets{ attack->GetActiveProjectiles() };
-        out.insert(out.end(), attackBullets.begin(), attackBullets.end());
-    }
-}

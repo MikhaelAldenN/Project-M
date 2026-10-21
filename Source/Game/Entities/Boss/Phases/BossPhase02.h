@@ -67,7 +67,6 @@ public:
 
     Camera* GetFXCamera() const { return m_fxCamera.get(); }
 
-    void AppendActiveProjectiles(std::vector<Bullet*>& out) const override;
     [[nodiscard]] ProjectilePool* GetProjectilePool() override { return &m_projectiles; }
     [[nodiscard]] const ProjectilePool* GetProjectilePool() const override { return &m_projectiles; }
 

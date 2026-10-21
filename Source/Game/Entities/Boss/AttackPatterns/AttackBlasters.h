@@ -44,7 +44,6 @@ public:
     void Stop(Boss* boss) override;
 
     bool IsFinished() const override;
-    std::vector<Bullet*> GetActiveProjectiles() const override;
 
 private:
     struct OrbitalBlaster {

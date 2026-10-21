@@ -194,9 +194,3 @@ void AttackBlasters::Stop(Boss* boss) {
 bool AttackBlasters::IsFinished() const {
     return !m_isSpawning && m_blasters.empty();
 }
-
-std::vector<Bullet*> AttackBlasters::GetActiveProjectiles() const {
-    // Note: The beam logic currently uses AABB overlap rather than Bullet instances in your original code. 
-    // If you plan to spawn actual bullets for the beam hitboxes later, return them here.
-    return {};
-}

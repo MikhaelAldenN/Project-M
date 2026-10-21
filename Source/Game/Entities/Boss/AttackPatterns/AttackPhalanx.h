@@ -49,7 +49,6 @@ public:
     void Stop(Boss* boss) override;
 
     bool IsFinished() const override;
-    std::vector<Bullet*> GetActiveProjectiles() const override { return {}; }
 
     [[nodiscard]] const BossMoveTarget* GetBossMoveTarget() const override { return &m_moveTarget; }
 

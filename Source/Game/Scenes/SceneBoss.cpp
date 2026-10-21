@@ -642,15 +642,6 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
         if (const INaviPhase * phase{ m_navi ? m_navi->GetCurrentPhase() : nullptr })
         {
             const bool isWindowkill{ IsWindowkill(phase) };
-            std::vector<Bullet*> bullets; // debug overlay only: a per-frame allocation is acceptable
-            phase->AppendActiveProjectiles(bullets);
-            for (Bullet* bullet : bullets)
-            {
-                if (!bullet || !bullet->IsActive()) continue;
-                if (isWindowkill) shapeRenderer->DrawSphere(bullet->GetPosition(), bullet->GetRadius(), { 0.0f, 1.0f, 0.0f, 1.0f });
-                else              shapeRenderer->DrawSphere(bullet->GetPosition(), bullet->GetRadius(), { 1.0f, 0.0f, 0.0f, 1.0f });
-            }
-
             if (const ProjectilePool * pool{ phase->GetProjectilePool() })
             {
                 const DirectX::XMFLOAT4 color{ isWindowkill

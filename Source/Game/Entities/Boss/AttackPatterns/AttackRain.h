@@ -42,7 +42,6 @@ public:
     void Stop(Boss* boss) override;
 
     bool IsFinished() const override;
-    std::vector<Bullet*> GetActiveProjectiles() const override { return {}; }
 
     // State query — disesuaikan agar membaca dari zona pertama (Aman untuk BossPhase01)
     int               GetState()   const { return m_zones.empty() ? 0 : m_zones[0].state; }

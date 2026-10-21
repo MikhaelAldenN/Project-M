@@ -5,7 +5,6 @@
 #include <vector>
 
 class Boss;
-class Bullet;
 class Camera;
 struct ID3D11DeviceContext;
 
@@ -40,9 +39,6 @@ public:
 
     // Returns true when all projectiles are destroyed and the attack is over.
     virtual bool IsFinished() const = 0;
-
-    // Returns active bullets for the global collision manager.
-    virtual std::vector<Bullet*> GetActiveProjectiles() const = 0;
 
     // Non-null while the attack steers the boss; the phase then stops its idle hover.
     // The pointer stays valid until the attack is destroyed.

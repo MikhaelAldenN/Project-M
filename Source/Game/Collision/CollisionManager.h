@@ -19,10 +19,9 @@
 class ItemManager;
 class NaviAlly;
 class Boss;
-class Bullet;
 
 // Damage dealt by collision pairs whose bullets do not carry their own damage value.
-// Boss bullets and player bullets against enemies or the boss use Bullet::GetDamage() instead.
+// Boss projectiles and player bullets against enemies or the boss use Projectile::damage instead.
 struct CollisionDamageConfig
 {
     int enemyBulletToPlayer{ 10 };
@@ -79,7 +78,4 @@ private:
     Boss* m_Boss = nullptr;
 
     CollisionDamageConfig m_damageConfig{};
-
-    // Reused every frame so collecting the boss bullets does not allocate a new buffer.
-    std::vector<Bullet*> m_bossBulletScratch;
 };

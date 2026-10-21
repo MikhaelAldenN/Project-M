@@ -9,7 +9,6 @@
 #include "IBossAttackPattern.h"
 
 class Boss;
-class Bullet;
 class Camera;
 class Player;
 class ProjectilePool;
@@ -59,10 +58,6 @@ public:
 
     // True once the phase's end sequence is over and the scene may leave the fight.
     [[nodiscard]] virtual bool IsReadyToChangeScene() const { return false; }
-
-    // Appends the bullets that are active right now. `out` is not cleared, so one buffer
-    // can be reused. Pointers are borrowed and valid until the phase's next Update.
-    virtual void AppendActiveProjectiles(std::vector<Bullet*>& out) const = 0;
 
     // The phase's plain-data projectile pool, or null when the phase has none.
     // Borrowed: the pool lives as long as the phase.

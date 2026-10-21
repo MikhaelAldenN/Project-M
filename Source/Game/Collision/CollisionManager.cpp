@@ -726,20 +726,6 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
         return true;
         };
 
-    m_bossBulletScratch.clear();
-    phase->AppendActiveProjectiles(m_bossBulletScratch);
-    for (Bullet* bullet : m_bossBulletScratch)
-    {
-        if (!bullet || !bullet->IsActive()) continue;
-        // A parried bullet (heading back to the boss) never hurts the player.
-        if (bullet->GetBossTarget() != nullptr) continue;
-
-        if (hitPlayer(bullet->GetMovement()->GetPosition(), bullet->GetRadius(), bullet->GetDamage()))
-        {
-            bullet->SetActive(false);
-        }
-    }
-
     if (ProjectilePool * pool{ phase->GetProjectilePool() })
     {
         const std::vector<Projectile>& slots{ pool->Slots() };
@@ -785,20 +771,6 @@ void CollisionManager::CheckBossProjectilesVsBoss(float elapsedTime)
         phase->TakeDamage(DamageInfo{ damage, position });
         CameraController::Instance().AddTrauma(0.15f);
         };
-
-    m_bossBulletScratch.clear();
-    phase->AppendActiveProjectiles(m_bossBulletScratch);
-    for (Bullet* bullet : m_bossBulletScratch)
-    {
-        if (!bullet->IsActive() || bullet->GetBossTarget() != m_Boss) continue;
-
-        const DirectX::XMFLOAT3 bPos{ bullet->GetMovement()->GetPosition() };
-        if (!reachesBoss(bPos)) continue;
-
-        // Deactivated before the damage, so one fragment cannot hit twice.
-        bullet->SetActive(false);
-        damageBoss(bPos, bullet->GetDamage());
-    }
 
     if (ProjectilePool * pool{ phase->GetProjectilePool() })
     {

@@ -36,7 +36,6 @@ public:
     void Stop(Boss* boss) override;
 
     bool IsFinished() const override;
-    std::vector<Bullet*> GetActiveProjectiles() const override { return {}; }
 
 private:
     void FireBurst(Boss* boss, float angleOffset);

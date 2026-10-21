@@ -459,8 +459,3 @@ void BossPhase01::UpdateDeathSequence(float dt, Boss* boss) {
         boss->ChangePhase(std::make_unique<BossPhase02>(m_aiTarget));
     }
 }
-
-void BossPhase01::AppendActiveProjectiles(std::vector<Bullet*>& /*out*/) const
-{
-    // Bullet hell projectiles live in m_projectiles; callers read them through GetProjectilePool.
-}
