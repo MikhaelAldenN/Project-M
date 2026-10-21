@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <optional>
 #include "EffectManager.h"
 
 using namespace DirectX;
@@ -42,8 +43,38 @@ namespace
         p.position = next;
     }
 
+    struct TargetMotion
+    {
+        XMFLOAT3 position{};
+        XMFLOAT3 velocity{};
+    };
+
+    // Where the target of `p` is and how it moves. Empty when `p` has no target
+    // or its enemy is not in `targets.enemies`.
+    std::optional<TargetMotion> FindTargetMotion(const Projectile& p, const ProjectileTargets& targets)
+    {
+        switch (p.target)
+        {
+        case ProjectileTarget::player:
+            return TargetMotion{ targets.playerPosition, targets.playerVelocity };
+        case ProjectileTarget::boss:
+            // The boss is treated as still, so steering does not lead it.
+            return TargetMotion{ targets.bossPosition, XMFLOAT3{} };
+        case ProjectileTarget::enemy:
+        {
+            const auto found{ std::find_if(targets.enemies.begin(), targets.enemies.end(),
+                [&p](const TrackedTarget& enemy) { return enemy.id == p.targetId; }) };
+            if (found == targets.enemies.end()) return std::nullopt;
+            return TargetMotion{ found->position, found->velocity };
+        }
+        case ProjectileTarget::none:
+        default:
+            return std::nullopt;
+        }
+    }
+
     // Turns `p` toward where its target will be when the projectile arrives.
-    // Only the direction changes; the speed stays the same.
+    // Only the direction changes; the speed stays the same. Without a target it flies straight.
     void SteerTowardTarget(Projectile& p, float dt, const ProjectileTargets& targets)
     {
         XMVECTOR velocity{ XMLoadFloat3(&p.velocity) };
@@ -51,9 +82,10 @@ namespace
         // Why: the lead time below divides by the speed, and a still projectile has no direction to turn.
         if (speed <= 0.0f) return;
 
-        const bool isPlayer{ p.target == ProjectileTarget::player };
-        const XMFLOAT3 targetPosition{ isPlayer ? targets.playerPosition : targets.bossPosition };
-        const XMFLOAT3 targetVelocity{ isPlayer ? targets.playerVelocity : XMFLOAT3{} };
+        const std::optional<TargetMotion> motion{ FindTargetMotion(p, targets) };
+        if (!motion) return;
+        const XMFLOAT3 targetPosition{ motion->position };
+        const XMFLOAT3 targetVelocity{ motion->velocity };
 
         const float dx{ targetPosition.x - p.position.x };
         const float dz{ targetPosition.z - p.position.z };
@@ -205,6 +237,8 @@ void ProjectilePool::Update(float dt, const ProjectileTargets& targets)
     for (Projectile& p : m_slots)
     {
         if (!p.isActive) continue;
+
+        p.age += dt;
 
         if (p.isParabolic && p.target == ProjectileTarget::boss)
         {

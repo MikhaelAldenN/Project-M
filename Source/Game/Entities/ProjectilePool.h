@@ -11,6 +11,15 @@ enum class ProjectileTarget : std::uint8_t
     none,   // flies straight
     player, // homes on the player, leading by the player's velocity
     boss,   // homes on the boss; with isParabolic set, follows a curve that ends on the boss
+    enemy,  // homes on the enemy named by targetId, leading by that enemy's velocity
+};
+
+// Position and velocity of one enemy that projectiles can home on.
+struct TrackedTarget
+{
+    std::uint32_t id{ 0 };
+    DirectX::XMFLOAT3 position{};
+    DirectX::XMFLOAT3 velocity{};
 };
 
 // Target state the pool reads while steering. The owner fills it once per update.
@@ -19,6 +28,8 @@ struct ProjectileTargets
     DirectX::XMFLOAT3 playerPosition{};
     DirectX::XMFLOAT3 playerVelocity{};
     DirectX::XMFLOAT3 bossPosition{};
+    // Active enemies. A projectile whose enemy is not listed flies straight.
+    std::vector<TrackedTarget> enemies{};
 };
 
 // One pooled projectile. Plain hot data: the pool walks every slot each frame.
@@ -30,8 +41,10 @@ struct Projectile
     float radius{ 0.25f };      // hitbox radius, world units
     float visualScale{ 1.0f };  // uniform model scale
     int damage{ 10 };
+    float age{ 0.0f };          // seconds since spawn
     float turnSpeed{ 8.0f };    // homing steering rate, per second
     ProjectileTarget target{ ProjectileTarget::none };
+    std::uint32_t targetId{ 0 }; // enemy to home on when target == enemy; 0 names no enemy
 
     // Quadratic Bezier from parabolaStart through parabolaControl to the boss. Used with target == boss.
     bool isParabolic{ false };
