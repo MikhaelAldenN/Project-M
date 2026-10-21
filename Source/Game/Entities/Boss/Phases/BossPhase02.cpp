@@ -39,55 +39,13 @@ void BossPhase02::Enter(Boss* boss) {
     auto windowSystem = boss->GetWindowSystem();
     m_pixelToUnit = windowSystem->GetPixelToUnitRatio();
 
-    // The overlays must cover the whole monitor, not just its 16:9 arena rect.
-    // The tracker scales canvas pixels by (arena rect height / canvas height), so the
-    // monitor size is converted into canvas pixels with the inverse of that factor.
-    SDL_Rect display{};
-    if (SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &display))
-    {
-        const Beyond::PixelRect arena{ Beyond::FitRect(
-            Beyond::PixelRect{ display.x, display.y, display.w, display.h },
-            Beyond::Config::CANVAS_WIDTH, Beyond::Config::CANVAS_HEIGHT) };
-        if (arena.height > 0)
-        {
-            const float canvasPerDesktop{ static_cast<float>(Beyond::Config::CANVAS_HEIGHT)
-                / static_cast<float>(arena.height) };
-            m_screenW = static_cast<float>(display.w) * canvasPerDesktop;
-            m_screenH = static_cast<float>(display.h) * canvasPerDesktop;
-        }
-    }
+    UpdateOverlaySizeFromDisplay();
 
     m_hudRenderer = std::make_unique<HUDRenderer>(device);
 
-    // Ciptakan jendela FX SECARA DINAMIS hanya ketika fase ini dimulai!
-    TrackedWindowConfig fxCfg = { "navi_fx", "N.A.V.I - FX", (int)m_screenW, (int)m_screenH, 3 };
-    fxCfg.role = WindowRole::SUB_VIEWPORT;
-    fxCfg.isTransparent = true;
+    CreateFxWindow(*windowSystem);
 
-    windowSystem->AddTrackedWindow(fxCfg,
-        []() { return DirectX::XMFLOAT3(0, 0, 0); },
-        [this]() { return DirectX::XMFLOAT2(m_screenW, m_screenH); }
-    );
-
-    auto* fxWin = windowSystem->GetTrackedWindow("navi_fx");
-    if (fxWin) {
-        m_fxWindow = fxWin->window;
-        m_fxCamera = fxWin->camera;
-        m_fxWindow->SetBackgroundAlpha(0.0f);
-        m_fxWindow->SetClickThrough(true);
-        m_fxWindow->SetBorderVisible(false);
-        m_fxWindow->SetDraggable(false);
-    }
-
-    // Load tekstur sayap ke VRAM hanya di fase ini
-    m_wingSprite = std::make_unique<Sprite>(device, "Data/Sprite/Placeholder/[PLACEHOLDER]ErrorAtlas.png");
-    m_overdriveSprite = std::make_unique<Sprite>(device, "Data/Sprite/txt_nagaoshi.png");
-
-    // Reset timer dan ciptakan array
-    m_glitchTimer = 0.0f;
-    m_wingState = WingState::Expanding;
-    m_wingStateTimer = 0.0f;
-    GenerateButterflyWings();
+    InitializeWings(device);
 
     boss->SetPosition({ 0.0f, 0.0f, 7.0f });
     boss->GetFaceParams().gridResolution = 16;
@@ -112,50 +70,111 @@ void BossPhase02::Enter(Boss* boss) {
         windowSystem->RemoveTrackedWindow("player");
     }
 
-    // =========================================================
-    // PLAYER CAGE
-    // =========================================================
-    if (m_aiTarget) {
-        m_isPlayerCaged = true;
-        m_aiTarget->SetPosition(0, 0, -8.0f);
-        m_cageMaxHP = 600; // Sesuaikan dengan total HP yang kamu inginkan
-        m_cageHP = m_cageMaxHP;
-        m_cagePos = m_aiTarget->GetPosition(); // Kunci posisi kandang di lokasi player saat ini
-        m_cageWindowPos = m_cagePos;
-        m_cageShakeTimer = 0.0f;
-        m_aiTarget->SetShootDelay(0.0f);
-
-        // Hitung ukuran asli di dunia 3D (300 pixel / ratio)
-        m_cageSizeWorld = 300.0f / windowSystem->GetPixelToUnitRatio();
-
-        TrackedWindowConfig cageCfg;
-        cageCfg.name = m_cageWindowName;
-        cageCfg.title = "TRAPPED.exe";
-        cageCfg.width = 300;
-        cageCfg.height = 300;
-        cageCfg.role = WindowRole::TRACKED_ENTITY;
-        cageCfg.priority = 100; // Pastikan selalu di atas
-        cageCfg.isTransparent = false;
-
-        windowSystem->AddTrackedWindow(cageCfg,
-            [this]() { return m_cageWindowPos; }, // Posisinya STATIS, hanya jitter saat kena tembak
-            []() { return DirectX::XMFLOAT2(300.0f, 300.0f); }
-        );
-
-        if (auto* cageWindow = windowSystem->GetTrackedWindow(m_cageWindowName)) {
-            if (cageWindow->window) {
-                cageWindow->window->SetBackgroundAlpha(1.0f);
-            }
-        }
-    }
+    CreatePlayerCage(*windowSystem);
 
     m_overdriveAlpha = 0.0f;
 
+    StartOpeningDialogue(*windowSystem);
+
+    CreateClickBlocker(*windowSystem);
+}
+
+void BossPhase02::UpdateOverlaySizeFromDisplay() {
+    // The overlays must cover the whole monitor, not just its 16:9 arena rect.
+    // The tracker scales canvas pixels by (arena rect height / canvas height), so the
+    // monitor size is converted into canvas pixels with the inverse of that factor.
+    SDL_Rect display{};
+    if (SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &display))
+    {
+        const Beyond::PixelRect arena{ Beyond::FitRect(
+            Beyond::PixelRect{ display.x, display.y, display.w, display.h },
+            Beyond::Config::CANVAS_WIDTH, Beyond::Config::CANVAS_HEIGHT) };
+        if (arena.height > 0)
+        {
+            const float canvasPerDesktop{ static_cast<float>(Beyond::Config::CANVAS_HEIGHT)
+                / static_cast<float>(arena.height) };
+            m_screenW = static_cast<float>(display.w) * canvasPerDesktop;
+            m_screenH = static_cast<float>(display.h) * canvasPerDesktop;
+        }
+    }
+}
+
+void BossPhase02::CreateFxWindow(WindowTrackingSystem& windowSystem) {
+    // Ciptakan jendela FX SECARA DINAMIS hanya ketika fase ini dimulai!
+    TrackedWindowConfig fxCfg = { "navi_fx", "N.A.V.I - FX", (int)m_screenW, (int)m_screenH, 3 };
+    fxCfg.role = WindowRole::SUB_VIEWPORT;
+    fxCfg.isTransparent = true;
+
+    windowSystem.AddTrackedWindow(fxCfg,
+        []() { return DirectX::XMFLOAT3(0, 0, 0); },
+        [this]() { return DirectX::XMFLOAT2(m_screenW, m_screenH); }
+    );
+
+    auto* fxWin = windowSystem.GetTrackedWindow("navi_fx");
+    if (fxWin) {
+        m_fxWindow = fxWin->window;
+        m_fxCamera = fxWin->camera;
+        m_fxWindow->SetBackgroundAlpha(0.0f);
+        m_fxWindow->SetClickThrough(true);
+        m_fxWindow->SetBorderVisible(false);
+        m_fxWindow->SetDraggable(false);
+    }
+}
+
+void BossPhase02::InitializeWings(ID3D11Device* device) {
+    // Load tekstur sayap ke VRAM hanya di fase ini
+    m_wingSprite = std::make_unique<Sprite>(device, "Data/Sprite/Placeholder/[PLACEHOLDER]ErrorAtlas.png");
+    m_overdriveSprite = std::make_unique<Sprite>(device, "Data/Sprite/txt_nagaoshi.png");
+
+    // Reset timer dan ciptakan array
+    m_glitchTimer = 0.0f;
+    m_wingState = WingState::Expanding;
+    m_wingStateTimer = 0.0f;
+    GenerateButterflyWings();
+}
+
+void BossPhase02::CreatePlayerCage(WindowTrackingSystem& windowSystem) {
+    if (!m_aiTarget) return;
+
+    m_isPlayerCaged = true;
+    m_aiTarget->SetPosition(0, 0, -8.0f);
+    m_cageMaxHP = 600; // Sesuaikan dengan total HP yang kamu inginkan
+    m_cageHP = m_cageMaxHP;
+    m_cagePos = m_aiTarget->GetPosition(); // Kunci posisi kandang di lokasi player saat ini
+    m_cageWindowPos = m_cagePos;
+    m_cageShakeTimer = 0.0f;
+    m_aiTarget->SetShootDelay(0.0f);
+
+    // Hitung ukuran asli di dunia 3D (300 pixel / ratio)
+    m_cageSizeWorld = 300.0f / windowSystem.GetPixelToUnitRatio();
+
+    TrackedWindowConfig cageCfg;
+    cageCfg.name = m_cageWindowName;
+    cageCfg.title = "TRAPPED.exe";
+    cageCfg.width = 300;
+    cageCfg.height = 300;
+    cageCfg.role = WindowRole::TRACKED_ENTITY;
+    cageCfg.priority = 100; // Pastikan selalu di atas
+    cageCfg.isTransparent = false;
+
+    windowSystem.AddTrackedWindow(cageCfg,
+        [this]() { return m_cageWindowPos; }, // Posisinya STATIS, hanya jitter saat kena tembak
+        []() { return DirectX::XMFLOAT2(300.0f, 300.0f); }
+    );
+
+    if (auto* cageWindow = windowSystem.GetTrackedWindow(m_cageWindowName)) {
+        if (cageWindow->window) {
+            cageWindow->window->SetBackgroundAlpha(1.0f);
+        }
+    }
+}
+
+void BossPhase02::StartOpeningDialogue(WindowTrackingSystem& windowSystem) {
     // =========================================================
     // OPENING DIALOGUE: TRACKING WINDOW
     // =========================================================
     {
-        float p2u = windowSystem->GetPixelToUnitRatio();
+        float p2u = windowSystem.GetPixelToUnitRatio();
         float halfW = (m_dialogueWindowW * 0.5f) / p2u;
         m_dialogueWorldPos = { -halfW, 0.0f, 1.5f };
     }
@@ -170,12 +189,12 @@ void BossPhase02::Enter(Boss* boss) {
         diagCfg.isTransparent = false;                // Solid — sama seperti kandang & bullet
         diagCfg.priority = 5;
 
-        windowSystem->AddTrackedWindow(diagCfg,
+        windowSystem.AddTrackedWindow(diagCfg,
             [this]() { return m_dialogueWorldPos; },
             [this]() { return DirectX::XMFLOAT2(m_dialogueWindowW, m_dialogueWindowH); }
         );
 
-        auto* diagWin = windowSystem->GetTrackedWindow(m_dialogueWindowName);
+        auto* diagWin = windowSystem.GetTrackedWindow(m_dialogueWindowName);
         if (diagWin && diagWin->window) {
             m_dialogueWindow = diagWin->window;
             m_dialogueCamera = diagWin->camera;
@@ -204,7 +223,9 @@ void BossPhase02::Enter(Boss* boss) {
 
     m_cageFirstHitTriggered = false;
     m_overdriveDialogueTriggered = false;
+}
 
+void BossPhase02::CreateClickBlocker(WindowTrackingSystem& windowSystem) {
     // =========================================================
     // INVISIBLE CLICK BLOCKER WINDOW
     // =========================================================
@@ -221,12 +242,12 @@ void BossPhase02::Enter(Boss* boss) {
     blockerCfg.priority = 99;
     blockerCfg.isTransparent = true;
 
-    windowSystem->AddTrackedWindow(blockerCfg,
+    windowSystem.AddTrackedWindow(blockerCfg,
         []() { return DirectX::XMFLOAT3(0, 0, 0); },
         [this]() { return DirectX::XMFLOAT2(m_screenW, m_screenH); }
     );
 
-    if (auto* blockerWin = windowSystem->GetTrackedWindow("click_blocker")) {
+    if (auto* blockerWin = windowSystem.GetTrackedWindow("click_blocker")) {
         if (blockerWin->window) {
             blockerWin->window->SetBackgroundAlpha(0.0f); // 100% tembus pandang
             blockerWin->window->SetClickThrough(false);   // Tangkap semua klik OS!

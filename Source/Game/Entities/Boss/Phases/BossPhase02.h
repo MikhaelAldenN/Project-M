@@ -14,6 +14,7 @@
 #include "BossAI.h"
 
 class Sprite;
+class WindowTrackingSystem;
 class Player;
 
 struct WingNode {
@@ -99,6 +100,14 @@ private:
     void GenerateButterflyWings();
     void TriggerCageFirstHitDialogue(Boss* boss);
     void DamageCage(int dmg);
+
+    // Enter steps, called in this order by Enter.
+    void UpdateOverlaySizeFromDisplay();
+    void CreateFxWindow(WindowTrackingSystem& windowSystem);
+    void InitializeWings(ID3D11Device* device);
+    void CreatePlayerCage(WindowTrackingSystem& windowSystem);
+    void StartOpeningDialogue(WindowTrackingSystem& windowSystem);
+    void CreateClickBlocker(WindowTrackingSystem& windowSystem);
 
 private:
     Beyond::Window* m_fxWindow = nullptr;
