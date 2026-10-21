@@ -6,7 +6,7 @@ using namespace DirectX;
 
 Stage::Stage(ID3D11Device* device, const std::string& modelPath)
 {
-    // Load the model (default: StageConfig::MODEL_PATH, bisa di-override caller)
+    // Load the model (default: StageConfig::MODEL_PATH; callers may pass another)
     model = std::make_shared<Model>(device, modelPath.c_str());
 
     // Apply defaults

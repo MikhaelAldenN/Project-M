@@ -18,7 +18,7 @@ SceneSandbox::SceneSandbox()
     constexpr float canvasAspect{ static_cast<float>(Beyond::Config::CANVAS_WIDTH)
            / static_cast<float>(Beyond::Config::CANVAS_HEIGHT) };
 
-    // --- Camera: top-down, sama style-nya SceneGame ---
+    // --- Camera: top-down, same style as SceneGame ---
     auto& camCtrl{ CameraController::Instance() };
     camCtrl.ClearCamera();
     camCtrl.StopSequence();
@@ -41,7 +41,7 @@ SceneSandbox::SceneSandbox()
     camCtrl.SetFixedSetting(startPos);
     camCtrl.SetTarget(m_cameraTarget);
 
-    // --- Stage: pakai model percobaan, bukan stage utama ---
+    // --- Stage: a test model, not the main stage ---
     m_stage = std::make_unique<Stage>(Graphics::Instance().GetDevice(), SANDBOX_STAGE_PATH);
     
     // --- Clear unwanted features for SceneSandbox ---
@@ -64,9 +64,7 @@ SceneSandbox::SceneSandbox()
     m_player->ApplyConfig(sandboxConfig);
     m_player->GetMovement()->SetRotationY(DirectX::XM_PI);
 
-    // --- Collision: cuma Player vs Stage, gak ada enemy/item manager ---
-    // NOTE: kalau CollisionManager::Initialize gak nerima nullptr buat
-    // enemyManager/itemManager, aku perlu lihat header-nya buat bikin overload.
+    // --- Collision: player against the stage only; no enemy or item manager ---
     m_collisionManager = std::make_unique<CollisionManager>();
     m_collisionManager->Initialize(m_player.get(), m_stage.get(), nullptr, nullptr);
 
@@ -108,7 +106,7 @@ void SceneSandbox::Render(float elapsedTime, Camera* camera)
     auto dc{ Graphics::Instance().GetDeviceContext() };
     auto rs{ Graphics::Instance().GetRenderState() };
 
-    // Simple clear, gak pakai post-process pipeline (biar ringan buat testing)
+    // Plain clear without the post-process pipeline, to keep testing light
     ID3D11RenderTargetView* originalRTV{ nullptr };
     ID3D11DepthStencilView* originalDSV{ nullptr };
     dc->OMGetRenderTargets(1, &originalRTV, &originalDSV);

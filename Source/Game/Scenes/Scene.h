@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-// シーン基底
+// Base class of every scene
 class Scene
 {
 public:
@@ -21,12 +21,9 @@ public:
 	Scene() = default;
 	virtual ~Scene() = default;
 
-	// 更新処理
 	virtual void Update(float elapsedTime) {}
 
-	// 描画処理
 	virtual void Render(float dt, class Camera* camera = nullptr) = 0;
-	// GUI描画処理
 	virtual void DrawGUI() {}
 
 	[[nodiscard]] virtual Kind GetKind() const = 0;

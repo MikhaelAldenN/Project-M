@@ -111,8 +111,8 @@ private:
     std::unique_ptr<Primitive>            m_primitive2D;
     std::unique_ptr<PrimitiveRenderer>    m_primitive3D;
 
-    DirectX::XMFLOAT3 m_cameraPosition{ 0.0f, 18.0f, 0.0f }; // Posisi default (Top View)
-    DirectX::XMFLOAT3 m_cameraTarget{ 0.0f, 0.0f, 0.0f };   // Titik yang dilihat kamera
+    DirectX::XMFLOAT3 m_cameraPosition{ 0.0f, 18.0f, 0.0f }; // default top-down position
+    DirectX::XMFLOAT3 m_cameraTarget{ 0.0f, 0.0f, 0.0f };   // point the camera looks at
 
     std::unique_ptr<EnemyManager>         m_enemyManager;
     std::unique_ptr<ItemManager>          m_itemManager;
@@ -153,7 +153,7 @@ private:
     // Terminal log (capped at 50 lines)
     std::vector<std::string> m_debugLogs;
 
-    DirectX::XMFLOAT4 m_clearColor = { 0.0f, 0.0f, 0.0f, 1.0f }; // Default: Abu-abu Gelap (R, G, B, A)
+    DirectX::XMFLOAT4 m_clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 private:
     // =========================================================

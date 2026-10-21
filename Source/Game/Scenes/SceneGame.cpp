@@ -470,7 +470,7 @@ void SceneGame::Update(const float elapsedTime)
 
     if (m_isBossCinematicActive)
     {
-        // 1. Hitung pergerakan kamera (berhenti di angka 1.0)
+        // 1. Camera move, eased; t stops at 1
         float t = std::clamp(m_bossCinematicTimer / BOSS_CINEMATIC_DURATION, 0.0f, 1.0f);
         float smoothT = t * t * (3.0f - 2.0f * t);
 
@@ -486,31 +486,31 @@ void SceneGame::Update(const float elapsedTime)
         // 2. State Machine Cinematic
         if (m_bossCinematicTimer < BOSS_CINEMATIC_DURATION)
         {
-            // FASE 1: Kamera masih jalan menuju Boss. Timer jalan terus.
+            // PHASE 1: the camera is still moving toward the boss; the timer runs.
             m_bossCinematicTimer += elapsedTime;
         }
         else if (!m_bossDialogueStarted)
         {
-            // FASE 2: Kamera sampai. Munculin dialog dan STOP Timer!
+            // PHASE 2: the camera has arrived. Start the dialogue; the timer stops.
             m_bossDialogueStarted = true;
             std::vector<std::string> dialogPages = {
                 u8"えっ...？ 何あのキノコ...。\n他のやつらより、ずっと大きい...？",
                 u8"ちょっと待って、様子がおかしいわ。\nなんか...膨らんでない！？",
                 u8"きゃあああああっ！？\n毒ガス！？ ごほっ、げほっ...！"
             };
-            // Terjemahan kasarnya:
-            // 1. Eh...? Jamur apa itu... Jauh lebih besar dari yang lain?
-            // 2. Tunggu, ada yang aneh. Kok dia... membesar?!
-            // 3. Kyaaaa?! Gas racun?! Uhuk, uhuk!
+            // Rough English translation:
+            // 1. Huh...? What is that mushroom... It is much bigger than the others?
+            // 2. Wait, something is wrong. Is it... swelling?!
+            // 3. Kyaaaa?! Poison gas?! *cough* *cough*!
 
             m_dialogueBox->StartDialogue(dialogPages);
         }
         else if (m_bossDialogueStarted)
         {
-            // FASE 3: Dialog sedang berjalan, nungguin player mencet Enter
+            // PHASE 3: the dialogue runs until the player presses Enter.
             int currentLine = m_dialogueBox->GetCurrentDialogueIndex();
 
-            // Pas nyampe di baris ke-3 (index 2) dan efek belum keluar, TRIGGER RACUNNYA!
+            // On the third line (index 2), trigger the poison once.
             if (currentLine == 2 && !m_bossEffectTriggered)
             {
                 m_bossEffectTriggered = true;
@@ -541,12 +541,12 @@ void SceneGame::Update(const float elapsedTime)
                 }
             }
 
-            // FASE 4: Player mencet enter nutup jeritan Navi. Kotak dialog otomatis hilang, mulai Fade Putih!
+            // PHASE 4: the player closed Navi's scream; the dialogue box is gone. Fade to white.
             if (m_bossEffectTriggered && !m_dialogueBox->IsActive())
             {
                 AudioManager::Instance().FadeOutAmbientSFX(1.5f);
 
-                // Jalanin timer lagi buat ngitung efek whiteout
+                // The timer runs again to time the whiteout.
                 m_bossCinematicTimer += elapsedTime;
 
                 float timeInFade = m_bossCinematicTimer - BOSS_CINEMATIC_DURATION;
@@ -576,7 +576,7 @@ void SceneGame::Update(const float elapsedTime)
                 }
                 else
                 {
-                    // Fade back ke game normal
+                    // Fade back to normal play
                     float fadeOutTime = timeInFade - (WHITEOUT_FADE_DURATION + WHITEOUT_HOLD_DURATION);
                     m_whiteAlpha = 1.0f - std::clamp(fadeOutTime / FADE_BACK_DURATION, 0.0f, 1.0f);
 
@@ -587,13 +587,13 @@ void SceneGame::Update(const float elapsedTime)
                         m_navi->StartAttackDelay(999.0f);
                     }
 
-                    // Final cleanup pas layarnya udah 100% normal (White alpha 0)
+                    // Final cleanup once the white alpha is back to 0
                     if (m_whiteAlpha <= 0.0f)
                     {
                         m_whiteAlpha = 0.0f;
                         m_isBossCinematicActive = false;
 
-                        // Player masih di-lock, Navi belum nyerang
+                        // The player is still locked and Navi does not attack yet.
                         if (!m_hasTriggeredPoisonDialogue)
                         {
                             StartPoisonDialogue();
@@ -671,7 +671,7 @@ void SceneGame::Update(const float elapsedTime)
 
     if (m_player && m_enemyManager && m_dialogueBox && !m_dialogueBox->IsActive())
     {
-        // Cek hanya kalau salah satu dialog belum pernah ke-trigger
+        // Only while one of the two dialogues has not played yet
         if (!m_hasTriggeredMushroomDialogue || !m_hasTriggeredTrackingDialogue)
         {
             const DirectX::XMFLOAT3 pPos = m_player->GetPosition();
@@ -706,17 +706,17 @@ void SceneGame::Update(const float elapsedTime)
 
     if (m_isPoisonDialogueActive && m_dialogueBox && !m_dialogueBox->IsActive())
     {
-        // Kotak dialog udah hilang karena player mencet Enter di teks terakhir.
+        // The player closed the last line of the dialogue.
         m_isPoisonDialogueActive = false;
 
-        // Lepas lock input player biar bisa gerak
+        // Give control back to the player
         if (m_player)
         {
             m_player->SetInputEnabled(true);
             m_player->SetAimLocked(false);
         }
 
-        // Navi langsung nyerang player! (Kasih delay tipis 0.5 detik biar dramatis)
+        // Navi attacks after a short 0.5 s delay.
         if (m_navi)
         {
             m_navi->StartAttackDelay(0.5f);
@@ -774,7 +774,7 @@ void SceneGame::StartIntroDialogueTest()
 
     if (m_dialogueBox)
     {
-        // Masukkan dialog per halaman/tekanan tombol
+        // One string per page; each button press advances a page.
         std::vector<std::string> dialogPages = {
             u8"目を覚まして。戦いの時間が来たわ。\n{ATK}で攻撃よ。遠くの敵は撃ち抜き、\n近づけばその刃で斬り裂くの。",
             u8"そして、よく覚えておいて。\nいずれそのキーは、敵の牙を弾き返す\n「Parry」の要にもなるわ。魂に刻み込んで。",
@@ -985,8 +985,8 @@ void SceneGame::Render(float elapsedTime, Camera* camera)
             dc,
             0.0f, 0.0f, 0.0f,      // dx, dy, dz
             screenW, screenH,      // dw, dh
-            0.0f, 0.0f,            // sx, sy (左上)
-            1920.0f, 1080.0f,      // sw, sh (テクスチャサイズに合わせて適宜変更)
+            0.0f, 0.0f,            // sx, sy (top left)
+            1920.0f, 1080.0f,      // sw, sh (match the texture size)
             0.0f,                  // angle
             0.0f, 0.0f, 0.0f, m_fadeAlpha // r, g, b, a
         );

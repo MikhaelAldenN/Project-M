@@ -81,14 +81,13 @@ SceneBoss::SceneBoss()
 
     EffectManager::Instance().Initialize(device, context);
 
-    m_stage = std::make_unique<Stage>(device); // Walau kosong, ini mencegah Null Pointer
+    m_stage = std::make_unique<Stage>(device); // empty, but systems that read the stage need one
 
     m_collisionManager = std::make_unique<CollisionManager>();
 
-    // Gunakan Overload 2 yang ada Boss-nya
     m_collisionManager->Initialize(m_player.get(), m_stage.get(), m_enemyManager.get(), m_itemManager.get());
 
-    // PENTING: Beri tahu Player siapa wasit (CollisionManager) di scene ini!
+    // The player sends its collision queries through this scene's CollisionManager.
     m_player->SetCollisionManager(m_collisionManager.get());
 
     m_navi = std::make_unique<Boss>();
@@ -218,9 +217,6 @@ void SceneBoss::InitializeSubWindows()
             SDL_SetWindowBordered(sdlWin, true);
         }
     }
-
-    // --- Register main window with the tracking system ---
-    // (Lanjutkan kode aslimu di bawah sini...)
 
     // --- Register main window with the tracking system ---
     Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
@@ -416,7 +412,7 @@ void SceneBoss::UpdateArenaCamera(float elapsedTime)
     }
 
     // =========================================================
-    // KAMERA STATIS (NO ZOOM)
+    // STATIC CAMERA (NO ZOOM)
     // =========================================================
     m_targetZoom = 0.0f;
     m_currentZoom = 0.0f;
@@ -426,14 +422,12 @@ void SceneBoss::UpdateArenaCamera(float elapsedTime)
     // =========================================================
     // CAMERA AND CAMERA SHAKE UPDATE
     // =========================================================
-    // Deklarasi hanya dilakukan SATU KALI di sini!
     float newUnifiedHeight = m_windowSystem->GetUnifiedCameraHeight();
     auto& camCtrl = CameraController::Instance();
 
-    // Ambil nilai getaran (Trauma)
     DirectX::XMFLOAT3 shake = camCtrl.GetShakeOffset();
 
-    // Set posisi kamera dengan menggabungkan Zoom (Y) dan Shake (X, Z)
+    // Camera height from the window system, offset by the shake on every axis.
     camCtrl.SetFixedSetting(DirectX::XMFLOAT3(shake.x, newUnifiedHeight + shake.y, shake.z));
     camCtrl.SetTarget({ shake.x, shake.y, shake.z });
 
@@ -488,7 +482,7 @@ bool SceneBoss::UpdateNavi(float scaledDt)
 {
     if (!m_navi) return false;
 
-    // AI Director にプレイヤーのデータを渡す
+    // Hand the player to the AI director.
     // Why every frame: a phase created mid-fight has no target until the scene hands it one.
     if (INaviPhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAITarget(m_player.get());
 
@@ -504,11 +498,11 @@ bool SceneBoss::UpdateNavi(float scaledDt)
     const bool isWindowkillPhase{ IsWindowkill(updatedPhase) };
 
     if (isWindowkillPhase && !m_playerWindowTransparent) {
-        // Jika bos baru saja masuk Phase 2, nyalakan transparansi!
+        // Windowkill started: the player window becomes transparent.
         m_playerWindowTransparent = true;
     }
     else if (!isWindowkillPhase && m_playerWindowTransparent) {
-        // Jika bos kembali ke Phase 1 (atau respawn/mati), matikan transparansi!
+        // Left Windowkill (respawn or death): the player window is opaque again.
         m_playerWindowTransparent = false;
     }
 
@@ -617,22 +611,21 @@ void SceneBoss::ClearBoundTargets(ID3D11DeviceContext* dc)
     ID3D11RenderTargetView* currentRTV = nullptr;
     ID3D11DepthStencilView* currentDSV = nullptr;
 
-    // Ambil Render Target dan Depth Stencil yang saat ini sedang diikat oleh WindowManager
     dc->OMGetRenderTargets(1, &currentRTV, &currentDSV);
 
     if (currentRTV)
     {
-        // Bersihkan ulang menggunakan warna kustom dari SceneBoss
+        // Clear again with this scene's clear color.
         float clearColor[4] = { m_clearColor.x, m_clearColor.y, m_clearColor.z, m_clearColor.w };
         dc->ClearRenderTargetView(currentRTV, clearColor);
 
-        // Wajib di-release karena OMGetRenderTargets menaikkan tingkat referensi (COM AddRef)
+        // OMGetRenderTargets adds a reference, so release it.
         currentRTV->Release();
     }
 
     if (currentDSV)
     {
-        // Bersihkan ulang depth buffer agar kalkulasi depth 3D tidak rusak
+        // Clear depth and stencil as well, so 3D depth tests start fresh.
         dc->ClearDepthStencilView(currentDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
         currentDSV->Release();
     }
@@ -678,8 +671,8 @@ void SceneBoss::RenderShapesAndHitboxes(ID3D11DeviceContext* dc, Camera* targetC
     auto shapeRenderer = Graphics::Instance().GetShapeRenderer();
     if (m_showHitboxes)
     {
-        // 1. Gambar Hurtbox Player (Lingkaran Hijau)
-        // Kita kunci di y=1.0f agar terlihat menonjol di badan player
+        // 1. Player hurtbox (green)
+        // Drawn at y = 1 so it shows on the player's body.
         if (m_player && m_player->GetHP() > 0) {
             DirectX::XMFLOAT3 pPos = m_player->GetPosition();
             pPos.y = 1.0f;
@@ -794,7 +787,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
     RenderContext rc{ dc, Graphics::Instance().GetRenderState(), camera, nullptr };
     rc.isTransparentWindow = isTransparentWindow;
-    // --- 1. DETEKSI KAMERA SAYAP (CAMERA FILTERING) ---
+    // --- 1. Is this the wing (FX) camera? ---
     bool isWingCamera = false;
     if (m_navi) {
         if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
@@ -802,14 +795,14 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
         }
     }
 
-    // A. RENDER PELURU (Selalu di semua jendela agar terlihat menembus layar)
+    // A. Player bullets: drawn in every window, so they appear to cross between windows
     if (m_player) {
         m_player->RenderProjectiles(modelRenderer);
     }
 
-    // B. RENDER TUBUH PEMAIN (Kondisional)
+    // B. Player body (conditional)
     if (m_player) {
-        // Logika bawaan:
+        // Default rule:
         bool shouldRenderHere = m_playerWindowTransparent ? isWingCamera : !isWingCamera;
 
         // Why: in Windowkill every tracked window can show the player, not only the wing camera.
@@ -825,7 +818,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
             auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase());
             if (wkPhase && wkPhase->IsPlayerCaged()) {
-                isInView = true; // Selalu render player selama dia di dalam kandang!
+                isInView = true; // always drawn while caged
             }
 
             if (isInView) {
@@ -834,14 +827,13 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
         }
     }
 
-    // C. RENDER MUSUH & ITEM — tetap skip di wing camera
+    // C. Enemies and items, skipped by the wing camera
     if (!isWingCamera) {
         if (m_enemyManager) m_enemyManager->Render(modelRenderer);
         if (m_itemManager) m_itemManager->Render(modelRenderer);
     }
 
-    // --- 3. RENDER NAVI (termasuk wajah & background) ---
-    // Saat mati, paksa render di main cam meski isWingCamera false sudah benar
+    // --- 3. Navi (face and background) ---
     if (m_navi) m_navi->Render(dc, camera);
 
     modelRenderer->Render(rc);

@@ -22,11 +22,11 @@ class Stage;
 // ==========================================
 // SCENE SANDBOX
 // ==========================================
-// Tempat percobaan: stage kosong buat testing collision, mekanik baru,
-// atau debug tooling, tanpa beban sistem SceneGame (dialog, boss, UI, FX).
-// Isinya cuma Player + Stage + kamera top-down + collision.
+// Test scene: an empty stage for trying collision, new mechanics
+// or debug tooling without the SceneGame systems (dialogue, boss, UI, FX).
+// Contains only the player, the stage, a top-down camera and collision.
 //
-// Cara pakai: ganti SANDBOX_STAGE_PATH di bawah kalau mau nyoba stage lain.
+// To try another stage, change SANDBOX_STAGE_PATH below.
 // ==========================================
 class SceneSandbox : public Scene
 {
@@ -52,8 +52,7 @@ private:
         static constexpr float CAM_START_HEIGHT{ 20.0f };
     };
 
-    // Stage percobaan terpisah dari stage utama game.
-    // Butuh referensi lain? Tinggal ganti path ini.
+    // Test stage, separate from the main game stage.
     static constexpr const char* SANDBOX_STAGE_PATH{ "Data/Model/Stage/ExampleStage.glb" };
 
     void RenderScene(float elapsedTime, Camera* camera);

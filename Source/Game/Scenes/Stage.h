@@ -184,9 +184,9 @@ enum class DebugLineType { Void, Disable, Enable, Checkpoint };
 class Stage
 {
 public:
-    // modelPath opsional: default tetap StageConfig::MODEL_PATH biar scene lama
-    // (SceneGame, SceneBoss) gak kena efek. Scene lain (misal SceneSandbox)
-    // bisa lempar path stage percobaan sendiri.
+    // modelPath is optional: SceneGame and SceneBoss use the default
+    // StageConfig::MODEL_PATH; other scenes such as SceneSandbox pass
+    // their own test stage.
     Stage(ID3D11Device* device, const std::string& modelPath = StageConfig::MODEL_PATH);
 
     void UpdateTransform();
