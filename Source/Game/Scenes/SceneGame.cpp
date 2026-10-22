@@ -745,7 +745,7 @@ void SceneGame::StartPlayerDeathSequence()
     if (m_player)
     {
         m_player->SetInputEnabled(false);
-        m_player->scale = { 0.0f, 0.0f, 0.0f };
+        m_player->m_scale = { 0.0f, 0.0f, 0.0f };
     }
 }
 
@@ -859,7 +859,7 @@ void SceneGame::ResetLevel()
         m_player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f });
         m_player->SetMaxHP(isBossStage ? BOSS_MAX_HP : NORMAL_MAX_HP);
         m_player->SetInputEnabled(false);
-        m_player->scale = { 1.0f, 1.0f, 1.0f };
+        m_player->m_scale = { 1.0f, 1.0f, 1.0f };
         m_player->GetStateMachine()->ChangeState(m_player.get(), std::make_unique<PlayerIdle>());
         m_player->GetProjectiles().Clear();
     }
@@ -1057,7 +1057,7 @@ void SceneGame::RenderScene(const float elapsedTime, Camera* camera)
 
     if (m_player)
     {
-        modelRenderer->Draw(ShaderId::Phong, m_player->GetModel(), m_player->color);
+        modelRenderer->Draw(ShaderId::Phong, m_player->GetModel(), m_player->m_color);
         m_player->RenderWeapon(modelRenderer);
         m_player->RenderProjectiles(modelRenderer);
     }

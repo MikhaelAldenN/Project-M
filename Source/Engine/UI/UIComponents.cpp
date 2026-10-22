@@ -12,7 +12,7 @@ void StatusPanel::SetStatus(const std::string& newText) {
 
 void StatusPanel::Draw(BitmapFont* font) {
     if (!font) return;
-    font->Draw(m_text.c_str(), x, y, 0.625f, 1, 1, 1, 1);
+    font->Draw(m_text.c_str(), m_x, m_y, 0.625f, 1, 1, 1, 1);
 }
 
 // ================= LOG PANEL =================
@@ -29,9 +29,9 @@ void LogPanel::AddLog(const std::string& msg) {
 
 void LogPanel::Draw(BitmapFont* font) {
     if (!font) return;
-    float currentY = y;
+    float currentY = m_y;
     for (const auto& line : m_logs) {
-        font->Draw(line.c_str(), x, currentY, 0.625f, 1, 1, 1, 1);
+        font->Draw(line.c_str(), m_x, currentY, 0.625f, 1, 1, 1, 1);
         currentY += m_lineSpacing;
     }
 }
@@ -68,16 +68,16 @@ void DirectoryPanel::Update(float dt) {
 
 void DirectoryPanel::Draw(BitmapFont* font) {
     if (!font) return;
-    float currentY = y;
+    float currentY = m_y;
     for (int i = 0; i < m_files.size(); i++) {
         // Highlight logic
         if (i == m_selectedIndex) {
             // selected: yellow
-            font->Draw(m_files[i].name.c_str(), x, currentY, 0.625f, 1.0f, 1.0f, 0.0f, 1.0f);
+            font->Draw(m_files[i].name.c_str(), m_x, currentY, 0.625f, 1.0f, 1.0f, 0.0f, 1.0f);
         }
         else {
             // white
-            font->Draw(m_files[i].name.c_str(), x, currentY, 0.625f, 1.0f, 1.0f, 1.0f, 1.0f);
+            font->Draw(m_files[i].name.c_str(), m_x, currentY, 0.625f, 1.0f, 1.0f, 1.0f, 1.0f);
         }
         currentY += m_lineSpacing;
     }

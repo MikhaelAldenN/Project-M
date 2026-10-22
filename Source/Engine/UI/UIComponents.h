@@ -9,8 +9,8 @@
 // --- BASE CLASS ---
 class UIElement {
 public:
-    float x, y;
-    UIElement(float _x, float _y) : x(_x), y(_y) {}
+    float m_x, m_y;
+    UIElement(float _x, float _y) : m_x(_x), m_y(_y) {}
     virtual ~UIElement() = default;
 
     virtual void Update(float dt) {} // does nothing by default

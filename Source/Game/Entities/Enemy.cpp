@@ -31,14 +31,14 @@ void Enemy::Update(float elapsedTime, Camera* camera)
 
     if (m_type == EnemyType::Pentagon)
     {
-        XMFLOAT3 rot = movement->GetRotation();
+        XMFLOAT3 rot = m_movement->GetRotation();
         rot.y += 10.0f * elapsedTime;
-        movement->SetRotation(rot);
+        m_movement->SetRotation(rot);
     }
 
     if (m_attackType == AttackType::TrackingHorizontal)
     {
-        XMFLOAT3 pos = movement->GetPosition();
+        XMFLOAT3 pos = m_movement->GetPosition();
         pos.x += m_currentSpeed * elapsedTime;
 
         if (pos.x >= m_patrolMaxX)
@@ -51,11 +51,11 @@ void Enemy::Update(float elapsedTime, Camera* camera)
             pos.x = m_patrolMinX;
             m_currentSpeed = std::abs(m_baseMoveSpeed);
         }
-        movement->SetPosition(pos);
+        m_movement->SetPosition(pos);
     }
     else if (m_attackType == AttackType::TrackingRandom)
     {
-        XMFLOAT3 pos = movement->GetPosition();
+        XMFLOAT3 pos = m_movement->GetPosition();
         float dx = m_randomTargetPos.x - pos.x;
         float dz = m_randomTargetPos.z - pos.z;
         float distSq = dx * dx + dz * dz;
@@ -74,13 +74,13 @@ void Enemy::Update(float elapsedTime, Camera* camera)
         XMVECTOR vOffset = vDir * m_baseMoveSpeed * elapsedTime;
         XMVECTOR vNewPos = XMVectorAdd(vPos, vOffset);
         XMStoreFloat3(&pos, vNewPos);
-        movement->SetPosition(pos);
+        m_movement->SetPosition(pos);
     }
 
-    XMFLOAT3 pos = movement->GetPosition();
-    XMFLOAT3 rot = movement->GetRotation();
+    XMFLOAT3 pos = m_movement->GetPosition();
+    XMFLOAT3 rot = m_movement->GetRotation();
 
-    XMMATRIX S = XMMatrixScaling(scale.x, scale.y, scale.z);
+    XMMATRIX S = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
     XMMATRIX R = XMMatrixRotationRollPitchYaw(
         XMConvertToRadians(rot.x),
         XMConvertToRadians(rot.y),
@@ -91,7 +91,7 @@ void Enemy::Update(float elapsedTime, Camera* camera)
     XMFLOAT4X4 worldMatrix;
     XMStoreFloat4x4(&worldMatrix, S * R * T);
 
-    if (model) model->UpdateTransform(worldMatrix);
+    if (m_model) m_model->UpdateTransform(worldMatrix);
 }
 
 void Enemy::UpdateTracking(float elapsedTime, Camera* camera, const DirectX::XMFLOAT3& playerPos,
@@ -110,7 +110,7 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
     // 1. FAST FAIL: Guard clauses prevent deep nesting and dangling pointer crashes.
     if (m_attackType == AttackType::None || !camera || !allowAttack) return;
 
-    const DirectX::XMFLOAT3 myPos{ movement->GetPosition() };
+    const DirectX::XMFLOAT3 myPos{ m_movement->GetPosition() };
     const DirectX::XMFLOAT3 targetPos{ playerPos };
 
     // 2. CPU OPTIMIZATION: Calculate Squared Distance to skip expensive std::sqrt calculations.
@@ -141,7 +141,7 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
         // 3a. ROTATE TO PLAYER
         const float targetYawRad{ std::atan2(dx, dz) };
         const float targetYawDeg{ DirectX::XMConvertToDegrees(targetYawRad) };
-        movement->SetRotation({ 0.0f, targetYawDeg, 0.0f });
+        m_movement->SetRotation({ 0.0f, targetYawDeg, 0.0f });
 
         // 3b. MOVE TO PLAYER (The "Trees Hate You" Mechanic)
         if (m_attackType == AttackType::Tracking && m_baseMoveSpeed > 0.0f)
@@ -181,12 +181,12 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
 
                 // Apply the terrifying speed to movement
                 const float dist{ std::sqrt(distSq) };
-                DirectX::XMFLOAT3 pos{ movement->GetPosition() };
+                DirectX::XMFLOAT3 pos{ m_movement->GetPosition() };
 
                 pos.x += (dx / dist) * currentSpeed * elapsedTime;
                 pos.z += (dz / dist) * currentSpeed * elapsedTime;
 
-                movement->SetPosition(pos);
+                m_movement->SetPosition(pos);
             }
             else
             {
@@ -270,7 +270,7 @@ void Enemy::UpdateAttackLogic(float elapsedTime, Camera* camera, const DirectX::
 
 DirectX::XMFLOAT3 Enemy::GetForwardVector() const
 {
-    XMFLOAT3 rot = movement->GetRotation();
+    XMFLOAT3 rot = m_movement->GetRotation();
     float yawRad = XMConvertToRadians(rot.y);
     float pitchRad = XMConvertToRadians(rot.x);
     float x = sinf(yawRad) * cosf(pitchRad);
@@ -285,17 +285,17 @@ void Enemy::Reinitialize(ID3D11Device* device, const char* filePath, const Direc
     const float minZ, const float maxZ, const MoveDir dir)
 {
     // Reassign the model (std::shared_ptr handles cleanup of the old model automatically)
-    model = std::make_shared<Model>(device, filePath);
+    m_model = std::make_shared<Model>(device, filePath);
 
     // Reset Core Identity
     m_type = type;
     m_attackType = attackType;
     m_baseColor = startColor;
-    scale = (m_type == EnemyType::Pentagon) ? DirectX::XMFLOAT3{ 150.0f, 150.0f, 150.0f } : DirectX::XMFLOAT3{ 1.0f, 1.0f, 1.0f };
+    m_scale = (m_type == EnemyType::Pentagon) ? DirectX::XMFLOAT3{ 150.0f, 150.0f, 150.0f } : DirectX::XMFLOAT3{ 1.0f, 1.0f, 1.0f };
 
     // Reset Transforms & Patrols
-    movement->SetPosition(startPos);
-    movement->SetRotation(startRot);
+    m_movement->SetPosition(startPos);
+    m_movement->SetRotation(startRot);
     m_originalPosition = startPos;
     m_originalRotation = startRot;
 
@@ -323,7 +323,7 @@ void Enemy::Reinitialize(ID3D11Device* device, const char* filePath, const Direc
 
 void Enemy::UpdateProjectiles(float elapsedTime, const ProjectileTargets& targets)
 {
-    AdvanceProjectiles(elapsedTime, targets, movement->GetPosition());
+    AdvanceProjectiles(elapsedTime, targets, m_movement->GetPosition());
 }
 
 void Enemy::FireProjectile(const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& direction, bool isAimed)
@@ -465,7 +465,7 @@ DamageResult Enemy::TakeDamage(const DamageInfo& damage)
     return DamageResult::damaged;
 }
 
-void Enemy::SetPosition(const DirectX::XMFLOAT3& pos) { movement->SetPosition(pos); }
-void Enemy::SetRotation(const DirectX::XMFLOAT3& rot) { movement->SetRotation(rot); }
+void Enemy::SetPosition(const DirectX::XMFLOAT3& pos) { m_movement->SetPosition(pos); }
+void Enemy::SetRotation(const DirectX::XMFLOAT3& rot) { m_movement->SetRotation(rot); }
 
-DirectX::XMFLOAT3 Enemy::GetRotation() const { return movement->GetRotation(); }
+DirectX::XMFLOAT3 Enemy::GetRotation() const { return m_movement->GetRotation(); }

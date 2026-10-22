@@ -207,15 +207,15 @@ public:
     StageCollider& GetCollider() noexcept { return m_collider; }
     float GetColliderBuildMs() const noexcept { return m_colliderBuildMs; }
 
-    std::shared_ptr<Model> GetModel() const { return model; }
+    std::shared_ptr<Model> GetModel() const { return m_model; }
     const SpatialHashGrid& GetSpatialGrid() const { return m_spatialGrid; }
 
 public:
     // Public variables for GUI editing
-    DirectX::XMFLOAT3 position;
-    DirectX::XMFLOAT3 rotation;
-    DirectX::XMFLOAT3 scale;
-    DirectX::XMFLOAT4 color;
+    DirectX::XMFLOAT3 m_position;
+    DirectX::XMFLOAT3 m_rotation;
+    DirectX::XMFLOAT3 m_scale;
+    DirectX::XMFLOAT4 m_color;
 
     std::vector<DebugWallData> m_debugWalls;
     std::vector<DebugLineData> m_linesVoid;
@@ -233,7 +233,7 @@ private:
     void RebuildSpatialGrid();
 
     SpatialHashGrid m_spatialGrid;
-    std::shared_ptr<Model> model;
+    std::shared_ptr<Model> m_model;
 
     StageCollider m_collider{};
     float m_colliderBuildMs{ 0.0f };

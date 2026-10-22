@@ -51,15 +51,15 @@ public:
     void Update(float elapsedTime, Camera* camera) override;
 
     // --- Component accessors (raw pointers, no ownership transfer) ---
-    StateMachine* GetStateMachine() const { return stateMachine.get(); }
-    CharacterMovement* GetMovement()     const { return movement.get(); }
-    AnimationController* GetAnimator()     const { return animator.get(); }
-    std::shared_ptr<Model> GetModel()        const { return model; }
+    StateMachine* GetStateMachine() const { return m_stateMachine.get(); }
+    CharacterMovement* GetMovement()     const { return m_movement.get(); }
+    AnimationController* GetAnimator()     const { return m_animator.get(); }
+    std::shared_ptr<Model> GetModel()        const { return m_model; }
 
     // --- Input & camera ---
-    void SetInputEnabled(bool enable) { isInputEnabled = enable; }
-    [[nodiscard]] bool IsInputEnabled() const { return isInputEnabled; }
-    void SetCamera(Camera* cam) { activeCamera = cam; }
+    void SetInputEnabled(bool enable) { m_isInputEnabled = enable; }
+    [[nodiscard]] bool IsInputEnabled() const { return m_isInputEnabled; }
+    void SetCamera(Camera* cam) { m_activeCamera = cam; }
 
     // --- Position helpers ---
     void SetPosition(float x, float y, float z);
@@ -127,21 +127,21 @@ public:
     // Returns true when player has meaningful smoothed input
     bool IsMoving() const
     {
-        return (std::abs(currentSmoothInput.x) > 0.01f ||
-            std::abs(currentSmoothInput.y) > 0.01f);
+        return (std::abs(m_currentSmoothInput.x) > 0.01f ||
+            std::abs(m_currentSmoothInput.y) > 0.01f);
     }
     [[nodiscard]] bool IsBackpedaling() const { return m_isBackpedaling; }
 
     // Visual tint (used by states for hit flash, etc.)
-    DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    DirectX::XMFLOAT4 m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     // --- Read accessors for state machine ---
-    float GetBaseSpeed()    const { return baseSpeed; }
-    float GetDashSpeed()    const { return dashSpeed; }
-    float GetDashDuration() const { return dashDuration; }
+    float GetBaseSpeed()    const { return m_baseSpeed; }
+    float GetDashSpeed()    const { return m_dashSpeed; }
+    float GetDashDuration() const { return m_dashDuration; }
     [[nodiscard]] float GetSlashLungeDistance() const { return m_slashLungeDistance; }
     [[nodiscard]] float GetSlashLungeDuration() const { return m_slashLungeDuration; }
-    DirectX::XMFLOAT2 GetLastValidInput() const { return lastValidInput; }
+    DirectX::XMFLOAT2 GetLastValidInput() const { return m_lastValidInput; }
 
     // Called by PlayerDash on enter. Spends one dash charge, which also grants the dash
     // invincibility, and restarts the recovery timer. With no charge left the dash still
@@ -172,7 +172,7 @@ public:
     [[nodiscard]] bool IsInvincible() const { return m_invincibilityTimer > 0.0f; }
 
     // --- Parry and aim-lock setters ---
-    void SetLastValidInput(DirectX::XMFLOAT2 dir) { lastValidInput = dir; }
+    void SetLastValidInput(DirectX::XMFLOAT2 dir) { m_lastValidInput = dir; }
     void SetAimLocked(bool locked) { m_aimLocked = locked; }
     void ForceAimTarget(const DirectX::XMFLOAT3& target) { m_aimTarget = target; }
 
@@ -216,34 +216,34 @@ private:
     void UpdateOverdriveVfx();
 
     // --- Owned components ---
-    std::unique_ptr<StateMachine>        stateMachine;
-    std::unique_ptr<AnimationController> animator;
+    std::unique_ptr<StateMachine>        m_stateMachine;
+    std::unique_ptr<AnimationController> m_animator;
 
     // --- Stage collision (borrowed, see SetStageCollider) ---
     StageCollider* m_stageCollider{ nullptr };
 
     // --- Camera ---
-    Camera* activeCamera = nullptr;
+    Camera* m_activeCamera = nullptr;
 
     // --- Input state ---
-    bool isInputEnabled = true;
-    bool invertControls = false;
+    bool m_isInputEnabled = true;
+    bool m_invertControls = false;
     bool m_isBackpedaling = false;
     bool m_useAimFacing = true;
     bool  m_isStateMoveTimed{ false };  // see SetStateMoveTimeLimit
     float m_stateMoveTimeLeft{ 0.0f };
-    DirectX::XMFLOAT2 currentSmoothInput = { 0.0f, 0.0f };
-    DirectX::XMFLOAT2 lastValidInput = { 0.0f, 1.0f };
+    DirectX::XMFLOAT2 m_currentSmoothInput = { 0.0f, 0.0f };
+    DirectX::XMFLOAT2 m_lastValidInput = { 0.0f, 1.0f };
 
     // --- Movement params (runtime-tunable, initialized from PlayerConst) ---
-    float moveSpeed = PlayerConst::MoveSpeed;
-    float acceleration = PlayerConst::Acceleration;
-    float deceleration = PlayerConst::Deceleration;
+    float m_moveSpeed = PlayerConst::MoveSpeed;
+    float m_acceleration = PlayerConst::Acceleration;
+    float m_deceleration = PlayerConst::Deceleration;
 
     // --- Dash params ---
-    float baseSpeed = 10.0f;
-    float dashSpeed = PlayerConst::DashSpeed;
-    float dashDuration = PlayerConst::DashDuration;
+    float m_baseSpeed = 10.0f;
+    float m_dashSpeed = PlayerConst::DashSpeed;
+    float m_dashDuration = PlayerConst::DashDuration;
     float m_dashIFrameDuration{ PlayerConst::DashIFrameDuration };
     int   m_maxDashCharges{ PlayerConst::DashCharges };
     float m_dashRecoveryTime{ PlayerConst::DashRecoveryTime };

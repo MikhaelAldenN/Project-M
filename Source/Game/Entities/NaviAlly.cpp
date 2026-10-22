@@ -20,12 +20,12 @@ NaviAlly::NaviAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* ene
     : m_targetPlayer(targetPlayer) 
     , m_enemyManager(enemyManager)
 {
-    model = std::make_shared<Model>(device, "Data/Model/Character/MDL_Navi.glb");
-    scale = { 0.4f, 0.4f, 0.4f };
-    movement->SetRotation({ 0.0f, 0.0f, 0.0f });
+    m_model = std::make_shared<Model>(device, "Data/Model/Character/MDL_Navi.glb");
+    m_scale = { 0.4f, 0.4f, 0.4f };
+    m_movement->SetRotation({ 0.0f, 0.0f, 0.0f });
 
     OutputDebugStringA("\n=== NAVI ANIMATIONS LOADED ===\n");
-    const auto& anims = model->GetAnimations();
+    const auto& anims = m_model->GetAnimations();
     for (size_t i = 0; i < anims.size(); ++i)
     {
         std::string msg = "[" + std::to_string(i) + "] " + anims[i].name + "\n";
@@ -34,7 +34,7 @@ NaviAlly::NaviAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* ene
     OutputDebugStringA("================================\n\n");
 
     m_animator = std::make_unique<AnimationController>();
-    m_animator->Initialize(model);
+    m_animator->Initialize(m_model);
 
     m_animator->Play("Armature|Flying", true, 0.2f);
 
@@ -46,7 +46,7 @@ NaviAlly::NaviAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* ene
         startPos.x += 1.0f;
         startPos.y += HOVER_HEIGHT;
         startPos.z += 0.5f;
-        movement->SetPosition(startPos);
+        m_movement->SetPosition(startPos);
     }
     SyncData();
 }
@@ -94,7 +94,7 @@ void NaviAlly::UpdateHoverLogic(float elapsedTime)
     // STATE ENTRY: Capture anchor when first potioned
     if (m_isPotioned && !m_hasCapturedAnchor)
     {
-        m_potionAnchorPos = movement->GetPosition();
+        m_potionAnchorPos = m_movement->GetPosition();
         m_hasCapturedAnchor = true;
     }
     // STATE EXIT: Reset anchor flag when not potioned
@@ -103,7 +103,7 @@ void NaviAlly::UpdateHoverLogic(float elapsedTime)
         m_hasCapturedAnchor = false;
     }
 
-    XMFLOAT3 currentPos{ movement->GetPosition() };
+    XMFLOAT3 currentPos{ m_movement->GetPosition() };
     XMFLOAT3 targetPos{ 0.0f, 0.0f, 0.0f };
 
     // LOGIC SELECTION
@@ -206,7 +206,7 @@ void NaviAlly::UpdateHoverLogic(float elapsedTime)
     currentPos.y += (targetPos.y - currentPos.y) * lerpFactor;
     currentPos.y += hoverBob;
 
-    movement->SetPosition(currentPos);
+    m_movement->SetPosition(currentPos);
     SyncData();
 }
 
@@ -222,7 +222,7 @@ void NaviAlly::SpawnBullet(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3
 
 void NaviAlly::FireAtTarget(const DirectX::XMFLOAT3& targetPos)
 {
-    XMFLOAT3 myPos{ movement->GetPosition() };
+    XMFLOAT3 myPos{ m_movement->GetPosition() };
     float dx{ targetPos.x - myPos.x };
     float dy{ targetPos.y - myPos.y };
     float dz{ targetPos.z - myPos.z };
@@ -240,7 +240,7 @@ void NaviAlly::FireAtTarget(const DirectX::XMFLOAT3& targetPos)
 
 void NaviAlly::FireRadialBurst() noexcept
 {
-    XMFLOAT3 myPos{ movement->GetPosition() };
+    XMFLOAT3 myPos{ m_movement->GetPosition() };
     constexpr int bulletCount = 24;
     constexpr float angleStep = DirectX::XM_2PI / bulletCount;
 
@@ -254,7 +254,7 @@ void NaviAlly::FireRadialBurst() noexcept
 
 void NaviAlly::FireFanBurst(const DirectX::XMFLOAT3& targetPos) noexcept
 {
-    XMFLOAT3 myPos{ movement->GetPosition() };
+    XMFLOAT3 myPos{ m_movement->GetPosition() };
     float dx{ targetPos.x - myPos.x };
     float dz{ targetPos.z - myPos.z };
 
@@ -309,7 +309,7 @@ void NaviAlly::UpdateShootingLogic(float elapsedTime, Camera* camera)
 
     if (!m_enemyManager || !camera) return;
 
-    XMFLOAT3 myPos{ movement->GetPosition() };
+    XMFLOAT3 myPos{ m_movement->GetPosition() };
     Enemy* bestTarget{ nullptr };
     float closestDistSq{ ATTACK_RANGE_SQ };
 
@@ -366,7 +366,7 @@ void NaviAlly::UpdateProjectiles(float elapsedTime)
     // Navi's bullets fly straight, so there is no target to steer toward.
     m_projectiles.Update(elapsedTime, ProjectileTargets{});
 
-    XMFLOAT3 myPos{ movement->GetPosition() };
+    XMFLOAT3 myPos{ m_movement->GetPosition() };
 
     const std::vector<Projectile>& slots{ m_projectiles.Slots() };
     for (std::size_t i{ 0 }; i < slots.size(); ++i)
@@ -418,14 +418,14 @@ void NaviAlly::SetPotionedState(bool isPotioned) noexcept
 
 void NaviAlly::SetPosition(const DirectX::XMFLOAT3& pos)
 {
-    movement->SetPosition(pos);
+    m_movement->SetPosition(pos);
 
     SyncData();
 }
 
 void NaviAlly::Render(ModelRenderer* renderer)
 {
-    if (!IsAlive() || !model) return;
+    if (!IsAlive() || !m_model) return;
     DirectX::XMFLOAT4 renderColor = m_color;
 
     if (m_isPotioned) {
@@ -441,7 +441,7 @@ void NaviAlly::Render(ModelRenderer* renderer)
             1.0f
         };
     }
-    renderer->Draw(ShaderId::Phong, model, renderColor);
+    renderer->Draw(ShaderId::Phong, m_model, renderColor);
 }
 
 void NaviAlly::RenderProjectiles(ModelRenderer* renderer)
@@ -465,5 +465,5 @@ void NaviAlly::RenderDebug(ShapeRenderer* shapeRenderer)
 
     const DirectX::XMFLOAT4 debugColor{ 0.0f, 1.0f, 1.0f, 0.5f };
 
-    shapeRenderer->DrawSphere(movement->GetPosition(), HITBOX_RADIUS, debugColor);
+    shapeRenderer->DrawSphere(m_movement->GetPosition(), HITBOX_RADIUS, debugColor);
 }

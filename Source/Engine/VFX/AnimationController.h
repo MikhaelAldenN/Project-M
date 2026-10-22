@@ -18,7 +18,7 @@ public:
     [[nodiscard]] float GetPlaybackSpeed() const { return m_playbackSpeed; }
 
     bool IsPlaying(const std::string& name) const;
-    float GetCurrentTime() const { return timer; }
+    float GetCurrentTime() const { return m_timer; }
 
     // Builds the upper-body mask from rootNodeName and every node below it.
     void SetUpperBodyMaskRoot(const std::string& rootNodeName);
@@ -27,34 +27,34 @@ public:
     void PlayUpper(const std::string& name, bool loop = false);
 
     // True while an upper-body animation is playing.
-    bool IsUpperPlaying() const { return upperAnimIndex != -1; }
+    bool IsUpperPlaying() const { return m_upperAnimIndex != -1; }
 
     // Whether the current upper-body animation loops.
-    bool upperIsLooping = false;
+    bool m_upperIsLooping = false;
 
 private:
-    std::shared_ptr<Model> ownerModel;
+    std::shared_ptr<Model> m_ownerModel;
 
     // Current animation
-    int currentAnimIndex = -1;
-    float timer = 0.0f;
-    bool isLooping = true;
+    int m_currentAnimIndex = -1;
+    float m_timer = 0.0f;
+    bool m_isLooping = true;
     float m_playbackSpeed{ 1.0f };
-    int upperAnimIndex = -1;
-    float upperTimer = 0.0f;
+    int m_upperAnimIndex = -1;
+    float m_upperTimer = 0.0f;
 
     // Blend state
-    bool isBlending = false;
-    float blendTimer = 0.0f;
-    float blendDuration = 0.0f;
+    bool m_isBlending = false;
+    float m_blendTimer = 0.0f;
+    float m_blendDuration = 0.0f;
 
     // Pose buffers
     // final pose sent to the model
-    std::vector<Model::NodePose> nodePoses;
+    std::vector<Model::NodePose> m_nodePoses;
 
     // last pose of the previous animation, blended out
-    std::vector<Model::NodePose> prevNodePoses;
+    std::vector<Model::NodePose> m_prevNodePoses;
 
-    std::vector<Model::NodePose> upperNodePoses;
-    std::vector<bool> upperBodyMask;
+    std::vector<Model::NodePose> m_upperNodePoses;
+    std::vector<bool> m_upperBodyMask;
 };

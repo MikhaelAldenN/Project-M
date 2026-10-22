@@ -34,12 +34,12 @@ namespace
 // ============================================================
 
 Player::Player()
-    : stateMachine(std::make_unique<StateMachine>())
-    , animator(std::make_unique<AnimationController>())
+    : m_stateMachine(std::make_unique<StateMachine>())
+    , m_animator(std::make_unique<AnimationController>())
 {
     ID3D11Device* device = Graphics::Instance().GetDevice();
-    model = std::make_shared<Model>(device, "Data/Model/Character/TEST_mdl_Player3.glb");
-    scale = { 1.0f, 1.0f, 1.0f };
+    m_model = std::make_shared<Model>(device, "Data/Model/Character/TEST_mdl_Player3.glb");
+    m_scale = { 1.0f, 1.0f, 1.0f };
 
 	// Load weapons and set their local offsets for correct hand positioning
     m_weapons[static_cast<size_t>(WeaponType::Crossbow)] = std::make_unique<Weapon>(device, "Data/Model/Character/WEAPON_mdl_Crossbow.glb");
@@ -56,19 +56,19 @@ Player::Player()
         { 0.350f, 0.350f, 0.350f }
     );
 
-    if (model) {
-        m_rightHandBoneIndex = model->GetNodeIndex("hand.r");
+    if (m_model) {
+        m_rightHandBoneIndex = m_model->GetNodeIndex("hand.r");
     }
 
     m_playerbulletModel = std::make_shared<Model>(device, "Data/Model/Character/PLACEHOLDER_mdl_Paddle.glb");
 
-    animator->Initialize(model);
-    animator->SetUpperBodyMaskRoot("body");
-    stateMachine->Initialize(std::make_unique<PlayerIdle>(), this);
+    m_animator->Initialize(m_model);
+    m_animator->SetUpperBodyMaskRoot("body");
+    m_stateMachine->Initialize(std::make_unique<PlayerIdle>(), this);
 
     // Log loaded animations to debug output
     OutputDebugStringA("\n=== ANIMATIONS LOADED ===\n");
-    const auto& anims = model->GetAnimations();
+    const auto& anims = m_model->GetAnimations();
     for (size_t i = 0; i < anims.size(); ++i)
     {
         std::string msg = "[" + std::to_string(i) + "] " + anims[i].name + "\n";
@@ -92,15 +92,15 @@ Player::Player()
         };
 
     // Chain 1: Center (001 to 007)
-    m_capeSimulator->AddChain(model, GenerateBoneNames("cape.", 1, 7));
+    m_capeSimulator->AddChain(m_model, GenerateBoneNames("cape.", 1, 7));
 
     // Chain 2: Right (008 to 015)
-    m_capeSimulator->AddChain(model, GenerateBoneNames("cape.", 8, 15));
+    m_capeSimulator->AddChain(m_model, GenerateBoneNames("cape.", 8, 15));
 
     // Chain 3: Left (016 to 023)
-    m_capeSimulator->AddChain(model, GenerateBoneNames("cape.", 16, 23));
+    m_capeSimulator->AddChain(m_model, GenerateBoneNames("cape.", 16, 23));
 
-    color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
 }
 
 Player::~Player()
@@ -128,28 +128,28 @@ void Player::SetStageCollider(StageCollider* collider)
 
 void Player::StandOnGround()
 {
-    if (!m_stageCollider || !movement) return;
+    if (!m_stageCollider || !m_movement) return;
 
     // Why the search starts stepOffset higher: a point lying exactly on the floor
     // would start the probe inside it, and the one-sided cast would miss.
-    XMFLOAT3 feet{ movement->GetPosition() };
+    XMFLOAT3 feet{ m_movement->GetPosition() };
     const XMFLOAT3 probeStart{ feet.x, feet.y + PlayerConst::StepOffset, feet.z };
     float groundY{ 0.0f };
     if (KinematicMover::FindGroundHeight(*m_stageCollider, probeStart, PlayerConst::GroundSnapDistance, groundY))
     {
         feet.y = groundY;
-        movement->SetPosition(feet);
+        m_movement->SetPosition(feet);
     }
 }
 
 void Player::ApplyConfig(const PlayerConfig& config) noexcept
 {
-    moveSpeed = config.moveSpeed;
-    dashSpeed = config.dashSpeed;
-    dashDuration = config.dashDuration;
-    acceleration = config.acceleration;
-    deceleration = config.deceleration;
-    invertControls = config.invertControls;
+    m_moveSpeed = config.moveSpeed;
+    m_dashSpeed = config.dashSpeed;
+    m_dashDuration = config.dashDuration;
+    m_acceleration = config.acceleration;
+    m_deceleration = config.deceleration;
+    m_invertControls = config.invertControls;
 }
 
 void Player::Update(float elapsedTime, Camera* camera)
@@ -164,18 +164,18 @@ void Player::Update(float elapsedTime, Camera* camera)
     UpdateDashRecovery(elapsedTime);
 
     SetCamera(camera);
-    if (isInputEnabled)
+    if (m_isInputEnabled)
     {
         HandleMovementInput(elapsedTime);
         HandleAimInput(camera); 
     }
-    else currentSmoothInput = { 0.0f, 0.0f };
+    else m_currentSmoothInput = { 0.0f, 0.0f };
 
     UpdateHorizontalMovement(elapsedTime);
 
     UpdateActionState(elapsedTime);
 
-    if (animator) animator->Update(elapsedTime);
+    if (m_animator) m_animator->Update(elapsedTime);
 
     AutoSheatheSword();
 
@@ -233,17 +233,17 @@ void Player::UpdateActionState(float elapsedTime)
     if (m_debugState.forceAnimation)
     {
         // Force the animation on loop, bypassing the State Machine entirely!
-        if (!animator->IsPlaying(m_debugState.animationName))
+        if (!m_animator->IsPlaying(m_debugState.animationName))
         {
             // Note: We play this on the FULL body, ignoring PlayUpper, 
             // so you get a perfectly clean stance for tuning!
-            animator->Play(m_debugState.animationName, true, 0.2f);
+            m_animator->Play(m_debugState.animationName, true, 0.2f);
         }
     }
     else
     {
         // Normal Gameplay
-        if (stateMachine) stateMachine->Update(this, elapsedTime);
+        if (m_stateMachine) m_stateMachine->Update(this, elapsedTime);
     }
 }
 
@@ -252,7 +252,7 @@ void Player::AutoSheatheSword()
     // If the player is holding the Sword, but the upper-body attack 
     // animation has officially finished, automatically revert to the Crossbow.
     // The !m_debugState check ensures the sword doesn't vanish while you are tuning it in the GUI!
-    if (!m_debugState.forceAnimation && m_activeWeaponType == WeaponType::Sword && !animator->IsUpperPlaying())
+    if (!m_debugState.forceAnimation && m_activeWeaponType == WeaponType::Sword && !m_animator->IsUpperPlaying())
     {
         SetActiveWeapon(WeaponType::Crossbow);
         m_aimLocked = false;
@@ -264,7 +264,7 @@ void Player::UpdateDashReadyVfx()
     // Keeps the Dash Ready VFX attached to the player.
     if (m_dashReadyVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashReadyVfxHandle))
     {
-        DirectX::XMFLOAT3 vfxPos = movement->GetPosition();
+        DirectX::XMFLOAT3 vfxPos = m_movement->GetPosition();
 
         // Y offset tuned in the Player panel
         vfxPos.y += m_dashReadyOffsetY;
@@ -280,7 +280,7 @@ void Player::UpdateDashStandbyVfx()
         // 1. Start the effect when none is playing (first time, or the last one ended)
         if (m_dashStandbyVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
         {
-            DirectX::XMFLOAT3 vfxPos = movement->GetPosition();
+            DirectX::XMFLOAT3 vfxPos = m_movement->GetPosition();
             vfxPos.y += m_dashReadyOffsetY;
             m_dashStandbyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Standby.efk", vfxPos, 0.7f);
         }
@@ -288,7 +288,7 @@ void Player::UpdateDashStandbyVfx()
         // 2. Keep it on the player while it plays
         if (m_dashStandbyVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
         {
-            DirectX::XMFLOAT3 trackPos = movement->GetPosition();
+            DirectX::XMFLOAT3 trackPos = m_movement->GetPosition();
             trackPos.y += m_dashReadyOffsetY;
             EffectManager::Instance().SetPosition(m_dashStandbyVfxHandle, trackPos);
         }
@@ -316,7 +316,7 @@ void Player::UpdateOverdriveVfx()
         // 2. Start the overdrive effect when it is not playing
         if (m_overdriveVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_overdriveVfxHandle))
         {
-            DirectX::XMFLOAT3 vfxPos = movement->GetPosition();
+            DirectX::XMFLOAT3 vfxPos = m_movement->GetPosition();
             vfxPos.y += m_dashReadyOffsetY;
             m_overdriveVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Overdrive.efk", vfxPos, 1.0f);
         }
@@ -324,7 +324,7 @@ void Player::UpdateOverdriveVfx()
         // 3. Keep it on the player
         if (m_overdriveVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_overdriveVfxHandle))
         {
-            DirectX::XMFLOAT3 trackPos = movement->GetPosition();
+            DirectX::XMFLOAT3 trackPos = m_movement->GetPosition();
             trackPos.y += m_dashReadyOffsetY;
             EffectManager::Instance().SetPosition(m_overdriveVfxHandle, trackPos);
         }
@@ -342,14 +342,14 @@ void Player::UpdateOverdriveVfx()
         {
             if (m_dashStandbyVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
             {
-                DirectX::XMFLOAT3 vfxPos = movement->GetPosition();
+                DirectX::XMFLOAT3 vfxPos = m_movement->GetPosition();
                 vfxPos.y += m_dashReadyOffsetY;
                 m_dashStandbyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Standby.efk", vfxPos, 0.7f);
             }
 
             if (m_dashStandbyVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
             {
-                DirectX::XMFLOAT3 trackPos = movement->GetPosition();
+                DirectX::XMFLOAT3 trackPos = m_movement->GetPosition();
                 trackPos.y += m_dashReadyOffsetY;
                 EffectManager::Instance().SetPosition(m_dashStandbyVfxHandle, trackPos);
             }
@@ -378,7 +378,7 @@ void Player::UpdateDashRecovery(float dt)
     // "ready" cue would announce nothing new.
     if (!wasPenalized) return;
 
-    DirectX::XMFLOAT3 pos = movement->GetPosition();
+    DirectX::XMFLOAT3 pos = m_movement->GetPosition();
     pos.y += m_dashReadyOffsetY;
 
     m_dashReadyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Ready.efk", pos, 0.5f);
@@ -406,9 +406,9 @@ float Player::BeginDash()
 void Player::HandleMovementInput(float dt)
 {
     // 1. Fast early exit (Zero runtime cost for subsequent logic if disabled)
-    if (!isInputEnabled)
+    if (!m_isInputEnabled)
     {
-        currentSmoothInput = { 0.0f, 0.0f };
+        m_currentSmoothInput = { 0.0f, 0.0f };
         return;
     }
 
@@ -436,7 +436,7 @@ void Player::HandleMovementInput(float dt)
     }   
     
     // 5. Apply Inversion cleanly
-    if (invertControls)
+    if (m_invertControls)
     {
         targetX = -targetX;
         targetZ = -targetZ;
@@ -461,20 +461,20 @@ void Player::HandleMovementInput(float dt)
     // (Note: If it's a gamepad and sqLength <= 1.0f, we KEEP the magnitude to allow analog "slow walking")
 
     // 7. Smooth acceleration / deceleration
-    const float smoothX{ (std::abs(targetX) > inputEpsilon) ? acceleration : deceleration };
-    const float smoothZ{ (std::abs(targetZ) > inputEpsilon) ? acceleration : deceleration };
+    const float smoothX{ (std::abs(targetX) > inputEpsilon) ? m_acceleration : m_deceleration };
+    const float smoothZ{ (std::abs(targetZ) > inputEpsilon) ? m_acceleration : m_deceleration };
 
-    currentSmoothInput.x += (targetX - currentSmoothInput.x) * smoothX * dt;
-    currentSmoothInput.y += (targetZ - currentSmoothInput.y) * smoothZ * dt;
+    m_currentSmoothInput.x += (targetX - m_currentSmoothInput.x) * smoothX * dt;
+    m_currentSmoothInput.y += (targetZ - m_currentSmoothInput.y) * smoothZ * dt;
 
     // 8. Snap to zero below threshold (Defends against creeping floating-point drift over time)
-    if (std::abs(currentSmoothInput.x) < inputEpsilon) currentSmoothInput.x = 0.0f;
-    if (std::abs(currentSmoothInput.y) < inputEpsilon) currentSmoothInput.y = 0.0f;
+    if (std::abs(m_currentSmoothInput.x) < inputEpsilon) m_currentSmoothInput.x = 0.0f;
+    if (std::abs(m_currentSmoothInput.y) < inputEpsilon) m_currentSmoothInput.y = 0.0f;
 
     // 9. Track last non-zero input direction (Vital for your Dash mechanic)
     if (std::abs(targetX) > inputEpsilon || std::abs(targetZ) > inputEpsilon)
     {
-        lastValidInput = { targetX, targetZ };
+        m_lastValidInput = { targetX, targetZ };
     }
 }
 
@@ -504,7 +504,7 @@ void Player::HandleAimInput(Camera* camera)
             const float dirX{ rx * invLength };
             const float dirZ{ ry * invLength }; // Change to -ry if Y-axis is inverted in your world
 
-            const DirectX::XMFLOAT3 pPos{ movement->GetPosition() };
+            const DirectX::XMFLOAT3 pPos{ m_movement->GetPosition() };
             constexpr float aimDistance{ 1000.0f };
 
             DirectX::XMFLOAT3 trueGamepadWorldPos{
@@ -520,7 +520,7 @@ void Player::HandleAimInput(Camera* camera)
             const DirectX::XMFLOAT2 moveDir{ GetLastValidInput() };
             if (moveDir.x != 0.0f || moveDir.y != 0.0f)
             {
-                const DirectX::XMFLOAT3 pPos{ movement->GetPosition() };
+                const DirectX::XMFLOAT3 pPos{ m_movement->GetPosition() };
                 constexpr float aimDistance{ 1000.0f };
 
                 DirectX::XMFLOAT3 followMoveTarget{
@@ -562,7 +562,7 @@ void Player::HandleAimInput(Camera* camera)
 
         if (std::abs(dir.y) > 0.001f) {
             // Defends against the "Floating Gun" bug by using the player's dynamic Y position
-            const float gunHeight{ movement->GetPosition().y + PlayerConst::BulletSpawnY };
+            const float gunHeight{ m_movement->GetPosition().y + PlayerConst::BulletSpawnY };
             const float t{ (gunHeight - origin.y) / dir.y };
 
             DirectX::XMFLOAT3 trueMouseWorldPos{
@@ -581,7 +581,7 @@ void Player::UpdateHorizontalMovement(float dt)
     float displacementX = 0.0f;
     float displacementZ = 0.0f;
 
-    XMFLOAT3 stateVelocity = movement->GetVelocity();
+    XMFLOAT3 stateVelocity = m_movement->GetVelocity();
 
     if (stateVelocity.x != 0.0f || stateVelocity.z != 0.0f)
     {
@@ -598,26 +598,26 @@ void Player::UpdateHorizontalMovement(float dt)
     }
     else
     {
-        displacementX = currentSmoothInput.x * moveSpeed * dt;
-        displacementZ = currentSmoothInput.y * moveSpeed * dt;
+        displacementX = m_currentSmoothInput.x * m_moveSpeed * dt;
+        displacementZ = m_currentSmoothInput.y * m_moveSpeed * dt;
     }
 
     if (m_stageCollider)
     {
-        movement->SetPosition(KinematicMover::Move(*m_stageCollider, movement->GetPosition(),
+        m_movement->SetPosition(KinematicMover::Move(*m_stageCollider, m_movement->GetPosition(),
             { displacementX, 0.0f, displacementZ }, k_stageMoveSettings));
         return;
     }
 
     // Without a stage collider (SceneBoss) nothing blocks the player; Y stays as it is.
-    const XMFLOAT3 position{ movement->GetPosition() };
-    movement->SetPosition({ position.x + displacementX, position.y, position.z + displacementZ });
+    const XMFLOAT3 position{ m_movement->GetPosition() };
+    m_movement->SetPosition({ position.x + displacementX, position.y, position.z + displacementZ });
 }
 
 void Player::UpdateFootRotation(float dt, float& outSmoothedYaw)
 {
     XMFLOAT2 moveInput = GetLastValidInput();
-    float currentYaw = XMConvertToRadians(movement->GetRotation().y);
+    float currentYaw = XMConvertToRadians(m_movement->GetRotation().y);
     float targetYaw = currentYaw;
 
     if (moveInput.x != 0.0f || moveInput.y != 0.0f)
@@ -640,7 +640,7 @@ void Player::UpdateFootRotation(float dt, float& outSmoothedYaw)
     }
 
 
-    XMFLOAT3 pos = movement->GetPosition();
+    XMFLOAT3 pos = m_movement->GetPosition();
     float dx = m_aimTarget.x - pos.x;
     float dz = m_aimTarget.z - pos.z;
 
@@ -682,10 +682,10 @@ void Player::UpdateAimConstraint(float dt, float& inOutSmoothedYaw, bool& outSho
     outShouldAim = false;
     outRelativeAngle = 0.0f;
 
-    if (!model || !activeCamera) return;
+    if (!m_model || !m_activeCamera) return;
     if (!m_useAimFacing) return;
 
-    DirectX::XMFLOAT3 pos = movement->GetPosition();
+    DirectX::XMFLOAT3 pos = m_movement->GetPosition();
     float dx = m_aimTarget.x - pos.x;
     float dz = m_aimTarget.z - pos.z;
 
@@ -729,12 +729,12 @@ void Player::UpdateAimConstraint(float dt, float& inOutSmoothedYaw, bool& outSho
 void Player::ApplyWorldMatrix(float smoothedYaw, bool shouldAim, float relativeAngle)
 {
     // Commit smoothed foot yaw to movement state
-    movement->SetRotationY(XMConvertToDegrees(smoothedYaw));
+    m_movement->SetRotationY(XMConvertToDegrees(smoothedYaw));
 
-    XMFLOAT3 pos = movement->GetPosition();
-    XMFLOAT3 rot = movement->GetRotation();
+    XMFLOAT3 pos = m_movement->GetPosition();
+    XMFLOAT3 rot = m_movement->GetRotation();
 
-    XMMATRIX S = XMMatrixScaling(scale.x, scale.y, scale.z);
+    XMMATRIX S = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
     XMMATRIX R = XMMatrixRotationRollPitchYaw(
         XMConvertToRadians(rot.x),
         XMConvertToRadians(rot.y),
@@ -745,12 +745,12 @@ void Player::ApplyWorldMatrix(float smoothedYaw, bool shouldAim, float relativeA
     XMStoreFloat4x4(&worldMatrix, S * R * T);
 
     // Inject torso bone twist for upper-body aiming
-    if (shouldAim && model)
+    if (shouldAim && m_model)
     {
-        int bodyIndex = model->GetNodeIndex("body");
+        int bodyIndex = m_model->GetNodeIndex("body");
         if (bodyIndex != -1)
         {
-            Model::Node& bodyNode = model->GetNodes()[bodyIndex];
+            Model::Node& bodyNode = m_model->GetNodes()[bodyIndex];
 
             // Get the Parent's (Hips/Pelvis) Global Matrix
             XMMATRIX parentGlobal = XMMatrixIdentity();
@@ -779,13 +779,13 @@ void Player::ApplyWorldMatrix(float smoothedYaw, bool shouldAim, float relativeA
 
     if (m_capeSimulator)
     {
-        DirectX::XMFLOAT3 trueVelocity{ movement->GetVelocity() };
+        DirectX::XMFLOAT3 trueVelocity{ m_movement->GetVelocity() };
 
         // Fallback to input velocity if true velocity is zero 
         if (trueVelocity.x == 0.0f && trueVelocity.z == 0.0f)
         {
-            trueVelocity.x = currentSmoothInput.x * moveSpeed;
-            trueVelocity.z = currentSmoothInput.y * moveSpeed;
+            trueVelocity.x = m_currentSmoothInput.x * m_moveSpeed;
+            trueVelocity.z = m_currentSmoothInput.y * m_moveSpeed;
         }
 
         const float totalYaw{ smoothedYaw + relativeAngle };
@@ -801,12 +801,12 @@ void Player::ApplyWorldMatrix(float smoothedYaw, bool shouldAim, float relativeA
         m_capeSimulator->Update(0.016f, localVelocity);
     }
 
-    if (model) model->UpdateTransform(worldMatrix);
+    if (m_model) m_model->UpdateTransform(worldMatrix);
 
     DirectX::XMFLOAT4X4 attachMatrix = worldMatrix; // Fallback to feet if hand is missing
-    if (m_rightHandBoneIndex != -1 && model->GetNodes().size() > m_rightHandBoneIndex)
+    if (m_rightHandBoneIndex != -1 && m_model->GetNodes().size() > m_rightHandBoneIndex)
     {
-        attachMatrix = model->GetNodes()[m_rightHandBoneIndex].worldTransform;
+        attachMatrix = m_model->GetNodes()[m_rightHandBoneIndex].worldTransform;
     }
 
     // Optimization: Range-based for-loop. Updates all weapons so they are ready instantly.
@@ -821,7 +821,7 @@ void Player::UpdateProjectiles(float dt)
     // Player bullets fly straight, so there is no target to steer toward.
     m_projectiles.Update(dt, ProjectileTargets{});
 
-    DirectX::XMFLOAT3 myPos = movement->GetPosition();
+    DirectX::XMFLOAT3 myPos = m_movement->GetPosition();
 
     // Max distance before the bullet vanishes
     constexpr float DESPAWN_DISTANCE = 55.0f;
@@ -858,9 +858,9 @@ void Player::RotateModelToPoint(const DirectX::XMFLOAT3& targetPos)
 
 void Player::FireProjectile()
 {
-    if (!isInputEnabled) return;
+    if (!m_isInputEnabled) return;
 
-    const DirectX::XMFLOAT3 myPos{ movement->GetPosition() };
+    const DirectX::XMFLOAT3 myPos{ m_movement->GetPosition() };
 
     // Calculate purely on the XZ plane
     const float dx{ m_aimTarget.x - myPos.x };
@@ -969,10 +969,10 @@ DamageResult Player::TakeDamage(const DamageInfo& damage)
 
 void Player::EnterDeathState()
 {
-    scale = { 0.0f, 0.0f, 0.0f };
+    m_scale = { 0.0f, 0.0f, 0.0f };
     SetInputEnabled(false);
-    movement->SetVelocity({ 0.0f, 0.0f, 0.0f });
-    stateMachine->ChangeState(this, std::make_unique<PlayerDead>());
+    m_movement->SetVelocity({ 0.0f, 0.0f, 0.0f });
+    m_stateMachine->ChangeState(this, std::make_unique<PlayerDead>());
 }
 
 void Player::Heal(float amount) {
@@ -1004,12 +1004,12 @@ float Player::GetDamageGlitchIntensity() const noexcept
 
 void Player::SetPosition(float x, float y, float z)
 {
-    if (movement) movement->SetPosition({ x, y, z });
+    if (m_movement) m_movement->SetPosition({ x, y, z });
 }
 
 void Player::SetPosition(const DirectX::XMFLOAT3& pos)
 {
-    if (movement) movement->SetPosition(pos);
+    if (m_movement) m_movement->SetPosition(pos);
     StandOnGround();
 }
 
@@ -1020,14 +1020,14 @@ void Player::ReleasePowerCap()
     m_uncapRegenAccumulator = 0.0f;
 
     // Keep the current values so RestorePowerCap can put them back.
-    m_normalMoveSpeed = moveSpeed;
-    m_normalDashSpeed = dashSpeed;
-    m_normalColor = color;
+    m_normalMoveSpeed = m_moveSpeed;
+    m_normalDashSpeed = m_dashSpeed;
+    m_normalColor = m_color;
 
     // Overdrive values
-    moveSpeed = m_uncapMoveSpeed;
-    dashSpeed = m_uncapDashSpeed;
-    color = m_uncapColor;
+    m_moveSpeed = m_uncapMoveSpeed;
+    m_dashSpeed = m_uncapDashSpeed;
+    m_color = m_uncapColor;
 }
 
 void Player::RestorePowerCap()
@@ -1037,9 +1037,9 @@ void Player::RestorePowerCap()
     m_uncapRegenAccumulator = 0.0f;
 
     // Back to the values saved by ReleasePowerCap
-    moveSpeed = m_normalMoveSpeed;
-    dashSpeed = m_normalDashSpeed;
-    color = m_normalColor;
+    m_moveSpeed = m_normalMoveSpeed;
+    m_dashSpeed = m_normalDashSpeed;
+    m_color = m_normalColor;
 }
 
 
@@ -1053,7 +1053,7 @@ void Player::DrawDebugGUI()
 
     const DirectX::XMFLOAT3 playerPos{ GetPosition() };
     DebugProperty::Text("Position", "%.2f, %.2f, %.2f", playerPos.x, playerPos.y, playerPos.z);
-    DebugProperty::Text("Input", "%s", isInputEnabled ? "on" : "off");
+    DebugProperty::Text("Input", "%s", m_isInputEnabled ? "on" : "off");
 
     // ---- Head: actions ----
     float hp{ m_hp };
@@ -1065,29 +1065,29 @@ void Player::DrawDebugGUI()
     if (ImGui::Button("Reset state"))
     {
         m_hp = m_maxHp;
-        scale = { 1.0f, 1.0f, 1.0f }; // the death sequence hides the player by zeroing scale
-        isInputEnabled = true;
+        m_scale = { 1.0f, 1.0f, 1.0f }; // the death sequence hides the player by zeroing scale
+        m_isInputEnabled = true;
         m_aimLocked = false;
         m_dashCharges = m_maxDashCharges;
-        if (stateMachine) stateMachine->Initialize(std::make_unique<PlayerIdle>(), this);
+        if (m_stateMachine) m_stateMachine->Initialize(std::make_unique<PlayerIdle>(), this);
     }
 
     // ---- Categories ----
     ImGui::PushID("Movement");
     if (ImGui::CollapsingHeader("Movement", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        DebugProperty::DragFloat("Walk speed", moveSpeed, 0.1f, 0.0f, 100.0f, "%.1f");
-        DebugProperty::DragFloat("Acceleration", acceleration, 0.1f, 0.1f, 100.0f, "%.1f");
-        DebugProperty::DragFloat("Deceleration", deceleration, 0.1f, 0.1f, 100.0f, "%.1f");
-        DebugProperty::Checkbox("Invert controls", invertControls);
+        DebugProperty::DragFloat("Walk speed", m_moveSpeed, 0.1f, 0.0f, 100.0f, "%.1f");
+        DebugProperty::DragFloat("Acceleration", m_acceleration, 0.1f, 0.1f, 100.0f, "%.1f");
+        DebugProperty::DragFloat("Deceleration", m_deceleration, 0.1f, 0.1f, 100.0f, "%.1f");
+        DebugProperty::Checkbox("Invert controls", m_invertControls);
     }
     ImGui::PopID();
 
     ImGui::PushID("Dash");
     if (ImGui::CollapsingHeader("Dash", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        DebugProperty::DragFloat("Speed", dashSpeed, 0.5f, 10.0f, 200.0f, "%.1f");
-        DebugProperty::DragFloat("Duration", dashDuration, 0.01f, 0.01f, 1.0f, "%.2f s");
+        DebugProperty::DragFloat("Speed", m_dashSpeed, 0.5f, 10.0f, 200.0f, "%.1f");
+        DebugProperty::DragFloat("Duration", m_dashDuration, 0.01f, 0.01f, 1.0f, "%.2f s");
         DebugProperty::Text("Charges", "%d / %d", m_dashCharges, m_maxDashCharges);
         DebugProperty::Text("Recovery", "%.2f s", (m_dashCharges < m_maxDashCharges) ? m_dashRecoveryTimer : 0.0f);
         DebugProperty::SliderInt("Full dashes", m_maxDashCharges, 1, 5);
@@ -1131,15 +1131,15 @@ void Player::DrawDebugGUI()
         // live speed and color while Overdrive is active.
         if (DebugProperty::DragFloat("Walk speed", m_uncapMoveSpeed, 0.1f, 10.0f, 100.0f, "%.1f") && isUncapped)
         {
-            moveSpeed = m_uncapMoveSpeed;
+            m_moveSpeed = m_uncapMoveSpeed;
         }
         if (DebugProperty::DragFloat("Dash speed", m_uncapDashSpeed, 0.5f, 10.0f, 200.0f, "%.1f") && isUncapped)
         {
-            dashSpeed = m_uncapDashSpeed;
+            m_dashSpeed = m_uncapDashSpeed;
         }
         DebugProperty::DragFloat("HP regen per second", m_uncapHealthRegenPerSecond, 0.1f, 0.0f, 100.0f, "%.1f");
         DebugProperty::DragFloat("Regen max HP", m_uncapMaxRegenHP, 1.0f, 1.0f, 9999.0f, "%.0f");
-        if (DebugProperty::ColorEdit4("Glow color", &m_uncapColor.x) && isUncapped) color = m_uncapColor;
+        if (DebugProperty::ColorEdit4("Glow color", &m_uncapColor.x) && isUncapped) m_color = m_uncapColor;
     }
     ImGui::PopID();
 

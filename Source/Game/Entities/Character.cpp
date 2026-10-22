@@ -3,7 +3,7 @@
 using namespace DirectX;
 
 Character::Character()
-    : movement(std::make_unique<CharacterMovement>())
+    : m_movement(std::make_unique<CharacterMovement>())
 {
 }
 
@@ -11,17 +11,17 @@ Character::Character()
 
 void Character::Render(ModelRenderer* renderer)
 {
-    if (model) renderer->Draw(ShaderId::Lambert, model);
+    if (m_model) renderer->Draw(ShaderId::Lambert, m_model);
 }
 
 void Character::RenderDebug(const RenderContext& rc, ShapeRenderer* renderer)
 {
-    if (!movement) return;
+    if (!m_movement) return;
 
-    XMFLOAT3 pos = movement->GetPosition();
+    XMFLOAT3 pos = m_movement->GetPosition();
     XMMATRIX T = XMMatrixTranslation(pos.x, pos.y, pos.z);
 
-    XMFLOAT3 rot = movement->GetRotation();
+    XMFLOAT3 rot = m_movement->GetRotation();
     XMMATRIX R = XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z);
 
     XMFLOAT4X4 transform;
@@ -32,20 +32,20 @@ void Character::RenderDebug(const RenderContext& rc, ShapeRenderer* renderer)
 
 void Character::SyncData()
 {
-    if (!model || model->GetNodes().empty()) return;
+    if (!m_model || m_model->GetNodes().empty()) return;
 
-    Model::Node& rootNode = model->GetNodes().at(0);
+    Model::Node& rootNode = m_model->GetNodes().at(0);
 
     // Sync position, rotation, and scale from movement state to model root node
-    rootNode.position = movement->GetPosition();
+    rootNode.position = m_movement->GetPosition();
 
-    XMFLOAT3 rot = movement->GetRotation();
+    XMFLOAT3 rot = m_movement->GetRotation();
     XMVECTOR qRot = XMQuaternionRotationRollPitchYaw(rot.x, rot.y, rot.z);
     XMStoreFloat4(&rootNode.rotation, qRot);
 
-    rootNode.scale = scale;
+    rootNode.scale = m_scale;
 
     XMFLOAT4X4 identity;
     XMStoreFloat4x4(&identity, XMMatrixIdentity());
-    model->UpdateTransform(identity);
+    m_model->UpdateTransform(identity);
 }

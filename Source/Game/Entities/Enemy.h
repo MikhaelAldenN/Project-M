@@ -58,7 +58,7 @@ public:
     DirectX::XMFLOAT3 GetOriginalRotation() const { return m_originalRotation; }
 
     EnemyType GetType() const { return m_type; }
-    std::shared_ptr<Model> GetModel() const { return model; }
+    std::shared_ptr<Model> GetModel() const { return m_model; }
 
     AttackType GetAttackType() const { return m_attackType; }
     ProjectilePool& GetProjectiles() { return m_projectiles; }
@@ -71,8 +71,8 @@ public:
     float GetMaxZ() const { return m_patrolMaxZ - m_originalPosition.z; }
     MoveDir GetMoveDir() const { return m_moveDir; }
 
-    void SetScale(const DirectX::XMFLOAT3& newScale) { scale = newScale; }
-    DirectX::XMFLOAT3 GetScale() const { return scale; }
+    void SetScale(const DirectX::XMFLOAT3& newScale) { m_scale = newScale; }
+    DirectX::XMFLOAT3 GetScale() const { return m_scale; }
 
     // Applies one hit with blink, sound and hit effect. Deactivates the enemy when HP reaches zero.
     DamageResult TakeDamage(const DamageInfo& damage);

@@ -335,7 +335,7 @@ void CollisionManager::CheckPlayerVsItems()
         if (!item->IsActive()) continue;
 
         XMFLOAT3 iPos = item->GetPosition();
-        float iRadius = item->scale.x * 0.5f;
+        float iRadius = item->m_scale.x * 0.5f;
 
         float distSq = (pPos.x - iPos.x) * (pPos.x - iPos.x) +
             (pPos.z - iPos.z) * (pPos.z - iPos.z);

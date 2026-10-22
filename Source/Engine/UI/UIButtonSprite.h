@@ -20,7 +20,7 @@ public:
 
         // Tint by state
         float r = 1, g = 1, b = 1;
-        switch (currentState)
+        switch (m_currentState)
         {
         case ButtonState::STANDBY: r = 1.0f; g = 1.0f; b = 1.0f; break;
         case ButtonState::HOVER:   r = 1.2f; g = 1.2f; b = 1.2f; break; // brighter
@@ -28,8 +28,8 @@ public:
         }
 
         m_sprite->Render(dc, camera,
-            (float)rect.left, (float)rect.top, 0,
-            width, height,
+            (float)m_rect.left, (float)m_rect.top, 0,
+            m_width, m_height,
             0, 0, 0,
             r, g, b, 1.0f);
     }

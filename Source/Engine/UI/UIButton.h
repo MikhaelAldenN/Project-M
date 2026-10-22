@@ -14,8 +14,8 @@ class UIButton
 {
 public:
     UIButton(float x, float y, float width, float height)
-        : rect{ (long)x, (long)y, (long)(x + width), (long)(y + height) }
-        , width(width), height(height) {}
+        : m_rect{ (long)x, (long)y, (long)(x + width), (long)(y + height) }
+        , m_width(width), m_height(height) {}
 
     virtual ~UIButton() = default;
 
@@ -26,9 +26,9 @@ public:
     void Update()
     {
         // 1. A selected button always shows as PRESSED, even when the mouse is away.
-        if (isSelected)
+        if (m_isSelected)
         {
-            currentState = ButtonState::PRESSED;
+            m_currentState = ButtonState::PRESSED;
 
             // Returning here keeps the hover logic below from overriding the state.
             return;
@@ -38,57 +38,57 @@ public:
         Mouse& mouse = Input::Instance().GetMouse();
         POINT mousePos = { mouse.GetPositionX(), mouse.GetPositionY() };
 
-        bool isHover = PtInRect(&rect, mousePos);
+        bool isHover = PtInRect(&m_rect, mousePos);
         bool isMouseDown = mouse.GetButtonDown() & Mouse::BTN_LEFT;
 
         if (isHover)
         {
-            if (isMouseDown) currentState = ButtonState::PRESSED;
+            if (isMouseDown) m_currentState = ButtonState::PRESSED;
             else
             {
                 // A click fires on release inside the button.
-                if (currentState == ButtonState::PRESSED && callback) callback();
-                currentState = ButtonState::HOVER;
+                if (m_currentState == ButtonState::PRESSED && m_callback) m_callback();
+                m_currentState = ButtonState::HOVER;
             }
         }
         else
         {
-            currentState = ButtonState::STANDBY;
+            m_currentState = ButtonState::STANDBY;
         }
     }
 
     // --- Selection and click callback ---
-    void SetSelected(bool value) { isSelected = value; }
-    bool IsSelected() const { return isSelected; }
-    void SetOnClick(OnClickCallback cb) { callback = cb; }
-    ButtonState GetState() const { return currentState; }
+    void SetSelected(bool value) { m_isSelected = value; }
+    bool IsSelected() const { return m_isSelected; }
+    void SetOnClick(OnClickCallback cb) { m_callback = cb; }
+    ButtonState GetState() const { return m_currentState; }
 
-    float GetX() const { return (float)rect.left; }
-    float GetY() const { return (float)rect.top; }
-    float GetWidth() const { return width; }
-    float GetHeight() const { return height; }
+    float GetX() const { return (float)m_rect.left; }
+    float GetY() const { return (float)m_rect.top; }
+    float GetWidth() const { return m_width; }
+    float GetHeight() const { return m_height; }
     
     void SetPosition(float x, float y)
     {
-        rect.left = (long)x;
-        rect.top = (long)y;
-        rect.right = (long)(x + width);
-        rect.bottom = (long)(y + height);
+        m_rect.left = (long)x;
+        m_rect.top = (long)y;
+        m_rect.right = (long)(x + m_width);
+        m_rect.bottom = (long)(y + m_height);
     }
 
     void SetSize(float w, float h)
     {
-        width = w;
-        height = h;
-        rect.right = rect.left + (long)width;
-        rect.bottom = rect.top + (long)height;
+        m_width = w;
+        m_height = h;
+        m_rect.right = m_rect.left + (long)m_width;
+        m_rect.bottom = m_rect.top + (long)m_height;
     }
 
 
 protected:
-    RECT rect;
-    float width, height;
-    ButtonState currentState = ButtonState::STANDBY;
-    OnClickCallback callback;
-    bool isSelected = false;
+    RECT m_rect;
+    float m_width, m_height;
+    ButtonState m_currentState = ButtonState::STANDBY;
+    OnClickCallback m_callback;
+    bool m_isSelected = false;
 };

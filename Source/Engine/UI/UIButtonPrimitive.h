@@ -46,7 +46,7 @@ public:
     }
 
     void SetState(ButtonState state) {
-        currentState = state;
+        m_currentState = state;
     }
 
     int GetVisibleChars() const { return m_visibleChars; }
@@ -86,18 +86,18 @@ public:
         if (!m_primitive) return;
 
         // 1. Style of the current state
-        int stateIdx = static_cast<int>(currentState);
+        int stateIdx = static_cast<int>(m_currentState);
         const ButtonStyle& activeStyle = m_styles[stateIdx];
 
         // 2. Background and border
         if (activeStyle.backColor.w > 0.0f) // skip a fully transparent background
         {
-            m_primitive->Rect((float)rect.left, (float)rect.top, width, height, 0, 0, 0.0f,
+            m_primitive->Rect((float)m_rect.left, (float)m_rect.top, m_width, m_height, 0, 0, 0.0f,
                 activeStyle.backColor.x, activeStyle.backColor.y, activeStyle.backColor.z, activeStyle.backColor.w);
         }
 
         // Border
-        m_primitive->Rect((float)rect.left, (float)rect.top, width, height, 0, 0, 0.0f,
+        m_primitive->Rect((float)m_rect.left, (float)m_rect.top, m_width, m_height, 0, 0, 0.0f,
             activeStyle.borderColor.x, activeStyle.borderColor.y, activeStyle.borderColor.z, activeStyle.borderColor.w);
 
         m_primitive->Render(dc);
@@ -117,19 +117,19 @@ public:
             switch (m_alignment)
             {
             case TextAlignment::Left:
-                textX = (float)rect.left + m_paddingX;
+                textX = (float)m_rect.left + m_paddingX;
                 break;
             case TextAlignment::Right:
-                textX = (float)rect.left + width - fullTextSize.x - m_paddingX;
+                textX = (float)m_rect.left + m_width - fullTextSize.x - m_paddingX;
                 break;
             case TextAlignment::Center:
             default:
-                textX = (float)rect.left + (width - fullTextSize.x) / 2.0f;
+                textX = (float)m_rect.left + (m_width - fullTextSize.x) / 2.0f;
                 break;
             }
 
-            float pressOffset = (currentState == ButtonState::PRESSED) ? 2.0f : 0.0f;
-            float textY = (float)rect.top + (height - fullTextSize.y) / 2.0f + m_verticalAdjustment + pressOffset;
+            float pressOffset = (m_currentState == ButtonState::PRESSED) ? 2.0f : 0.0f;
+            float textY = (float)m_rect.top + (m_height - fullTextSize.y) / 2.0f + m_verticalAdjustment + pressOffset;
 
             // Draw the visible part at the full-text anchor
             font->Draw(drawText.c_str(), textX, textY, m_textScale,

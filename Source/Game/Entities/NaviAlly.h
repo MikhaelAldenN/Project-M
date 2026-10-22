@@ -53,7 +53,7 @@ public:
     [[nodiscard]] bool IsAlive() const noexcept { return m_hp > 0; }
 
     [[nodiscard]] DirectX::XMFLOAT3 GetAimPoint() const noexcept {
-        return movement->GetPosition();
+        return m_movement->GetPosition();
     }
 
     [[nodiscard]] bool IsPotioned() const noexcept { return m_isPotioned; }

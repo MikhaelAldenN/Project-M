@@ -16,34 +16,34 @@ public:
     // --- Getters / Setters ---
     ItemType GetType()   const { return m_type; }
 
-    void ResetAnimation() { animTime = 0.0f; }
+    void ResetAnimation() { m_animTime = 0.0f; }
 
     void SetType(ItemType type)
     {
         m_type = type;
-        color = (m_type == ItemType::Heal) ? kHealColor : kInvincibleColor;
+        m_color = (m_type == ItemType::Heal) ? kHealColor : kInvincibleColor;
     }
 
-    DirectX::XMFLOAT3 GetRotation() const { return movement->GetRotation(); }
+    DirectX::XMFLOAT3 GetRotation() const { return m_movement->GetRotation(); }
 
     DirectX::XMFLOAT3 GetBasePosition() const
     {
-        DirectX::XMFLOAT3 pos = movement->GetPosition();
-        pos.y = originalY;
+        DirectX::XMFLOAT3 pos = m_movement->GetPosition();
+        pos.y = m_originalY;
         return pos;
     }
 
-    void SetPosition(const DirectX::XMFLOAT3& pos) { movement->SetPosition(pos); originalY = pos.y; }
-    void SetRotation(const DirectX::XMFLOAT3& rot) { movement->SetRotation(rot); }
+    void SetPosition(const DirectX::XMFLOAT3& pos) { m_movement->SetPosition(pos); m_originalY = pos.y; }
+    void SetRotation(const DirectX::XMFLOAT3& rot) { m_movement->SetRotation(rot); }
 
     // Public for renderer
-    DirectX::XMFLOAT4 color = kHealColor;
+    DirectX::XMFLOAT4 m_color = kHealColor;
 
 private:
     ItemType m_type;
 
-    float originalY = 0.0f;
-    float animTime = 0.0f;
+    float m_originalY = 0.0f;
+    float m_animTime = 0.0f;
 
     // Animation config — static so they're shared, not duplicated per instance
     static constexpr float kFloatSpeed = 2.0f;

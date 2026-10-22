@@ -762,7 +762,7 @@ void SceneBoss::StartPlayerDeathSequence()
     if (m_player)
     {
         m_player->SetInputEnabled(false);
-        m_player->scale = { 0.0f, 0.0f, 0.0f }; // Hide player
+        m_player->m_scale = { 0.0f, 0.0f, 0.0f }; // Hide player
 
         // Stop movement sliding
         if (m_player->GetMovement()) {
@@ -1616,7 +1616,7 @@ void SceneBoss::AddLog(const std::string& message)
             m_player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f });
             m_player->SetMaxHP(m_player->GetMaxHP());
             m_player->SetInputEnabled(false);
-            m_player->scale = { 1.0f, 1.0f, 1.0f };
+            m_player->m_scale = { 1.0f, 1.0f, 1.0f };
 
             if (m_player->GetStateMachine()) {
                 m_player->GetStateMachine()->ChangeState(m_player.get(), std::make_unique<PlayerIdle>());

@@ -7,13 +7,13 @@ using namespace DirectX;
 Stage::Stage(ID3D11Device* device, const std::string& modelPath)
 {
     // Load the model (default: StageConfig::MODEL_PATH; callers may pass another)
-    model = std::make_shared<Model>(device, modelPath.c_str());
+    m_model = std::make_shared<Model>(device, modelPath.c_str());
 
     // Apply defaults
-    position = StageConfig::DEFAULT_POS;
-    rotation = StageConfig::DEFAULT_ROT;
-    scale = StageConfig::DEFAULT_SCALE;
-    color = StageConfig::DEFAULT_COLOR;
+    m_position = StageConfig::DEFAULT_POS;
+    m_rotation = StageConfig::DEFAULT_ROT;
+    m_scale = StageConfig::DEFAULT_SCALE;
+    m_color = StageConfig::DEFAULT_COLOR;
 
     // Initialize Debug Objects
     m_debugWalls.clear();
@@ -33,15 +33,15 @@ Stage::Stage(ID3D11Device* device, const std::string& modelPath)
 
 void Stage::RebuildCollider()
 {
-    if (!model) return;
+    if (!m_model) return;
 
     // The collider reads each node's worldTransform, which UpdateTransform refreshes.
     UpdateTransform();
 
     // Each void line is placed relative to the stage's position and rotation, not its scale.
     const XMMATRIX stagePose{
-        XMMatrixRotationRollPitchYaw(XMConvertToRadians(rotation.x), XMConvertToRadians(rotation.y), XMConvertToRadians(rotation.z))
-        * XMMatrixTranslation(position.x, position.y, position.z) };
+        XMMatrixRotationRollPitchYaw(XMConvertToRadians(m_rotation.x), XMConvertToRadians(m_rotation.y), XMConvertToRadians(m_rotation.z))
+        * XMMatrixTranslation(m_position.x, m_position.y, m_position.z) };
 
     std::vector<StageCollider::WallBox> walls{};
     walls.reserve(m_linesVoid.size());
@@ -58,7 +58,7 @@ void Stage::RebuildCollider()
     }
 
     const auto start{ std::chrono::steady_clock::now() };
-    m_collider.Build(*model, walls);
+    m_collider.Build(*m_model, walls);
     const std::chrono::duration<float, std::milli> elapsed{ std::chrono::steady_clock::now() - start };
     m_colliderBuildMs = elapsed.count();
 }
@@ -83,16 +83,16 @@ void Stage::RebuildSpatialGrid()
 
 void Stage::UpdateTransform()
 {
-    if (!model) return;
+    if (!m_model) return;
 
     // Calculate World Matrix: Scale * Rotation * Translation
-    XMMATRIX S = XMMatrixScaling(scale.x, scale.y, scale.z);
+    XMMATRIX S = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
     XMMATRIX R = XMMatrixRotationRollPitchYaw(
-        XMConvertToRadians(rotation.x),
-        XMConvertToRadians(rotation.y),
-        XMConvertToRadians(rotation.z)
+        XMConvertToRadians(m_rotation.x),
+        XMConvertToRadians(m_rotation.y),
+        XMConvertToRadians(m_rotation.z)
     );
-    XMMATRIX T = XMMatrixTranslation(position.x, position.y, position.z);
+    XMMATRIX T = XMMatrixTranslation(m_position.x, m_position.y, m_position.z);
 
     XMMATRIX world = S * R * T;
 
@@ -100,13 +100,13 @@ void Stage::UpdateTransform()
     XMStoreFloat4x4(&worldFloat, world);
 
     // Apply to the model's root nodes
-    model->UpdateTransform(worldFloat);
+    m_model->UpdateTransform(worldFloat);
 }
 
 void Stage::Render(ModelRenderer* renderer)
 {
-    if (!model || !renderer) return;
-    renderer->Draw(ShaderId::Phong, model, color);
+    if (!m_model || !renderer) return;
+    renderer->Draw(ShaderId::Phong, m_model, m_color);
 }
 
 void Stage::RenderDebug(ShapeRenderer* shapeRenderer, PrimitiveRenderer* primRenderer)

@@ -22,14 +22,14 @@ void ItemManager::SpawnItem(const ItemSpawnData& data)
 
     auto newItem = std::make_unique<Item>(m_deviceRef, data.Position, data.Type);
     newItem->SetRotation(data.Rotation);
-    newItem->scale = data.Scale;
+    newItem->m_scale = data.Scale;
     if (data.Type == ItemType::Heal) 
     {
-        newItem->color = { 1.0f, 0.89f, 0.58f, 1.0f }; 
+        newItem->m_color = { 1.0f, 0.89f, 0.58f, 1.0f }; 
     }
     else if (data.Type == ItemType::Invincible) 
     {
-        newItem->color = { 0.5f, 0.5f, 0.5f, 1.0f };   
+        newItem->m_color = { 0.5f, 0.5f, 0.5f, 1.0f };   
     }
     m_items.push_back(std::move(newItem));
 }
@@ -57,7 +57,7 @@ void ItemManager::AddItem(ItemType type)
     {
         defaultData.Position = m_items.back()->GetBasePosition(); 
         defaultData.Rotation = { 0, 0, 0 };
-        defaultData.Scale = m_items.back()->scale;
+        defaultData.Scale = m_items.back()->m_scale;
     }
     else 
     {
@@ -93,9 +93,9 @@ void ItemManager::RenderDebug(ShapeRenderer* renderer)
         {
             XMFLOAT3 pos = item->GetPosition();
             XMFLOAT3 boxSize;
-            boxSize.x = (item->scale.x * 0.5f) + 0.05f; // Half scale + Tiny Padding
-            boxSize.y = (item->scale.y * 0.5f) + 0.05f;
-            boxSize.z = (item->scale.z * 0.5f) + 0.05f;
+            boxSize.x = (item->m_scale.x * 0.5f) + 0.05f; // Half scale + Tiny Padding
+            boxSize.y = (item->m_scale.y * 0.5f) + 0.05f;
+            boxSize.z = (item->m_scale.z * 0.5f) + 0.05f;
 
             renderer->DrawBox(pos, item->GetRotation(), boxSize, { 1.0f, 1.0f, 0.0f, 1.0f });
         }
