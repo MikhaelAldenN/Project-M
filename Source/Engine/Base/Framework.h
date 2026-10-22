@@ -101,10 +101,10 @@ private:
 #endif
 
     static Framework* pInstance;
-    HighResolutionTimer timer;
+    HighResolutionTimer m_timer;
 
-    std::unique_ptr<Scene> scene;
-    std::unique_ptr<Scene> nextScene;
+    std::unique_ptr<Scene> m_scene;
+    std::unique_ptr<Scene> m_nextScene;
 
     WindowMode m_mainWindowMode{ WindowMode::windowed };
 

@@ -33,8 +33,8 @@ public:
     void Update(Player* player, float dt) override;
     void Exit(Player* player) override;
 private:
-    float timer = 0.0f;
-    DirectX::XMFLOAT2 dashDir = { 0.0f, 0.0f };
+    float m_timer = 0.0f;
+    DirectX::XMFLOAT2 m_dashDir = { 0.0f, 0.0f };
     float m_speedScale{ 1.0f }; // below 1 on a penalized dash, set in Enter
     bool m_isDashBuffered{ false }; // dash pressed during this dash, runs when it ends
     int m_dashGoVfxHandle = -1;
@@ -62,7 +62,7 @@ public:
     void Update(Player* player, float dt) override;
     void Exit(Player* player) override;
 private:
-    float timer = PlayerConst::ParryDuration;
+    float m_timer = PlayerConst::ParryDuration;
 };
 
 class PlayerShoot : public PlayerState

@@ -27,32 +27,32 @@ public:
     void SetOrthographic(float viewWidth, float viewHeight, float nearZ, float farZ);
 
     // --- Accessors ---
-    const DirectX::XMFLOAT3& GetPosition() const { return position; }
-    const DirectX::XMFLOAT3& GetRotation() const { return rotation; }
-    const DirectX::XMFLOAT4X4& GetView() const { return view; }
-    const DirectX::XMFLOAT4X4& GetProjection() const { return projection; }
+    const DirectX::XMFLOAT3& GetPosition() const { return m_position; }
+    const DirectX::XMFLOAT3& GetRotation() const { return m_rotation; }
+    const DirectX::XMFLOAT4X4& GetView() const { return m_view; }
+    const DirectX::XMFLOAT4X4& GetProjection() const { return m_projection; }
 
     // --- Helpers ---
     DirectX::XMFLOAT3 GetFocus() const;
-    const DirectX::XMFLOAT3& GetFront() const { return front; }
-    const DirectX::XMFLOAT3& GetRight() const { return right; }
-    const DirectX::XMFLOAT3& GetUp() const { return up; }
+    const DirectX::XMFLOAT3& GetFront() const { return m_front; }
+    const DirectX::XMFLOAT3& GetRight() const { return m_right; }
+    const DirectX::XMFLOAT3& GetUp() const { return m_up; }
 
     bool CheckSphere(float x, float y, float z, float radius);
 private:
     void UpdateViewMatrix();
 
-    DirectX::XMFLOAT3 position;
-    DirectX::XMFLOAT3 rotation; // Euler angles in Radians
+    DirectX::XMFLOAT3 m_position;
+    DirectX::XMFLOAT3 m_rotation; // Euler angles in Radians
 
-    DirectX::XMFLOAT3 front;
-    DirectX::XMFLOAT3 right;
-    DirectX::XMFLOAT3 up;
+    DirectX::XMFLOAT3 m_front;
+    DirectX::XMFLOAT3 m_right;
+    DirectX::XMFLOAT3 m_up;
 
-    DirectX::XMFLOAT4X4 view;
-    DirectX::XMFLOAT4X4 projection;
+    DirectX::XMFLOAT4X4 m_view;
+    DirectX::XMFLOAT4X4 m_projection;
 
-    float fovY = DirectX::XM_PIDIV4;
-    float nearZ = 0.1f;
-    float farZ = 1000.0f;
+    float m_fovY = DirectX::XM_PIDIV4;
+    float m_nearZ = 0.1f;
+    float m_farZ = 1000.0f;
 };

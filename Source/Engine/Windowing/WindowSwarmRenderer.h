@@ -39,13 +39,13 @@ private:
         DirectX::XMFLOAT4X4 viewProjection;
     };
 
-    std::vector<InstanceData> instances;
+    std::vector<InstanceData> m_instances;
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader>  vertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>   pixelShader;
-    Microsoft::WRL::ComPtr<ID3D11InputLayout>   inputLayout;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader>  m_vertexShader;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>   m_pixelShader;
+    Microsoft::WRL::ComPtr<ID3D11InputLayout>   m_inputLayout;
 
-    Microsoft::WRL::ComPtr<ID3D11Buffer>        vertexBuffer;   // static quad
-    Microsoft::WRL::ComPtr<ID3D11Buffer>        instanceBuffer; // per-instance data, rewritten every frame
-    Microsoft::WRL::ComPtr<ID3D11Buffer>        constantBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>        m_vertexBuffer;   // static quad
+    Microsoft::WRL::ComPtr<ID3D11Buffer>        m_instanceBuffer; // per-instance data, rewritten every frame
+    Microsoft::WRL::ComPtr<ID3D11Buffer>        m_constantBuffer;
 };

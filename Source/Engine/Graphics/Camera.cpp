@@ -4,14 +4,14 @@
 using namespace DirectX;
 
 Camera::Camera() :
-    position({ 0, 0, -10 }),
-    rotation({ 0, 0, 0 }),
-    front({ 0, 0, 1 }),
-    right({ 1, 0, 0 }),
-    up({ 0, 1, 0 })
+    m_position({ 0, 0, -10 }),
+    m_rotation({ 0, 0, 0 }),
+    m_front({ 0, 0, 1 }),
+    m_right({ 1, 0, 0 }),
+    m_up({ 0, 1, 0 })
 {
-    XMStoreFloat4x4(&view, XMMatrixIdentity());
-    XMStoreFloat4x4(&projection, XMMatrixIdentity());
+    XMStoreFloat4x4(&m_view, XMMatrixIdentity());
+    XMStoreFloat4x4(&m_projection, XMMatrixIdentity());
     UpdateViewMatrix();
 }
 
@@ -21,7 +21,7 @@ Camera::~Camera() {}
 
 void Camera::SetPosition(const XMFLOAT3& pos)
 {
-    this->position = pos;
+    this->m_position = pos;
     UpdateViewMatrix();
 }
 
@@ -32,16 +32,16 @@ void Camera::SetPosition(float x, float y, float z)
 
 void Camera::Translate(const XMFLOAT3& translation)
 {
-    XMVECTOR vPos = XMLoadFloat3(&position);
-    XMVECTOR vFront = XMLoadFloat3(&front);
-    XMVECTOR vRight = XMLoadFloat3(&right);
-    XMVECTOR vUp = XMLoadFloat3(&up);
+    XMVECTOR vPos = XMLoadFloat3(&m_position);
+    XMVECTOR vFront = XMLoadFloat3(&m_front);
+    XMVECTOR vRight = XMLoadFloat3(&m_right);
+    XMVECTOR vUp = XMLoadFloat3(&m_up);
 
     vPos = XMVectorAdd(vPos, XMVectorScale(vRight, translation.x));
     vPos = XMVectorAdd(vPos, XMVectorScale(vUp, translation.y));
     vPos = XMVectorAdd(vPos, XMVectorScale(vFront, translation.z));
 
-    XMStoreFloat3(&position, vPos);
+    XMStoreFloat3(&m_position, vPos);
     UpdateViewMatrix();
 }
 
@@ -52,12 +52,12 @@ void Camera::Translate(float x, float y, float z)
 
 void Camera::SetRotation(const XMFLOAT3& rot)
 {
-    this->rotation = rot;
+    this->m_rotation = rot;
 
     // Clamp Pitch to prevent gimbal lock
     constexpr float limit = XMConvertToRadians(90.0f);
-    if (this->rotation.x > limit) this->rotation.x = limit;
-    if (this->rotation.x < -limit) this->rotation.x = -limit;
+    if (this->m_rotation.x > limit) this->m_rotation.x = limit;
+    if (this->m_rotation.x < -limit) this->m_rotation.x = -limit;
 
     UpdateViewMatrix();
 }
@@ -69,7 +69,7 @@ void Camera::SetRotation(float x, float y, float z)
 
 void Camera::LookAt(const XMFLOAT3& target)
 {
-    XMVECTOR vPos = XMLoadFloat3(&position);
+    XMVECTOR vPos = XMLoadFloat3(&m_position);
     XMVECTOR vTarget = XMLoadFloat3(&target);
     XMVECTOR vDir = XMVectorSubtract(vTarget, vPos);
     vDir = XMVector3Normalize(vDir);
@@ -85,7 +85,7 @@ void Camera::LookAt(const XMFLOAT3& target)
 
 void Camera::SetLookAt(const DirectX::XMFLOAT3& eye, const DirectX::XMFLOAT3& focus, const DirectX::XMFLOAT3& up)
 {
-    this->position = eye;
+    this->m_position = eye;
     LookAt(focus);
 }
 
@@ -93,64 +93,64 @@ void Camera::SetLookAt(const DirectX::XMFLOAT3& eye, const DirectX::XMFLOAT3& fo
 
 void Camera::SetPerspectiveFov(float fovY, float aspect, float nearZ, float farZ)
 {
-    this->fovY = fovY;
-    this->nearZ = nearZ;
-    this->farZ = farZ;
+    this->m_fovY = fovY;
+    this->m_nearZ = nearZ;
+    this->m_farZ = farZ;
 
     XMMATRIX matProj = XMMatrixPerspectiveFovLH(fovY, aspect, nearZ, farZ);
-    XMStoreFloat4x4(&projection, matProj);
+    XMStoreFloat4x4(&m_projection, matProj);
 }
 
 void Camera::SetAspectRatio(float aspect)
 {
-    SetPerspectiveFov(this->fovY, aspect, this->nearZ, this->farZ);
+    SetPerspectiveFov(this->m_fovY, aspect, this->m_nearZ, this->m_farZ);
 }
 
 void Camera::SetOffCenterProjection(float left, float right, float bottom, float top, float nZ, float fZ)
 {
-    this->nearZ = nZ;
-    this->farZ = fZ;
+    this->m_nearZ = nZ;
+    this->m_farZ = fZ;
     XMMATRIX matProj = XMMatrixPerspectiveOffCenterLH(left, right, bottom, top, nZ, fZ);
-    XMStoreFloat4x4(&projection, matProj);
+    XMStoreFloat4x4(&m_projection, matProj);
 }
 
 void Camera::SetOrthographic(float viewWidth, float viewHeight, float nearZ, float farZ)
 {
-    this->nearZ = nearZ;
-    this->farZ = farZ;
+    this->m_nearZ = nearZ;
+    this->m_farZ = farZ;
     // Orthographic projection: a box instead of a frustum
     XMMATRIX matProj = XMMatrixOrthographicLH(viewWidth, viewHeight, nearZ, farZ);
-    XMStoreFloat4x4(&projection, matProj);
+    XMStoreFloat4x4(&m_projection, matProj);
 }
 
 // --- Helpers & Internals ---
 
 DirectX::XMFLOAT3 Camera::GetFocus() const
 {
-    return { position.x + front.x, position.y + front.y, position.z + front.z };
+    return { m_position.x + m_front.x, m_position.y + m_front.y, m_position.z + m_front.z };
 }
 
 void Camera::UpdateViewMatrix()
 {
-    XMMATRIX matRot = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+    XMMATRIX matRot = XMMatrixRotationRollPitchYaw(m_rotation.x, m_rotation.y, m_rotation.z);
 
     XMVECTOR vFront = XMVector3TransformNormal(XMVectorSet(0, 0, 1, 0), matRot);
     XMVECTOR vRight = XMVector3TransformNormal(XMVectorSet(1, 0, 0, 0), matRot);
     XMVECTOR vUp = XMVector3TransformNormal(XMVectorSet(0, 1, 0, 0), matRot);
 
-    XMStoreFloat3(&front, vFront);
-    XMStoreFloat3(&right, vRight);
-    XMStoreFloat3(&up, vUp);
+    XMStoreFloat3(&m_front, vFront);
+    XMStoreFloat3(&m_right, vRight);
+    XMStoreFloat3(&m_up, vUp);
 
-    XMVECTOR vPos = XMLoadFloat3(&position);
-    XMStoreFloat4x4(&view, XMMatrixLookToLH(vPos, vFront, vUp));
+    XMVECTOR vPos = XMLoadFloat3(&m_position);
+    XMStoreFloat4x4(&m_view, XMMatrixLookToLH(vPos, vFront, vUp));
 }
 
 bool Camera::CheckSphere(float x, float y, float z, float radius)
 {
     // 1. View * projection
-    XMMATRIX matView = XMLoadFloat4x4(&view);
-    XMMATRIX matProj = XMLoadFloat4x4(&projection);
+    XMMATRIX matView = XMLoadFloat4x4(&m_view);
+    XMMATRIX matProj = XMLoadFloat4x4(&m_projection);
     XMMATRIX matViewProj = XMMatrixMultiply(matView, matProj);
 
     XMFLOAT4X4 M;

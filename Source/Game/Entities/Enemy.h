@@ -54,8 +54,8 @@ public:
     [[nodiscard]] DirectX::XMFLOAT4 GetRenderColor() const;
     [[nodiscard]] DirectX::XMFLOAT4 GetBaseColor() const { return m_baseColor; }
     [[nodiscard]] DirectX::XMFLOAT4& GetMutableBaseColor() { return m_baseColor; }
-    DirectX::XMFLOAT3 GetOriginalPosition() const { return originalPosition; }
-    DirectX::XMFLOAT3 GetOriginalRotation() const { return originalRotation; }
+    DirectX::XMFLOAT3 GetOriginalPosition() const { return m_originalPosition; }
+    DirectX::XMFLOAT3 GetOriginalRotation() const { return m_originalRotation; }
 
     EnemyType GetType() const { return m_type; }
     std::shared_ptr<Model> GetModel() const { return model; }
@@ -65,10 +65,10 @@ public:
 
     bool IsHighlighted() const { return m_isHighlighted; }
 
-    float GetMinX() const { return m_patrolMinX - originalPosition.x; }
-    float GetMaxX() const { return m_patrolMaxX - originalPosition.x; }
-    float GetMinZ() const { return m_patrolMinZ - originalPosition.z; }
-    float GetMaxZ() const { return m_patrolMaxZ - originalPosition.z; }
+    float GetMinX() const { return m_patrolMinX - m_originalPosition.x; }
+    float GetMaxX() const { return m_patrolMaxX - m_originalPosition.x; }
+    float GetMinZ() const { return m_patrolMinZ - m_originalPosition.z; }
+    float GetMaxZ() const { return m_patrolMaxZ - m_originalPosition.z; }
     MoveDir GetMoveDir() const { return m_moveDir; }
 
     void SetScale(const DirectX::XMFLOAT3& newScale) { scale = newScale; }
@@ -100,8 +100,8 @@ private:
     void AdvanceProjectiles(float elapsedTime, const ProjectileTargets& targets, const DirectX::XMFLOAT3& center);
 
     DirectX::XMFLOAT3 GetForwardVector() const;
-    DirectX::XMFLOAT3 originalPosition;
-    DirectX::XMFLOAT3 originalRotation;
+    DirectX::XMFLOAT3 m_originalPosition;
+    DirectX::XMFLOAT3 m_originalRotation;
     EnemyType m_type;
     AttackType m_attackType;
     // A radial burst fires 8 bullets every 0.7 s and most despawn by distance within about 4 s,

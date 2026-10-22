@@ -582,7 +582,7 @@ void BossPhase02::UpdateBossPosition(Boss* boss) {
 void BossPhase02::UpdateWingState(float dt) {
     if (m_wingState == WingState::Expanding) {
         m_wingStateTimer += dt;
-        if (m_wingStateTimer >= WING_EXPAND_DURATION) {
+        if (m_wingStateTimer >= m_wingExpandDuration) {
             m_wingState = WingState::Idle;
             if (m_fxWindow) m_fxWindow->SetTargetFPS(0.0f);
         }

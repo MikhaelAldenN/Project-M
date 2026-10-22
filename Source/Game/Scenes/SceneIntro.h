@@ -26,12 +26,12 @@ public:
     void DrawGUI() override;
     [[nodiscard]] Kind GetKind() const override { return Kind::intro; }
 
-    Camera* GetCamera() const { return camera.get(); }
+    Camera* GetCamera() const { return m_camera.get(); }
 
 private:
     void CreateRenderTarget();
 
-    std::unique_ptr<Camera> camera;
+    std::unique_ptr<Camera> m_camera;
 
     // Helper for the GUI
     void GUIPostProcessTab();
@@ -50,16 +50,16 @@ private:
     PostProcessState m_fxState;
 
     // Post-Processing Resources
-    std::unique_ptr<UberShader> uberShader;
-    UberShader::UberData uberParams;
+    std::unique_ptr<UberShader> m_uberShader;
+    UberShader::UberData m_uberParams;
     float m_globalTime = 0.0f;
 
     // DirectX Render Targets
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTargetTexture;
-    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetView;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResourceView;
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilTexture;
-    Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_renderTargetTexture;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_renderTargetView;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_shaderResourceView;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_depthStencilTexture;
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthStencilView;
 
 #if defined(_DEBUG)
     // Keeps the "Bios Inspector" tab registered while this scene lives.

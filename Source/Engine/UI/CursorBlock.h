@@ -30,23 +30,23 @@ public:
     void SetColor(float r, float g, float b, float a = 1.0f);
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11BlendState> invertBlendState;
-    Microsoft::WRL::ComPtr<ID3D11BlendState> oldBlendState;
+    Microsoft::WRL::ComPtr<ID3D11BlendState> m_invertBlendState;
+    Microsoft::WRL::ComPtr<ID3D11BlendState> m_oldBlendState;
 
-    float width = 20.0f;
-    float height = 20.0f;
-    float posX = 0.0f;
-    float posY = 0.0f;
+    float m_width = 20.0f;
+    float m_height = 20.0f;
+    float m_posX = 0.0f;
+    float m_posY = 0.0f;
 
-    bool useGridSnap = false;
-    float gridW = 20.0f;
-    float gridH = 20.0f;
+    bool m_useGridSnap = false;
+    float m_gridW = 20.0f;
+    float m_gridH = 20.0f;
 
-    bool useBlink = true;
-    float blinkTimer = 0.0f;
-    float blinkVisibleTime = 0.5f;   // seconds shown
-    float blinkInvisibleTime = 0.2f; // seconds hidden
-    bool isVisible = true;
+    bool m_useBlink = true;
+    float m_blinkTimer = 0.0f;
+    float m_blinkVisibleTime = 0.5f;   // seconds shown
+    float m_blinkInvisibleTime = 0.2f; // seconds hidden
+    bool m_isVisible = true;
 
     float m_color[4] = { 0.96f, 0.80f, 0.23f, 1.0f };
 };

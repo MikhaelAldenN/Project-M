@@ -9,13 +9,13 @@ UberShader::UberShader(ID3D11Device* device)
     // --------------------------------------------------------
     // Load Shaders
     // --------------------------------------------------------
-    GpuResourceUtils::LoadVertexShader(device, "Data/Shader/UberPostProcessVS.cso", nullptr, 0, nullptr, vertexShader.GetAddressOf());
-    GpuResourceUtils::LoadPixelShader(device, "Data/Shader/UberPostProcessPS.cso", pixelShader.GetAddressOf());
+    GpuResourceUtils::LoadVertexShader(device, "Data/Shader/UberPostProcessVS.cso", nullptr, 0, nullptr, m_vertexShader.GetAddressOf());
+    GpuResourceUtils::LoadPixelShader(device, "Data/Shader/UberPostProcessPS.cso", m_pixelShader.GetAddressOf());
 
     // --------------------------------------------------------
     // Create Constant Buffer
     // --------------------------------------------------------
-    GpuResourceUtils::CreateConstantBuffer(device, sizeof(CbUber), constantBuffer.GetAddressOf());
+    GpuResourceUtils::CreateConstantBuffer(device, sizeof(CbUber), m_constantBuffer.GetAddressOf());
 
     // --------------------------------------------------------
     // Create Sampler State
@@ -25,9 +25,9 @@ UberShader::UberShader(ID3D11Device* device)
     samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
     samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
     samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
+    device->CreateSamplerState(&samplerDesc, m_samplerState.GetAddressOf());
 
-    currentData.intensity = -1.0f; // Force update
+    m_currentData.intensity = -1.0f; // Force update
 }
 
 void UberShader::Draw(ID3D11DeviceContext* dc, ID3D11ShaderResourceView* textureSRV, const UberData& data)
@@ -40,7 +40,7 @@ void UberShader::Draw(ID3D11DeviceContext* dc, ID3D11ShaderResourceView* texture
     // --------------------------------------------------------
     // OPTIMIZATION: Update GPU Buffer only if data changed
     // --------------------------------------------------------
-    if (!(currentData == finalData))
+    if (!(m_currentData == finalData))
     {
         CbUber cb = {};
         cb.color = finalData.color;
@@ -73,15 +73,15 @@ void UberShader::Draw(ID3D11DeviceContext* dc, ID3D11ShaderResourceView* texture
         cb.psxColorDepth = (std::max)(1.0f, finalData.psxColorDepth);
         cb.psxDitherStrength = finalData.psxDitherStrength;
 
-        dc->UpdateSubresource(constantBuffer.Get(), 0, 0, &cb, 0, 0);
-        currentData = finalData;
+        dc->UpdateSubresource(m_constantBuffer.Get(), 0, 0, &cb, 0, 0);
+        m_currentData = finalData;
     }
 
     // --------------------------------------------------------
     // SETUP PIPELINE
     // --------------------------------------------------------
-    dc->VSSetShader(vertexShader.Get(), nullptr, 0);
-    dc->PSSetShader(pixelShader.Get(), nullptr, 0);
+    dc->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+    dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     
     // OPTIMIZATION: Unbind Input Layout & Vertex Buffers
@@ -95,9 +95,9 @@ void UberShader::Draw(ID3D11DeviceContext* dc, ID3D11ShaderResourceView* texture
     // --------------------------------------------------------
     // BIND RESOURCES
     // --------------------------------------------------------
-    dc->PSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
+    dc->PSSetConstantBuffers(0, 1, m_constantBuffer.GetAddressOf());
     dc->PSSetShaderResources(0, 1, &textureSRV);
-    dc->PSSetSamplers(0, 1, samplerState.GetAddressOf());
+    dc->PSSetSamplers(0, 1, m_samplerState.GetAddressOf());
 
     // --------------------------------------------------------
     // DRAW FULL SCREEN TRIANGLE

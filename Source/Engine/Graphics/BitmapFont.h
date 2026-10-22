@@ -34,8 +34,8 @@ public:
         DirectX::XMFLOAT4 color = { 1,1,1,1 });
 
 private:
-    std::unique_ptr<Sprite> sprite;
-    std::map<int, CharData> chars;  // glyphs by code point
+    std::unique_ptr<Sprite> m_sprite;
+    std::map<int, CharData> m_chars;  // glyphs by code point
 
     // Reads one integer field of an .fnt line
     int ParseValue(const std::string& line, const std::string& key);

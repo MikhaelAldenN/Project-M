@@ -296,8 +296,8 @@ void Enemy::Reinitialize(ID3D11Device* device, const char* filePath, const Direc
     // Reset Transforms & Patrols
     movement->SetPosition(startPos);
     movement->SetRotation(startRot);
-    originalPosition = startPos;
-    originalRotation = startRot;
+    m_originalPosition = startPos;
+    m_originalRotation = startRot;
 
     m_patrolMinX = startPos.x + minX;
     m_patrolMaxX = startPos.x + maxX;
@@ -420,20 +420,20 @@ DirectX::XMFLOAT4 Enemy::GetRenderColor() const
 
 void Enemy::SetPatrolLimitsX(float minOffset, float maxOffset)
 {
-    m_patrolMinX = originalPosition.x + minOffset;
-    m_patrolMaxX = originalPosition.x + maxOffset;
+    m_patrolMinX = m_originalPosition.x + minOffset;
+    m_patrolMaxX = m_originalPosition.x + maxOffset;
 }
 
 void Enemy::SetPatrolLimitsZ(float minOffset, float maxOffset)
 {
-    m_patrolMinZ = originalPosition.z + minOffset;
-    m_patrolMaxZ = originalPosition.z + maxOffset;
+    m_patrolMinZ = m_originalPosition.z + minOffset;
+    m_patrolMaxZ = m_originalPosition.z + maxOffset;
 }
 
 void Enemy::UpdateOriginalTransform(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& rot)
 {
-    originalPosition = pos;
-    originalRotation = rot;
+    m_originalPosition = pos;
+    m_originalRotation = rot;
 
     if (!IsActive())
     {

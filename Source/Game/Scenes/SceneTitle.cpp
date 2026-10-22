@@ -15,12 +15,12 @@ SceneTitle::SceneTitle()
         SDL_ShowWindow(window->GetSDLWindow());
     }
 
-    camera = std::make_unique<Camera>();
-    camera->SetOrthographic(1920.0f, 1080.0f, 0.1f, 1000.0f);
-    camera->SetPosition(0.0f, 0.0f, -10.0f);
+    m_camera = std::make_unique<Camera>();
+    m_camera->SetOrthographic(1920.0f, 1080.0f, 0.1f, 1000.0f);
+    m_camera->SetPosition(0.0f, 0.0f, -10.0f);
 
-    postProcess = std::make_unique<PostProcessManager>();
-    postProcess->Initialize(1920, 1080);
+    m_postProcess = std::make_unique<PostProcessManager>();
+    m_postProcess->Initialize(1920, 1080);
 
     m_uberParams.center = { 0.5f, 0.5f };
     m_uberParams.roundness = 1.0f;
@@ -31,10 +31,10 @@ SceneTitle::SceneTitle()
 
     // Load Assets
     auto device = Graphics::Instance().GetDevice();
-    bgSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Title/Back_Title.png");
-    logoSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Title/Sprite_Title_Logo.png");
-    copyrightSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Title/Sprite_Title_Copyright.png");
-    startSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Title/Sprite_Title_Start.png");
+    m_bgSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Title/Back_Title.png");
+    m_logoSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Title/Sprite_Title_Logo.png");
+    m_copyrightSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Title/Sprite_Title_Copyright.png");
+    m_startSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Title/Sprite_Title_Start.png");
     m_fadeSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Game/Black.png");
 
     // Load New Menu Assets
@@ -259,9 +259,9 @@ void SceneTitle::Render(float dt, Camera* targetCamera)
     auto dc = Graphics::Instance().GetDeviceContext();
     auto rs = Graphics::Instance().GetRenderState();
 
-    postProcess->SetEnabled(m_fxState.MasterEnabled);
+    m_postProcess->SetEnabled(m_fxState.MasterEnabled);
 
-    UberShader::UberData& activeData = postProcess->GetData();
+    UberShader::UberData& activeData = m_postProcess->GetData();
     activeData = this->m_uberParams;
 
     activeData.psxEnabled = (m_fxState.MasterEnabled && m_fxState.EnablePSX);
@@ -273,8 +273,8 @@ void SceneTitle::Render(float dt, Camera* targetCamera)
 
     if (m_fxState.MasterEnabled)
     {
-        postProcess->BeginCapture();
-        postProcess->EndCapture(dt);
+        m_postProcess->BeginCapture();
+        m_postProcess->EndCapture(dt);
     }
     else
     {
@@ -300,19 +300,19 @@ void SceneTitle::Render(float dt, Camera* targetCamera)
     float t = 1.0f - std::clamp(m_bootTimer / BOOT_FADE_DURATION, 0.0f, 1.0f);
     float bootAlpha = t * t;
 
-    if (bgSprite) bgSprite->Render(dc, camera.get(), 0, 0, 0, 1920.0f, 1080.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, bootAlpha);
-    if (logoSprite) logoSprite->Render(dc, 461.5f, 200.0f, 0.0f, 957.0f, 547.0f, 0.0f, 0.0f, 997.0f, 547.0f, 0.0f, 1.0f, 1.0f, 1.0f, bootAlpha);
+    if (m_bgSprite) m_bgSprite->Render(dc, m_camera.get(), 0, 0, 0, 1920.0f, 1080.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, bootAlpha);
+    if (m_logoSprite) m_logoSprite->Render(dc, 461.5f, 200.0f, 0.0f, 957.0f, 547.0f, 0.0f, 0.0f, 997.0f, 547.0f, 0.0f, 1.0f, 1.0f, 1.0f, bootAlpha);
 
     float finalCopyrightAlpha = (m_bootTimer > 0.0f) ? bootAlpha : m_copyrightAlpha;
-    if (copyrightSprite && finalCopyrightAlpha > 0.0f)
+    if (m_copyrightSprite && finalCopyrightAlpha > 0.0f)
     {
-        copyrightSprite->Render(dc, 327.5f, 867.0f, 0.0f, 1245.0f, 105.0f, 0.0f, 0.0f, 1265.0f, 105.0f, 0.0f, 1.0f, 1.0f, 1.0f, finalCopyrightAlpha);
+        m_copyrightSprite->Render(dc, 327.5f, 867.0f, 0.0f, 1245.0f, 105.0f, 0.0f, 0.0f, 1265.0f, 105.0f, 0.0f, 1.0f, 1.0f, 1.0f, finalCopyrightAlpha);
     }
 
     // RENDER START
-    if (startSprite && m_startAlpha > 0.0f)
+    if (m_startSprite && m_startAlpha > 0.0f)
     {
-        startSprite->Render(dc, 679.5f, 906.5f, 0.0f, 545.0f, 34.0f, 0.0f, 0.0f, 545.0f, 34.0f, 0.0f, 1.0f, 1.0f, 1.0f, m_startAlpha);
+        m_startSprite->Render(dc, 679.5f, 906.5f, 0.0f, 545.0f, 34.0f, 0.0f, 0.0f, 545.0f, 34.0f, 0.0f, 1.0f, 1.0f, 1.0f, m_startAlpha);
     }
 
     // RENDER MENU 
@@ -355,7 +355,7 @@ void SceneTitle::Render(float dt, Camera* targetCamera)
 
     if (m_fxState.MasterEnabled)
     {
-        postProcess->EndCapture(dt);
+        m_postProcess->EndCapture(dt);
     }
 }
 

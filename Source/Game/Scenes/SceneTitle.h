@@ -39,15 +39,15 @@ public:
     // Debug / Tools
     void DrawGUI() override;
     [[nodiscard]] Kind GetKind() const override { return Kind::title; }
-    Camera* GetCamera() const { return camera.get(); }
+    Camera* GetCamera() const { return m_camera.get(); }
 
 private:
     // --- Subsystems ---
-    std::unique_ptr<Camera> camera{};
-    std::unique_ptr<Sprite> bgSprite{};
-    std::unique_ptr<Sprite> logoSprite{};
-    std::unique_ptr<Sprite> copyrightSprite{};
-    std::unique_ptr<PostProcessManager> postProcess{};
+    std::unique_ptr<Camera> m_camera{};
+    std::unique_ptr<Sprite> m_bgSprite{};
+    std::unique_ptr<Sprite> m_logoSprite{};
+    std::unique_ptr<Sprite> m_copyrightSprite{};
+    std::unique_ptr<PostProcessManager> m_postProcess{};
 
     // --- Post Process State ---
     struct PostProcessState {
@@ -65,7 +65,7 @@ private:
 
     // --- Sprites ---
     std::unique_ptr<Sprite> m_fadeSprite{};
-    std::unique_ptr<Sprite> startSprite{};
+    std::unique_ptr<Sprite> m_startSprite{};
     std::unique_ptr<Sprite> m_newGameSprite{};
     std::unique_ptr<Sprite> m_optionSprite{};
     std::unique_ptr<Sprite> m_exitSprite{};

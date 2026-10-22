@@ -149,10 +149,10 @@ private:
         float padding_psx[3];
     };
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader>  vertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>   pixelShader;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>        constantBuffer;
-    Microsoft::WRL::ComPtr<ID3D11SamplerState>  samplerState;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader>  m_vertexShader;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>   m_pixelShader;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>        m_constantBuffer;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState>  m_samplerState;
 
-    UberData currentData = {};
+    UberData m_currentData = {};
 };

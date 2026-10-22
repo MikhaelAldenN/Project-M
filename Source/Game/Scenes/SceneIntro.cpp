@@ -4,11 +4,11 @@
 
 SceneIntro::SceneIntro()
 {
-    camera = std::make_unique<Camera>();
-    camera->SetOrthographic(1920.0f, 1080.0f, 0.1f, 1000.0f);
+    m_camera = std::make_unique<Camera>();
+    m_camera->SetOrthographic(1920.0f, 1080.0f, 0.1f, 1000.0f);
 
     // Initialize UberShader & Render Targets
-    uberShader = std::make_unique<UberShader>(Graphics::Instance().GetDevice());
+    m_uberShader = std::make_unique<UberShader>(Graphics::Instance().GetDevice());
     CreateRenderTarget();     
 
 #if defined(_DEBUG)
@@ -52,8 +52,8 @@ void SceneIntro::Render(float dt, Camera* targetCamera)
 
     if (usePostProcess)
     {
-        currentRTV = renderTargetView.Get();
-        currentDSV = depthStencilView.Get();
+        currentRTV = m_renderTargetView.Get();
+        currentDSV = m_depthStencilView.Get();
     }
     else
     {
@@ -98,7 +98,7 @@ void SceneIntro::Render(float dt, Camera* targetCamera)
         dc->OMSetBlendState(rs->GetBlendState(BlendState::Opaque), nullptr, 0xFFFFFFFF);
 
         // Copy GUI Params to the Shader
-        UberShader::UberData finalParams = uberParams;
+        UberShader::UberData finalParams = m_uberParams;
         finalParams.time = m_globalTime;
 
         if (!m_fxState.EnableVignette) finalParams.intensity = 0.0f;
@@ -115,7 +115,7 @@ void SceneIntro::Render(float dt, Camera* targetCamera)
         }
 
         // Draw the off-screen texture onto the screen using the UberShader
-        uberShader->Draw(dc, shaderResourceView.Get(), finalParams);
+        m_uberShader->Draw(dc, m_shaderResourceView.Get(), finalParams);
 
         // Cleanup Shader Resources
         ID3D11ShaderResourceView* nullSRV[] = { nullptr };
@@ -184,13 +184,13 @@ void SceneIntro::GUIPostProcessTab()
 
         if (!m_fxState.EnableVignette) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
 
-        ImGui::ColorEdit3("Tint Color", &uberParams.color.x);
-        ImGui::SliderFloat("Intensity", &uberParams.intensity, 0.0f, 3.0f);
-        ImGui::SliderFloat("Smoothness", &uberParams.smoothness, 0.01f, 1.0f);
-        ImGui::SliderFloat2("Center", &uberParams.center.x, 0.0f, 1.0f);
+        ImGui::ColorEdit3("Tint Color", &m_uberParams.color.x);
+        ImGui::SliderFloat("Intensity", &m_uberParams.intensity, 0.0f, 3.0f);
+        ImGui::SliderFloat("Smoothness", &m_uberParams.smoothness, 0.01f, 1.0f);
+        ImGui::SliderFloat2("Center", &m_uberParams.center.x, 0.0f, 1.0f);
 
-        ImGui::Checkbox("Rounded Mask", &uberParams.rounded);
-        if (uberParams.rounded) ImGui::SliderFloat("Roundness", &uberParams.roundness, 0.0f, 1.0f);
+        ImGui::Checkbox("Rounded Mask", &m_uberParams.rounded);
+        if (m_uberParams.rounded) ImGui::SliderFloat("Roundness", &m_uberParams.roundness, 0.0f, 1.0f);
 
         if (!m_fxState.EnableVignette) ImGui::PopStyleVar();
         ImGui::Unindent();
@@ -203,9 +203,9 @@ void SceneIntro::GUIPostProcessTab()
         ImGui::Checkbox("ACTIVATE: Lens Layer", &m_fxState.EnableLens);
 
         if (!m_fxState.EnableLens) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-        ImGui::SliderFloat("Fisheye", &uberParams.distortion, -0.5f, 0.5f);
-        ImGui::SliderFloat("Chroma Blur", &uberParams.blurStrength, 0.0f, 0.05f, "%.4f");
-        ImGui::SliderFloat("Glitch Shake", &uberParams.glitchStrength, 0.0f, 1.0f);
+        ImGui::SliderFloat("Fisheye", &m_uberParams.distortion, -0.5f, 0.5f);
+        ImGui::SliderFloat("Chroma Blur", &m_uberParams.blurStrength, 0.0f, 0.05f, "%.4f");
+        ImGui::SliderFloat("Glitch Shake", &m_uberParams.glitchStrength, 0.0f, 1.0f);
         if (!m_fxState.EnableLens) ImGui::PopStyleVar();
         ImGui::Unindent();
     }
@@ -217,11 +217,11 @@ void SceneIntro::GUIPostProcessTab()
         ImGui::Checkbox("ACTIVATE: CRT Layer", &m_fxState.EnableCRT);
 
         if (!m_fxState.EnableCRT) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-        ImGui::SliderFloat("Density", &uberParams.fineDensity, 10.0f, 500.0f);
-        ImGui::SliderFloat("Opacity ", &uberParams.fineOpacity, 0.0f, 1.0f);
-        ImGui::SliderFloat("Speed", &uberParams.scanlineSpeed, -10.0f, 10.0f);
-        ImGui::SliderFloat("Size", &uberParams.scanlineSize, 1.0f, 150.0f);
-        ImGui::SliderFloat("Scanline Opacity", &uberParams.scanlineStrength, 0.0f, 1.0f);
+        ImGui::SliderFloat("Density", &m_uberParams.fineDensity, 10.0f, 500.0f);
+        ImGui::SliderFloat("Opacity ", &m_uberParams.fineOpacity, 0.0f, 1.0f);
+        ImGui::SliderFloat("Speed", &m_uberParams.scanlineSpeed, -10.0f, 10.0f);
+        ImGui::SliderFloat("Size", &m_uberParams.scanlineSize, 1.0f, 150.0f);
+        ImGui::SliderFloat("Scanline Opacity", &m_uberParams.scanlineStrength, 0.0f, 1.0f);
         if (!m_fxState.EnableCRT) ImGui::PopStyleVar();
         ImGui::Unindent();
     }
@@ -244,14 +244,14 @@ void SceneIntro::CreateRenderTarget()
     textureDesc.Usage = D3D11_USAGE_DEFAULT;
     textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-    device->CreateTexture2D(&textureDesc, nullptr, renderTargetTexture.ReleaseAndGetAddressOf());
-    device->CreateRenderTargetView(renderTargetTexture.Get(), nullptr, renderTargetView.ReleaseAndGetAddressOf());
-    device->CreateShaderResourceView(renderTargetTexture.Get(), nullptr, shaderResourceView.ReleaseAndGetAddressOf());
+    device->CreateTexture2D(&textureDesc, nullptr, m_renderTargetTexture.ReleaseAndGetAddressOf());
+    device->CreateRenderTargetView(m_renderTargetTexture.Get(), nullptr, m_renderTargetView.ReleaseAndGetAddressOf());
+    device->CreateShaderResourceView(m_renderTargetTexture.Get(), nullptr, m_shaderResourceView.ReleaseAndGetAddressOf());
 
     // Create Depth Buffer
     textureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-    device->CreateTexture2D(&textureDesc, nullptr, depthStencilTexture.ReleaseAndGetAddressOf());
-    device->CreateDepthStencilView(depthStencilTexture.Get(), nullptr, depthStencilView.ReleaseAndGetAddressOf());
+    device->CreateTexture2D(&textureDesc, nullptr, m_depthStencilTexture.ReleaseAndGetAddressOf());
+    device->CreateDepthStencilView(m_depthStencilTexture.Get(), nullptr, m_depthStencilView.ReleaseAndGetAddressOf());
 }

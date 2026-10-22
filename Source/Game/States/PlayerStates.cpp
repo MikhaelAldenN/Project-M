@@ -270,13 +270,13 @@ void PlayerMoving::Update(Player* player, float dt)
 
 void PlayerDash::Enter(Player* player)
 {
-    timer = player->GetDashDuration();
-    dashDir = player->GetLastValidInput();
+    m_timer = player->GetDashDuration();
+    m_dashDir = player->GetLastValidInput();
 
     // Why normalized: gamepad input keeps the stick tilt, which would shorten the dash.
-    const float dirLength{ std::sqrt((dashDir.x * dashDir.x) + (dashDir.y * dashDir.y)) };
-    dashDir = (dirLength > 0.0001f)
-        ? DirectX::XMFLOAT2{ dashDir.x / dirLength, dashDir.y / dirLength }
+    const float dirLength{ std::sqrt((m_dashDir.x * m_dashDir.x) + (m_dashDir.y * m_dashDir.y)) };
+    m_dashDir = (dirLength > 0.0001f)
+        ? DirectX::XMFLOAT2{ m_dashDir.x / dirLength, m_dashDir.y / dirLength }
     : DirectX::XMFLOAT2{ 0.0f, 1.0f };
 
     // Player owns the charge rule: it grants invincibility on a full dash and returns
@@ -287,8 +287,8 @@ void PlayerDash::Enter(Player* player)
     // Player::Update, so a velocity set in Update would only move the player two frames
     // after the press.
     const float speed{ player->GetDashSpeed() * m_speedScale };
-    player->GetMovement()->SetVelocity({ dashDir.x * speed, 0.0f, dashDir.y * speed });
-    player->SetStateMoveTimeLimit(timer);
+    player->GetMovement()->SetVelocity({ m_dashDir.x * speed, 0.0f, m_dashDir.y * speed });
+    player->SetStateMoveTimeLimit(m_timer);
 
     // =========================================================
     // Dash Go VFX, turned to the dash direction
@@ -301,7 +301,7 @@ void PlayerDash::Enter(Player* player)
 
     if (m_dashGoVfxHandle != -1) {
         // Add XM_PI (180 degrees) to reverse the effect's direction.
-        float yaw = atan2f(dashDir.x, dashDir.y) + DirectX::XM_PI;
+        float yaw = atan2f(m_dashDir.x, m_dashDir.y) + DirectX::XM_PI;
 
         EffectManager::Instance().SetRotation(m_dashGoVfxHandle, { 0.0f, yaw, 0.0f });
     }
@@ -321,7 +321,7 @@ void PlayerDash::Enter(Player* player)
 
 void PlayerDash::Update(Player* player, float dt)
 {
-    timer -= dt;
+    m_timer -= dt;
 
     // Why buffered: the dash input is an edge trigger, so a press during the dash would
     // otherwise be lost and two back-to-back dashes would need frame-perfect timing.
@@ -337,7 +337,7 @@ void PlayerDash::Update(Player* player, float dt)
         EffectManager::Instance().SetPosition(m_dashGoVfxHandle, trackPos);
     }
 
-    if (timer <= 0.0f)
+    if (m_timer <= 0.0f)
     {
         // A buffered press chains into the next dash; its Enter asks Player::BeginDash
         // whether that dash is full or penalized.
@@ -424,9 +424,9 @@ void PlayerParry::Enter(Player* player)
 
 void PlayerParry::Update(Player* player, float dt)
 {
-    timer -= dt;
+    m_timer -= dt;
 
-    if (timer <= 0.0f)
+    if (m_timer <= 0.0f)
     {
         if (player->IsMoving())
             player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerMoving>());

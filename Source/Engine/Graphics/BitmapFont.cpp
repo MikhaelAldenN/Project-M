@@ -55,7 +55,7 @@ BitmapFont::BitmapFont(const std::string& texturePath, const std::string& fontDa
 {
     // 1. Sprite for the font texture
     auto device = Graphics::Instance().GetDevice();
-    sprite = std::make_unique<Sprite>(device, texturePath.c_str());
+    m_sprite = std::make_unique<Sprite>(device, texturePath.c_str());
 
     // 2. Parse file .fnt
     std::ifstream file(fontDataPath);
@@ -77,7 +77,7 @@ BitmapFont::BitmapFont(const std::string& texturePath, const std::string& fontDa
             c.yoffset = ParseValue(line, "yoffset");
             c.xadvance = ParseValue(line, "xadvance");
 
-            chars[c.id] = c;
+            m_chars[c.id] = c;
         }
     }
 }
@@ -98,7 +98,7 @@ int BitmapFont::ParseValue(const std::string& line, const std::string& key)
 
 void BitmapFont::Draw(const std::string& text, float startX, float startY, float scale, float r, float g, float b, float a)
 {
-    if (!sprite) return;
+    if (!m_sprite) return;
 
     auto dc = Graphics::Instance().GetDeviceContext();
 
@@ -122,15 +122,15 @@ void BitmapFont::Draw(const std::string& text, float startX, float startY, float
         }
 
         // skip characters missing from the font
-        if (chars.find(id) == chars.end()) continue;
+        if (m_chars.find(id) == m_chars.end()) continue;
 
-        CharData& data = chars[id];
+        CharData& data = m_chars[id];
 
         float drawX = cursorX + (data.xoffset * scale);
         float drawY = cursorY + (data.yoffset * scale);
 
         // Draw the glyph's cell of the atlas (sx, sy, sw, sh)
-        sprite->Render(
+        m_sprite->Render(
             dc,
             drawX, drawY, 0.0f,                 // dx, dy, dz (screen position)
             (float)data.width * scale,          // dw (screen width)
@@ -148,7 +148,7 @@ void BitmapFont::Draw(const std::string& text, float startX, float startY, float
 void BitmapFont::Draw3D(const std::string& text, const Camera* camera,
     DirectX::XMFLOAT3 worldPos, float scale, DirectX::XMFLOAT3 rotation, DirectX::XMFLOAT4 color)
 {
-    if (!sprite) return;
+    if (!m_sprite) return;
     auto dc = Graphics::Instance().GetDeviceContext();
 
     // -------------------------------------------------------------
@@ -188,9 +188,9 @@ void BitmapFont::Draw3D(const std::string& text, const Camera* camera,
             continue;
         }
 
-        if (chars.find(id) == chars.end()) continue;
+        if (m_chars.find(id) == m_chars.end()) continue;
 
-        CharData& data = chars[id];
+        CharData& data = m_chars[id];
 
         // 1. Glyph size in world units
         float w = data.width * scale;
@@ -210,7 +210,7 @@ void BitmapFont::Draw3D(const std::string& text, const Camera* camera,
         XMStoreFloat3(&finalPos, vLocal + XMLoadFloat3(&worldPos));
 
         // 4. Draw the glyph
-        sprite->Render3D(dc, camera,
+        m_sprite->Render3D(dc, camera,
             finalPos.x, finalPos.y, finalPos.z,
             w, h,
             (float)data.x, (float)data.y,
@@ -247,10 +247,10 @@ DirectX::XMFLOAT2 BitmapFont::MeasureText(const std::string& text, float scale)
             continue;
         }
 
-        if (chars.find(id) != chars.end())
+        if (m_chars.find(id) != m_chars.end())
         {
             // xadvance: distance from this glyph to the next
-            width += chars[id].xadvance * scale;
+            width += m_chars[id].xadvance * scale;
         }
     }
     maxWidth = (std::max)(maxWidth, width);

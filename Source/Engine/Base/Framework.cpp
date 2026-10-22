@@ -153,7 +153,7 @@ Framework::Framework()
     }
 
     // Init Scene
-    scene = std::make_unique<SceneSandbox>();
+    m_scene = std::make_unique<SceneSandbox>();
 }
 
 Framework::~Framework()
@@ -162,7 +162,7 @@ Framework::~Framework()
     // Why first: the scene's shutdown and ClearAll() below change or destroy the windows.
     SaveWindowLayout();
 #endif
-    scene.reset();
+    m_scene.reset();
 
     // Why: restore SDL's WndProc while the hooked window still exists, so its
     // destroy messages never reach ImGui after the context is gone.
@@ -179,7 +179,7 @@ Framework::~Framework()
 }
 
 Framework* Framework::Instance() { return pInstance; }
-void Framework::ChangeScene(std::unique_ptr<Scene> newScene) { nextScene = std::move(newScene); }
+void Framework::ChangeScene(std::unique_ptr<Scene> newScene) { m_nextScene = std::move(newScene); }
 
 Beyond::Window* Framework::GetMainWindow() const
 {
@@ -347,7 +347,7 @@ void Framework::Render(float elapsedTime)
 {
     // Why not elapsedTime: render-side animation (post-process time) must stop
     // and scale together with the scene.
-    WindowManager::Instance().RenderAll(m_sceneDeltaTime, scene.get(), GetActiveCanvas());
+    WindowManager::Instance().RenderAll(m_sceneDeltaTime, m_scene.get(), GetActiveCanvas());
 
 #if defined(_DEBUG)
 
@@ -375,9 +375,9 @@ void Framework::Update(float elapsedTime)
     ProcessWindowLayoutResetRequest();
 #endif
 
-    if (nextScene)
+    if (m_nextScene)
     {
-        scene = std::move(nextScene); // the previous scene's destructor runs here
+        m_scene = std::move(m_nextScene); // the previous scene's destructor runs here
     }
 
 #if defined(_DEBUG)
@@ -420,7 +420,7 @@ void Framework::Update(float elapsedTime)
     m_isSimStepRequested = false;
 #endif
 
-    if (scene && shouldUpdateScene) scene->Update(m_sceneDeltaTime);
+    if (m_scene && shouldUpdateScene) m_scene->Update(m_sceneDeltaTime);
 }
 
 void Framework::ForceUpdateRender()
@@ -466,7 +466,7 @@ LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LP
 
 void Framework::OnSubWindowClosed(Uint32 sdlWindowID)
 {
-    if (scene) scene->OnSubWindowClosed(sdlWindowID);
+    if (m_scene) m_scene->OnSubWindowClosed(sdlWindowID);
 }
 
 bool Framework::HandleDebugHostEvent([[maybe_unused]] const SDL_Event& event)
@@ -616,7 +616,7 @@ void Framework::RegisterDebugTimePanel()
 
 Scene::Kind Framework::GetCurrentSceneKind() const
 {
-    return scene ? scene->GetKind() : Scene::Kind::none;
+    return m_scene ? m_scene->GetKind() : Scene::Kind::none;
 }
 
 const char* Framework::GetDebugLayoutScope() const
@@ -644,8 +644,8 @@ void Framework::ProcessDebugSceneRequest()
     // Why destroy first: scenes own OS windows and drive singletons (WindowManager,
     // audio, effects); the old one must release them before the new one claims them.
     // A scene queued through ChangeScene is dropped, the debug request wins.
-    nextScene.reset();
-    scene.reset();
+    m_nextScene.reset();
+    m_scene.reset();
 
     // Why: Windowkill hides the main window and only SceneTitle shows it again.
     // Every scene picked from the menu must start with the window visible.
@@ -657,11 +657,11 @@ void Framework::ProcessDebugSceneRequest()
 
     switch (request)
     {
-    case Scene::Kind::intro:   scene = std::make_unique<SceneIntro>(); break;
-    case Scene::Kind::title:   scene = std::make_unique<SceneTitle>(); break;
-    case Scene::Kind::game:    scene = std::make_unique<SceneGame>(); break;
-    case Scene::Kind::sandbox: scene = std::make_unique<SceneSandbox>(); break;
-    case Scene::Kind::boss:    scene = std::make_unique<SceneBoss>(); break;
+    case Scene::Kind::intro:   m_scene = std::make_unique<SceneIntro>(); break;
+    case Scene::Kind::title:   m_scene = std::make_unique<SceneTitle>(); break;
+    case Scene::Kind::game:    m_scene = std::make_unique<SceneGame>(); break;
+    case Scene::Kind::sandbox: m_scene = std::make_unique<SceneSandbox>(); break;
+    case Scene::Kind::boss:    m_scene = std::make_unique<SceneBoss>(); break;
     case Scene::Kind::none:    break;
     }
 }

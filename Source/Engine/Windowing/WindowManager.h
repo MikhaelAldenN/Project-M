@@ -34,18 +34,18 @@ public:
     void EnforceWindowPriorities();
     void MarkPriorityDirty() { m_dirtyPriority = true; }
 
-    void SetDebugWindow(Beyond::Window* win) { debugWindow = win; }
-    Beyond::Window* GetDebugWindow() const { return debugWindow; }
+    void SetDebugWindow(Beyond::Window* win) { m_debugWindow = win; }
+    Beyond::Window* GetDebugWindow() const { return m_debugWindow; }
 
     // --------------------------------------------------------
     // Helper functions
     // --------------------------------------------------------
 
-    bool HasWindows() const { return !windows.empty(); }
+    bool HasWindows() const { return !m_windows.empty(); }
 
     Beyond::Window* GetWindowByIndex(size_t index)
     {
-        if (index < windows.size()) return windows[index].get();
+        if (index < m_windows.size()) return m_windows[index].get();
         return nullptr;
     }
 
@@ -59,9 +59,9 @@ private:
     void operator=(const WindowManager&) = delete;
 
 private:
-    std::vector<std::unique_ptr<Beyond::Window>> windows;
+    std::vector<std::unique_ptr<Beyond::Window>> m_windows;
 
-    Beyond::Window* debugWindow = nullptr;
+    Beyond::Window* m_debugWindow = nullptr;
 
     bool m_dirtyPriority = false;
     bool m_imguiOnMainWindow = true;

@@ -3,5 +3,5 @@
 
 bool CharacterMovement::IsMoving() const
 {
-    return (fabsf(velocity.x) > 0.01f || fabsf(velocity.z) > 0.01f);
+    return (fabsf(m_velocity.x) > 0.01f || fabsf(m_velocity.z) > 0.01f);
 }

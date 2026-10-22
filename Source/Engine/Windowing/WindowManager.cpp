@@ -38,11 +38,11 @@ void WindowManager::Update(float dt)
 void WindowManager::EnforceWindowPriorities()
 {
     std::vector<Beyond::Window*> sortedWindows;
-    sortedWindows.reserve(windows.size());
+    sortedWindows.reserve(m_windows.size());
 
-    for (auto& win : windows)
+    for (auto& win : m_windows)
     {
-        if (win.get() != debugWindow && win->GetPriority() < 100)
+        if (win.get() != m_debugWindow && win->GetPriority() < 100)
         {
             sortedWindows.push_back(win.get());
         }
@@ -70,11 +70,11 @@ void WindowManager::RenderAll(float dt, Scene* scene, const GameCanvas* canvas)
 {
     auto context = Graphics::Instance().GetDeviceContext();
 
-    for (auto& win : windows)
+    for (auto& win : m_windows)
     {
         if (!win->GetSDLWindow()) continue;
 
-        const bool isMainWindow{ win.get() == windows.front().get() };
+        const bool isMainWindow{ win.get() == m_windows.front().get() };
         const bool usesCanvas{ isMainWindow && canvas != nullptr };
 
         // Canvas pass comes first: the scene draws at canvas size before the
@@ -132,7 +132,7 @@ void WindowManager::RenderAll(float dt, Scene* scene, const GameCanvas* canvas)
 
 void WindowManager::HandleResize(SDL_Window* sdlWindow, int width, int height)
 {
-    for (auto& win : windows)
+    for (auto& win : m_windows)
     {
         if (win->GetSDLWindow() == sdlWindow)
         {
@@ -157,7 +157,7 @@ Beyond::Window* WindowManager::CreateGameWindow(const char* title, int width, in
         });
 
     Beyond::Window* ptr = newWindow.get();
-    windows.push_back(std::move(newWindow));
+    m_windows.push_back(std::move(newWindow));
 
     MarkPriorityDirty();
 
@@ -166,16 +166,16 @@ Beyond::Window* WindowManager::CreateGameWindow(const char* title, int width, in
 
 void WindowManager::DestroyWindow(Beyond::Window* targetWindow)
 {
-    windows.erase(
-        std::remove_if(windows.begin(), windows.end(),
+    m_windows.erase(
+        std::remove_if(m_windows.begin(), m_windows.end(),
             [targetWindow](const std::unique_ptr<Beyond::Window>& w) {
                 return w.get() == targetWindow;
             }),
-        windows.end()
+        m_windows.end()
     );
 }
 
 void WindowManager::ClearAll()
 {
-    windows.clear();
+    m_windows.clear();
 }

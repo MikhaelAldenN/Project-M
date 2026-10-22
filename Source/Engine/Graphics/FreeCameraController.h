@@ -14,12 +14,12 @@ public:
 	void Update();
 
 private:
-	DirectX::XMFLOAT3		eye;
-	DirectX::XMFLOAT3		focus;
-	DirectX::XMFLOAT3		up;
-	DirectX::XMFLOAT3		right;
-	float					distance;
+	DirectX::XMFLOAT3		m_eye;
+	DirectX::XMFLOAT3		m_focus;
+	DirectX::XMFLOAT3		m_up;
+	DirectX::XMFLOAT3		m_right;
+	float					m_distance;
 
-	float					angleX;
-	float					angleY;
+	float					m_angleX;
+	float					m_angleY;
 };

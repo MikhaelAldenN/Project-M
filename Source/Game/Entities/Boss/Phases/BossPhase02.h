@@ -140,7 +140,7 @@ private:
     enum class WingState { Expanding, Idle };
     WingState m_wingState = WingState::Expanding;
     float m_wingStateTimer = 0.0f;
-    const float WING_EXPAND_DURATION = 2.0f;
+    const float m_wingExpandDuration = 2.0f;
 
     unsigned int m_wingSeed = 1337;
     float m_wingFlickerTimer = 0.0f;

@@ -21,5 +21,5 @@ private:
     ResourceManager() = default;
     ~ResourceManager() = default;
 
-    std::unordered_map<std::string, std::unique_ptr<BitmapFont>> fonts;
+    std::unordered_map<std::string, std::unique_ptr<BitmapFont>> m_fonts;
 };

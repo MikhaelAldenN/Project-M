@@ -25,39 +25,39 @@ CursorBlock::CursorBlock(ID3D11Device* device)
 
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-    device->CreateBlendState(&blendDesc, invertBlendState.GetAddressOf());
+    device->CreateBlendState(&blendDesc, m_invertBlendState.GetAddressOf());
 }
 
 CursorBlock::~CursorBlock() {}
 
 void CursorBlock::Initialize(float w, float h)
 {
-    this->width = w;
-    this->height = h;
+    this->m_width = w;
+    this->m_height = h;
 }
 
 void CursorBlock::SetGridSnap(bool enable, float gw, float gh)
 {
-    useGridSnap = enable;
-    gridW = gw;
-    gridH = gh;
+    m_useGridSnap = enable;
+    m_gridW = gw;
+    m_gridH = gh;
 }
 
 void CursorBlock::SetBlink(bool enable, float visibleTime, float invisibleTime)
 {
-    useBlink = enable;
-    blinkVisibleTime = visibleTime;
-    blinkInvisibleTime = invisibleTime;
+    m_useBlink = enable;
+    m_blinkVisibleTime = visibleTime;
+    m_blinkInvisibleTime = invisibleTime;
 
     // Restart visible, so a newly enabled blink begins with the cursor shown.
-    isVisible = true;
-    blinkTimer = 0.0f;
+    m_isVisible = true;
+    m_blinkTimer = 0.0f;
 }
 
 void CursorBlock::SetSize(float w, float h)
 {
-    this->width = w;
-    this->height = h;
+    this->m_width = w;
+    this->m_height = h;
 }
 
 void CursorBlock::SetColor(float r, float g, float b, float a)
@@ -69,32 +69,32 @@ void CursorBlock::SetColor(float r, float g, float b, float a)
 void CursorBlock::Update(float dt, float rawX, float rawY)
 {
     // 1. Logic Snapping
-    if (useGridSnap)
+    if (m_useGridSnap)
     {
-        posX = floorf(rawX / gridW) * gridW;
-        posY = floorf(rawY / gridH) * gridH;
+        m_posX = floorf(rawX / m_gridW) * m_gridW;
+        m_posY = floorf(rawY / m_gridH) * m_gridH;
     }
     else
     {
-        posX = rawX;
-        posY = rawY;
+        m_posX = rawX;
+        m_posY = rawY;
     }
 
     // 2. Logic Blinking
-    if (useBlink)
+    if (m_useBlink)
     {
-        blinkTimer += dt;
-        float currentLimit = isVisible ? blinkVisibleTime : blinkInvisibleTime;
+        m_blinkTimer += dt;
+        float currentLimit = m_isVisible ? m_blinkVisibleTime : m_blinkInvisibleTime;
 
-        if (blinkTimer >= currentLimit)
+        if (m_blinkTimer >= currentLimit)
         {
-            blinkTimer -= currentLimit;
-            isVisible = !isVisible;
+            m_blinkTimer -= currentLimit;
+            m_isVisible = !m_isVisible;
         }
     }
     else
     {
-        isVisible = true;
+        m_isVisible = true;
     }
 }
 
@@ -109,21 +109,21 @@ void CursorBlock::Update(float dt, Mouse& mouse)
 
 void CursorBlock::Render(ID3D11DeviceContext* context, Primitive* primitiveBatcher)
 {
-    if (!isVisible || !primitiveBatcher) return;
+    if (!m_isVisible || !primitiveBatcher) return;
 
     // 1. Save the current blend state
     float blendFactor[4];
     UINT sampleMask;
-    context->OMGetBlendState(oldBlendState.GetAddressOf(), blendFactor, &sampleMask);
+    context->OMGetBlendState(m_oldBlendState.GetAddressOf(), blendFactor, &sampleMask);
 
     // 2. Bind the cursor blend state (standard alpha, despite the member name)
-    context->OMSetBlendState(invertBlendState.Get(), nullptr, 0xFFFFFFFF);
+    context->OMSetBlendState(m_invertBlendState.Get(), nullptr, 0xFFFFFFFF);
 
     // 3. Draw the block and flush the batch
-    primitiveBatcher->Rect(posX, posY, width, height, 0.0f, 0.0f, 0.0f, m_color[0], m_color[1], m_color[2], m_color[3]);
+    primitiveBatcher->Rect(m_posX, m_posY, m_width, m_height, 0.0f, 0.0f, 0.0f, m_color[0], m_color[1], m_color[2], m_color[3]);
     primitiveBatcher->Render(context);
 
     // 4. Restore the saved blend state
-    context->OMSetBlendState(oldBlendState.Get(), blendFactor, sampleMask);
-    oldBlendState.Reset();
+    context->OMSetBlendState(m_oldBlendState.Get(), blendFactor, sampleMask);
+    m_oldBlendState.Reset();
 }

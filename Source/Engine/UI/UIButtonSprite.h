@@ -11,12 +11,12 @@ public:
     UIButtonSprite(const char* texturePath, float x, float y, float w, float h)
         : UIButton(x, y, w, h)
     {
-        sprite = std::make_unique<Sprite>(Graphics::Instance().GetDevice(), texturePath);
+        m_sprite = std::make_unique<Sprite>(Graphics::Instance().GetDevice(), texturePath);
     }
 
     void Render(ID3D11DeviceContext* dc, Camera* camera) override
     {
-        if (!sprite) return;
+        if (!m_sprite) return;
 
         // Tint by state
         float r = 1, g = 1, b = 1;
@@ -27,7 +27,7 @@ public:
         case ButtonState::PRESSED: r = 0.7f; g = 0.7f; b = 0.7f; break; // darker
         }
 
-        sprite->Render(dc, camera,
+        m_sprite->Render(dc, camera,
             (float)rect.left, (float)rect.top, 0,
             width, height,
             0, 0, 0,
@@ -35,5 +35,5 @@ public:
     }
 
 private:
-    std::unique_ptr<Sprite> sprite;
+    std::unique_ptr<Sprite> m_sprite;
 };
