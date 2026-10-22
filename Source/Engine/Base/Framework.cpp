@@ -11,19 +11,19 @@
 #include "SceneTitle.h"
 
 // ========================================================
-// Jembatan Win32 ke ImGui
+// Win32 bridge to ImGui
 // ========================================================
 static WNDPROC s_OriginalWndProc = nullptr;
 static HWND s_HookedWnd = nullptr; // window whose WndProc is currently replaced
 
 LRESULT CALLBACK ImGuiHookWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    // 1. Berikan event klik/keyboard ke ImGui terlebih dahulu
+    // 1. ImGui gets mouse and keyboard messages first
     if (ImGuiRenderer::HandleMessage(hWnd, msg, wParam, lParam)) {
         return true;
     }
 
-    // 2. Teruskan sisa pesannya ke sistem SDL3
+    // 2. Everything else goes on to SDL3
     if (s_OriginalWndProc) {
         return CallWindowProc(s_OriginalWndProc, hWnd, msg, wParam, lParam);
     }
@@ -71,7 +71,7 @@ Framework::Framework()
 
     AttackParamManager::Instance().Load("AttackParams.json");
 
-    // Buat Main Window (Fullscreen Borderless)
+    // Main window; its mode (windowed or borderless) is set below
     auto mainWin = WindowManager::Instance().CreateGameWindow("Main Window (close here)", 1600, 900);
     mainWin->SetPriority(0);
     mainWin->SetDraggable(false);
@@ -85,8 +85,6 @@ Framework::Framework()
     SetMainWindowMode(WindowMode::borderless);
 #endif
     SDL_ShowWindow(mainWin->GetSDLWindow());
-
-    // Posisikan di tengah saat awal
 
     HWND hwnd = (HWND)SDL_GetPointerProperty(
         SDL_GetWindowProperties(mainWin->GetSDLWindow()),
@@ -451,7 +449,6 @@ LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LP
     Beyond::Window* mainWin = GetMainWindow();
     HWND mainHwnd = NULL;
 
-    // Ekstrak HWND dari main window yang menggunakan SDL3
     if (mainWin && mainWin->GetSDLWindow()) {
         mainHwnd = (HWND)SDL_GetPointerProperty(
             SDL_GetWindowProperties(mainWin->GetSDLWindow()),
@@ -460,7 +457,6 @@ LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LP
         );
     }
 
-    // Bandingkan hWnd dengan mainHwnd hasil ekstrak
     if (mainWin && hWnd == mainHwnd)
     {
         if (ImGuiRenderer::HandleMessage(hWnd, msg, wParam, lParam)) return true;

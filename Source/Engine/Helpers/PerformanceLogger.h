@@ -47,7 +47,7 @@ private:
     std::chrono::high_resolution_clock::time_point m_bucketStarts[3];
     float m_bucketAccumulators[3] = { 0.0f, 0.0f, 0.0f };
 
-    // FPS Tracking (Debounce agar tidak spam per frame)
+    // FPS tracking (cooldown so a drop is not logged every frame)
     float m_fpsCooldown = 0.0f;
     float m_lowestFps = 999.0f;
     int m_maxWindows = 0;

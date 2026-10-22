@@ -102,15 +102,15 @@ int main(int argc, char* argv[])
         Uint64 frequency = SDL_GetPerformanceFrequency();
 
         // ==========================================
-        // KONFIGURASI FPS CAP
+        // FPS CAP
         // ==========================================
-        const double targetFPS = 10000; // Silakan ganti ke 30, 90, atau 120
+        const double targetFPS = 10000; // 10000 leaves the frame rate effectively uncapped
         const Uint64 targetTicksPerFrame = frequency / targetFPS;
-        const Uint64 yieldThreshold = frequency / 500; // Batas aman 2ms untuk CPU napas
+        const Uint64 yieldThreshold = frequency / 500; // yield only while more than 2 ms remain
 
         while (running)
         {
-            // 1. Catat waktu persis saat frame dimulai
+            // 1. Frame start time
             Uint64 frameStart = SDL_GetPerformanceCounter();
 
 
@@ -136,16 +136,15 @@ int main(int argc, char* argv[])
                 if (event.type == SDL_EVENT_QUIT) running = false;                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
                 if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
                 {
-                    // Cek window mana yang barusan diklik tombol silangnya
                     SDL_Window* closedWin = SDL_GetWindowFromID(event.window.windowID);
                     Beyond::Window* mainWin = framework ? framework->GetMainWindow() : nullptr;
 
                     if (mainWin && closedWin == mainWin->GetSDLWindow()) {
-                        // Yang disilang adalah MAIN WINDOW -> Matikan game!
+                        // Closing the main window quits the game.
                         running = false;
                     }
                     else {
-                        // Yang disilang adalah SUB-WINDOW (Dummy) -> Suruh Framework hapus!
+                        // A closed sub-window is handed to the framework to clean up.
                         if (framework) framework->OnSubWindowClosed(event.window.windowID);
                     }
                 }
@@ -178,20 +177,20 @@ int main(int argc, char* argv[])
             }
 
             // ==========================================
-            // 2. LOGIKA PEMBATAS FPS (HYBRID SPIN-WAIT)
+            // 2. FPS LIMITER (HYBRID SPIN-WAIT)
             // ==========================================
             while (true)
             {
                 Uint64 now = SDL_GetPerformanceCounter();
                 Uint64 ticksPassed = now - frameStart;
 
-                // Jika waktu frame sudah mencapai batas (misal 16.66ms), lanjut ke frame berikutnya!
+                // The frame has used its full time slice.
                 if (ticksPassed >= targetTicksPerFrame)
                 {
                     break;
                 }
 
-                // Jika sisa waktu masih > 2ms, suruh thread CPU mengalah sebentar
+                // More than 2 ms left: give the CPU back for a moment instead of spinning.
                 if (targetTicksPerFrame - ticksPassed > yieldThreshold)
                 {
                     std::this_thread::yield();

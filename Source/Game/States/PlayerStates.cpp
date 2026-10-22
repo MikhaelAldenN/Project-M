@@ -291,10 +291,10 @@ void PlayerDash::Enter(Player* player)
     player->SetStateMoveTimeLimit(timer);
 
     // =========================================================
-    // Play VFX Dash Go dan sesuaikan arah rotasinya!
+    // Dash Go VFX, turned to the dash direction
     // =========================================================
     DirectX::XMFLOAT3 pos = player->GetMovement()->GetPosition();
-    pos.y += 1.0f; // Naikkan sedikit agar pas di tengah badan
+    pos.y += 1.0f; // raised to the middle of the body
 
     // Keep the handle so the VFX can follow the player during the dash.
     m_dashGoVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Go.efk", pos, 0.2f);
@@ -312,11 +312,10 @@ void PlayerDash::Enter(Player* player)
         "Data/Sound/SE_Dash_03.wav"
     };
 
-    // 2. Pilih index secara acak (0, 1, atau 2)
+    // One of three dash sounds at random
     int randomIndex = rand() % 3;
 
-    // 3. Mainkan suaranya lewat AudioManager
-    // Kita gunakan volume 0.5f agar tidak terlalu memekakkan telinga
+    // kept quiet (0.1) on purpose
     AudioManager::Instance().PlaySFX(dashSounds[randomIndex], 0.1f);
 }
 
@@ -334,7 +333,7 @@ void PlayerDash::Update(Player* player, float dt)
     if (m_dashGoVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashGoVfxHandle))
     {
         DirectX::XMFLOAT3 trackPos = player->GetMovement()->GetPosition();
-        trackPos.y += 1.0f; // Pastikan offset Y sama dengan saat Enter
+        trackPos.y += 1.0f; // same Y offset as in Enter
         EffectManager::Instance().SetPosition(m_dashGoVfxHandle, trackPos);
     }
 
@@ -370,8 +369,6 @@ void PlayerSlash::Enter(Player* player)
     // during a slash without a target.
     if (!m_hasTarget) return;
 
-    // Brace initialization to prevent narrowing conversions
-    // Brace initialization to prevent narrowing conversions
     const float yawRad{ DirectX::XMConvertToRadians(player->GetMovement()->GetRotation().y) };
 
     // Why constant speed with a time limit: distance = speed x duration at any frame rate,

@@ -34,7 +34,7 @@ public:
     void ChangeScene(std::unique_ptr<Scene> newScene);
     void Quit();
 
-    // Helper untuk mengambil Main Window (Window index 0)
+    // The main window (window index 0)
     Beyond::Window* GetMainWindow() const;
 
     // How the main window occupies the desktop. The game image is always the 16:9

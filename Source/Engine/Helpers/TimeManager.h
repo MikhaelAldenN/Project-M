@@ -1,7 +1,7 @@
 #pragma once
 #include <algorithm>
 
-// Singleton untuk manipulasi skala waktu global
+// Global time scale for hit stop
 class TimeManager {
 public:
     static TimeManager& Instance() {
@@ -9,17 +9,17 @@ public:
         return instance;
     }
 
-    // Update harus dipanggil dengan waktu murni (Unscaled Delta Time)
+    // Call with unscaled delta time.
     void Update(float unscaledDt) {
         if (m_hitStopTimer > 0.0f) {
             m_hitStopTimer -= unscaledDt;
             if (m_hitStopTimer <= 0.0f) {
-                m_hitStopMultiplier = 1.0f; // Waktu kembali normal
+                m_hitStopMultiplier = 1.0f; // back to normal speed
             }
         }
     }
 
-    // Panggil ini dari mana saja (misal: saat kena damage, parry, ledakan)
+    // Callable from anywhere (for example on damage, parry or an explosion).
     void TriggerHitStop(float durationInSeconds, float timeScaleDuringHitStop = 0.0f) {
         m_hitStopTimer = durationInSeconds;
         m_hitStopMultiplier = timeScaleDuringHitStop;

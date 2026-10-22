@@ -10,13 +10,13 @@ void PerformanceLogger::Initialize()
     std::lock_guard<std::mutex> lock(m_mutex);
     if (m_logFile.is_open()) return;
 
-    std::string logDirectory = "Logs"; // Nama foldernya "Logs"
+    std::string logDirectory = "Logs";
     if (!std::filesystem::exists(logDirectory))
     {
         std::filesystem::create_directory(logDirectory);
     }
 
-    // Generate nama file berdasarkan waktu
+    // File name from the current time
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     tm localTime;
     localtime_s(&localTime, &now);
@@ -103,10 +103,10 @@ void PerformanceLogger::EndFrameCheck(float currentFps, int activeWindows)
 
     // Update cooldown
     if (m_fpsCooldown > 0.0f) {
-        m_fpsCooldown -= (1.0f / 60.0f); // Asumsi 60hz frame time
+        m_fpsCooldown -= (1.0f / 60.0f); // assumes 60 Hz frames
     }
 
-    // Jika FPS drop di bawah 50 dan cooldown sudah selesai (misal nge-log max 1 kali tiap 2 detik)
+    // Below 50 FPS, at most one report per 2 s cooldown
     if (currentFps < 50.0f && m_fpsCooldown <= 0.0f)
     {
         std::stringstream ss;
@@ -121,7 +121,7 @@ void PerformanceLogger::EndFrameCheck(float currentFps, int activeWindows)
         ss << "> Render 3D (D3D)  : " << m_bucketAccumulators[(int)PerfBucket::Render3D] << " ms\n";
         ss << "> Window OS (GDI)  : " << m_bucketAccumulators[(int)PerfBucket::WindowOS] << " ms\n";
 
-        // Auto-Diagnosis Sederhana
+        // Simple diagnosis
         if (m_bucketAccumulators[(int)PerfBucket::WindowOS] > 15.0f) {
             ss << "> DIAGNOSIS        : DWM / GDI Readback overload. OS Windows nge-lag.\n";
         }
@@ -132,10 +132,10 @@ void PerformanceLogger::EndFrameCheck(float currentFps, int activeWindows)
         ss << "---------------------------------------------------------------------\n";
         LogInfo(ss.str());
 
-        m_fpsCooldown = 2.0f; // Tunggu 2 detik sebelum nge-log warning FPS lagi
+        m_fpsCooldown = 2.0f; // no new FPS warning for 2 s
     }
 
-    // Reset accumulator tiap akhir frame
+    // Reset the accumulators at the end of every frame
     m_bucketAccumulators[0] = 0.0f;
     m_bucketAccumulators[1] = 0.0f;
     m_bucketAccumulators[2] = 0.0f;
