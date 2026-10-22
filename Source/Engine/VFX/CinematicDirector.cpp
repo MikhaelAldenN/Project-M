@@ -44,7 +44,7 @@ void CinematicDirector::PlaySequence(int index, bool isJumpCut)
     CameraController::Instance().PlaySequence(seq, false);
 }
 
-// Math Helper: Konversi (Posisi + Target) menjadi (Pitch, Yaw)
+// Pitch and yaw that look from pos toward target
 DirectX::XMFLOAT3 CinematicDirector::CalculateRotation(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& target)
 {
     XMVECTOR vPos = XMLoadFloat3(&pos);

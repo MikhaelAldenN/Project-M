@@ -1,14 +1,14 @@
 #include "AnimationController.h"
 #include <functional>
 
-using namespace DirectX; // Untuk mempermudah penulisan XMVECTOR, dll
+using namespace DirectX;
 
 void AnimationController::Initialize(std::shared_ptr<Model> model)
 {
     ownerModel = model;
     size_t nodeCount = ownerModel->GetNodes().size();
 
-    // Alokasi memori untuk pose sekarang dan pose blending
+    // Current pose and the snapshot used for blending
     nodePoses.resize(nodeCount);
     prevNodePoses.resize(nodeCount);
 }
@@ -22,13 +22,12 @@ void AnimationController::Play(const std::string& name, bool loop, float blendTi
 
     if (newIndex != currentAnimIndex)
     {
-        // --- LOGIKA BLENDING DI MULAI ---
+        // --- Start a blend ---
 
-        // Jika kita sebelumnya sedang memainkan animasi (bukan dari T-Pose awal),
-        // Kita snapshot (foto) pose terakhir ke dalam 'prevNodePoses'
+        // When another animation was playing (not the initial T-pose),
+        // its last pose is kept in prevNodePoses and blended out.
         if (currentAnimIndex != -1)
         {
-            // Salin state terakhir nodePoses ke prevNodePoses
             prevNodePoses = nodePoses;
 
             // Setup blending
@@ -38,7 +37,7 @@ void AnimationController::Play(const std::string& name, bool loop, float blendTi
         }
         else
         {
-            // Kalau ini animasi pertama kali dijalankan, tidak perlu blending
+            // The first animation starts without a blend.
             isBlending = false;
         }
 
@@ -54,7 +53,7 @@ void AnimationController::Update(float dt)
 {
     if (!ownerModel || currentAnimIndex == -1) return;
 
-    // 1. Update Timer Animasi Utama
+    // 1. Advance the main animation timer
     const auto& anims = ownerModel->GetAnimations();
     float duration = anims.at(currentAnimIndex).secondsLength;
 
@@ -81,25 +80,24 @@ void AnimationController::Update(float dt)
         timer = 0.0f; // Safe fallback for 0-second animations
     }
 
-    // 2. Hitung Pose Animasi Target (Animasi Baru)
-    // Hasil sementara disimpan di 'nodePoses' dulu
+    // 2. Pose of the new animation, written to nodePoses first
     ownerModel->ComputeAnimation(currentAnimIndex, timer, nodePoses);
 
-    // 3. Proses Blending (Jika aktif)
+    // 3. Blend from the snapshot, while a blend runs
     if (isBlending)
     {
         blendTimer += dt;
 
-        // Hitung persentase blending (0.0 sampai 1.0)
+        // blend weight, 0 to 1
         float t = blendTimer / blendDuration;
 
         if (t >= 1.0f)
         {
             t = 1.0f;
-            isBlending = false; // Blending selesai
+            isBlending = false; // blend finished
         }
 
-        // Lakukan interpolasi per-bone (Node)
+        // Per node (bone)
         size_t count = nodePoses.size();
         for (size_t i = 0; i < count; ++i)
         {
@@ -108,43 +106,42 @@ void AnimationController::Update(float dt)
             XMVECTOR r0 = XMLoadFloat4(&prevNodePoses[i].rotation);
             XMVECTOR t0 = XMLoadFloat3(&prevNodePoses[i].position);
 
-            // Ambil data dari Pose Baru (Target)
+            // New pose (target)
             XMVECTOR s1 = XMLoadFloat3(&nodePoses[i].scale);
             XMVECTOR r1 = XMLoadFloat4(&nodePoses[i].rotation);
             XMVECTOR t1 = XMLoadFloat3(&nodePoses[i].position);
 
-            // Interpolasi
-            // Lerp untuk Scale dan Position
+            // Lerp for scale and position
             XMVECTOR sFinal = XMVectorLerp(s0, s1, t);
             XMVECTOR tFinal = XMVectorLerp(t0, t1, t);
-            // Slerp (Spherical Linear Interpolation) untuk Rotasi agar putaran mulus
+            // Slerp for rotation, so the turn stays smooth
             XMVECTOR rFinal = XMQuaternionSlerp(r0, r1, t);
 
-            // Simpan kembali ke nodePoses (ini yang akan dipakai render)
+            // Result goes back into nodePoses, which is what gets drawn
             XMStoreFloat3(&nodePoses[i].scale, sFinal);
             XMStoreFloat4(&nodePoses[i].rotation, rFinal);
             XMStoreFloat3(&nodePoses[i].position, tFinal);
         }
     }
 
-    // 4. Upload ke Model (Visual)
+    // 4. Upper-body layer
     if (upperAnimIndex != -1 && !upperBodyMask.empty())
     {
         upperTimer += dt;
         float upperDuration = anims.at(upperAnimIndex).secondsLength;
 
-        // Cek apakah animasi sudah selesai
+        // upper-body animation reached its end
         if (upperTimer >= upperDuration)
         {
             if (upperIsLooping) {
-                upperTimer = fmod(upperTimer, upperDuration); // Ulangi
+                upperTimer = fmod(upperTimer, upperDuration); // loop
             }
             else {
-                upperAnimIndex = -1; // Matikan animasi upper body
+                upperAnimIndex = -1; // stop the upper-body animation
             }
         }
 
-        // Jika animasi masih berjalan (belum dimatikan)
+        // Still playing
         if (upperAnimIndex != -1)
         {
             if (upperNodePoses.size() != ownerModel->GetNodes().size()) {
@@ -157,13 +154,13 @@ void AnimationController::Update(float dt)
             {
                 if (upperBodyMask[i])
                 {
-                    // Timpa data dari Base Layer dengan Upper Layer
+                    // masked nodes take the upper-body pose
                     nodePoses[i] = upperNodePoses[i];
                 }
             }
         }
     }
-    // 4. Upload ke Model (Visual)
+    // 5. Upload the pose to the model
     ownerModel->SetNodePoses(nodePoses);
 }
 
@@ -181,7 +178,7 @@ void AnimationController::SetUpperBodyMaskRoot(const std::string& rootNodeName)
     int splitIndex = ownerModel->GetNodeIndex(rootNodeName.c_str());
     if (splitIndex == -1) return;
 
-    // Gunakan lambda rekursif untuk menandai node 'body' dan SEMUA anaknya
+    // Recursive lambda: marks the root node and every node below it
     std::function<void(Model::Node*)> markNode = [&](Model::Node* node) {
         int idx = ownerModel->GetNodeIndex(node->name.c_str());
         if (idx != -1) upperBodyMask[idx] = true;
@@ -194,11 +191,10 @@ void AnimationController::SetUpperBodyMaskRoot(const std::string& rootNodeName)
     markNode(&ownerModel->GetNodes()[splitIndex]);
 }
 
-// 1. Ubah implementasi PlayUpper:
 void AnimationController::PlayUpper(const std::string& name, bool loop)
 {
     if (!ownerModel) return;
     upperAnimIndex = ownerModel->GetAnimationIndex(name.c_str());
     upperTimer = 0.0f;
-    upperIsLooping = loop; // Simpan status looping
+    upperIsLooping = loop;
 }

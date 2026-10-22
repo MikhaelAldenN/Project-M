@@ -84,7 +84,7 @@ void EffectManager::PreloadEffect(const std::string& filePath)
     else
     {
         // ==========================================
-        // [DEBUG] TANGKAP ERROR LOAD FILE DI SINI!
+        // Load failed
         // ==========================================
         std::string errMsg = "[EFFEKSEER ERROR] Gagal meload file (Cek path, tekstur, atau versi Effekseer!): " + filePath + "\n";
         OutputDebugStringA(errMsg.c_str());
@@ -99,7 +99,7 @@ Effekseer::Handle EffectManager::Play(const std::string& filePath, const XMFLOAT
     auto it{ m_effectCache.find(filePath) };
     if (it == m_effectCache.end()) {
         // ==========================================
-        // [DEBUG] TANGKAP ERROR CACHE DI SINI!
+        // Not in the cache: the preload above failed
         // ==========================================
         std::string errMsg = "[EFFEKSEER ERROR] File tidak ada di cache (Preload gagal sebelumnya): " + filePath + "\n";
         OutputDebugStringA(errMsg.c_str());
@@ -111,7 +111,7 @@ Effekseer::Handle EffectManager::Play(const std::string& filePath, const XMFLOAT
 
     if (handle == -1) {
         // ==========================================
-        // [DEBUG] TANGKAP ERROR PLAY HANDLE DI SINI!
+        // Play failed
         // ==========================================
         OutputDebugStringA("[EFFEKSEER ERROR] Manager gagal memutar efek (Handle = -1)!\n");
     }
@@ -125,8 +125,7 @@ Effekseer::Handle EffectManager::Play(const std::string& filePath, const XMFLOAT
 
 void EffectManager::SetTargetPosition(Effekseer::Handle handle, const XMFLOAT3& pos)
 {
-    // Ini akan memberitahu Effekseer bahwa "Pusat Sedotan" (Target) efek ini 
-    // berada di koordinat pos, bukan di (0,0,0) dunia!
+    // Sets the effect's target location (for example the point an effect is pulled toward)
     if (IsPlaying(handle)) m_manager->SetTargetLocation(handle, pos.x, pos.y, pos.z);
 }
 

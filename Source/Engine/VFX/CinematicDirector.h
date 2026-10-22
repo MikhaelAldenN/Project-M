@@ -25,7 +25,7 @@ public:
     // Cleaned up Update (No more breakout energy/thresholds!)
     void Update(float elapsedTime, DirectX::XMFLOAT3 playerPosition);
 
-    // Helper untuk GUI agar tetap bisa diedit
+    // Mutable for the GUI editor
     std::vector<SceneCameraPoint>& GetScenarios() { return m_camScenarioPoints; }
 
 private:

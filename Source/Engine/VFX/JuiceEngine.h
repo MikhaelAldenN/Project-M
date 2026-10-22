@@ -3,13 +3,13 @@
 #include <algorithm>
 #include <cmath>
 
-// Konfigurasi Shake (Parameter Object Pattern)
+// Shake parameters
 struct ShakeSettings {
-    float Duration = 0.5f;          // Durasi total (detik)
-    float AmplitudePos = 0.5f;      // Kekuatan geser (Meter)
-    float AmplitudeRot = 2.0f;      // Kekuatan putar (Derajat)
-    float Frequency = 25.0f;        // Kecepatan getar (Hz)
-    float TraumaFalloff = 1.5f;     // Kecepatan reda (Makin tinggi = makin cepat berhenti)
+    float Duration = 0.5f;          // total duration (s)
+    float AmplitudePos = 0.5f;      // position amplitude (meters)
+    float AmplitudeRot = 2.0f;      // rotation amplitude (degrees)
+    float Frequency = 25.0f;        // frequency (Hz)
+    float TraumaFalloff = 1.5f;     // decay rate (higher = stops sooner)
 };
 
 class JuiceEngine
@@ -18,29 +18,29 @@ public:
     // Singleton Access
     static JuiceEngine& Instance();
 
-    // Panggil ini di Scene::Update atau Game::Update
+    // Call once per frame from the scene update.
     void Update(float deltaTime);
 
-    // --- TRIGGER METHODS (Panggil dari Player/Gameplay) ---
+    // --- Triggers (gameplay code) ---
 
-    // Memicu getaran kamera (Trauma-based)
+    // Starts a trauma-based camera shake.
     void TriggerShake(const ShakeSettings& settings, float intensityMultiplier = 1.0f);
 
-    // Memicu efek glitch pada layar (Kick & Decay)
+    // Starts a screen glitch that decays (kick and decay).
     void TriggerGlitchKick(float power = 1.5f, float decaySpeed = 5.0f);
 
-    // --- GETTER METHODS (Panggil dari Camera & Shader) ---
+    // --- Getters (camera and shaders) ---
 
-    // Dapatkan offset posisi untuk kamera frame ini
+    // Camera position offset for this frame
     DirectX::XMFLOAT3 GetShakePosOffset() const { return m_shakeResultPos; }
 
-    // Dapatkan offset rotasi untuk kamera frame ini (Pitch, Yaw, Roll)
+    // Camera rotation offset for this frame (pitch, yaw, roll)
     DirectX::XMFLOAT3 GetShakeRotOffset() const { return m_shakeResultRot; }
 
-    // Dapatkan nilai intensitas glitch saat ini (untuk dikirim ke Shader)
+    // Current glitch intensity, passed to the shader
     float GetGlitchIntensity() const { return m_currentGlitchIntensity; }
 
-    // Reset semua efek (misal saat ganti scene)
+    // Clears every effect (for example on a scene change).
     void Reset();
 
 private:
