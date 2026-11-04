@@ -152,8 +152,12 @@ Framework::Framework()
         m_gameCanvas.reset();
     }
 
-    // Init Scene
+    // Debug starts in the sandbox for fast iteration; a shipped build starts the player flow.
+#if defined(_DEBUG)
     m_scene = std::make_unique<SceneSandbox>();
+#else
+    m_scene = std::make_unique<SceneIntro>();
+#endif
 }
 
 Framework::~Framework()
