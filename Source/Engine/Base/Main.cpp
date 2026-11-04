@@ -133,7 +133,20 @@ int main(int argc, char* argv[])
                 }
 #endif
 
-                if (event.type == SDL_EVENT_QUIT) running = false;                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) running = false;
+                if (event.type == SDL_EVENT_QUIT)
+                {
+                    running = false;
+                }
+
+#if defined(_DEBUG)
+                // Shift+Esc is a developer quick exit; plain Esc belongs to the scenes (pause).
+                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE
+                    && (event.key.mod & SDL_KMOD_SHIFT) != 0 && !event.key.repeat)
+                {
+                    running = false;
+                }
+#endif
+
                 if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
                 {
                     SDL_Window* closedWin = SDL_GetWindowFromID(event.window.windowID);
