@@ -136,12 +136,6 @@ void SceneSandbox::Render(float elapsedTime, Camera* camera)
         shapeRenderer->Render(dc, targetCam->GetView(), targetCam->GetProjection());
         primRenderer->Render(dc, targetCam->GetView(), targetCam->GetProjection(), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
     }
-
-#if !defined(_DEBUG)
-    // Release keeps the floating window until ImGui is removed (beta).
-    DrawGUI();
-#endif
-
 }
 
 void SceneSandbox::RenderScene(const float elapsedTime, Camera* camera)

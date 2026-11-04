@@ -274,11 +274,6 @@ void SceneBoss::Update(float elapsedTime)
     PerformanceLogger::Instance().StopTimer(PerfBucket::Logic);
     const int activeWins = m_windowSystem ? static_cast<int>(m_windowSystem->GetWindows().size()) : 0;
     PerformanceLogger::Instance().EndFrameCheck(0.0f, activeWins);
-
-#if !defined(_DEBUG)
-    // Release keeps the floating window until ImGui is removed (beta).
-    DrawGUI();
-#endif
 }
 
 void SceneBoss::UpdatePlayerDeathSequence(float elapsedTime)

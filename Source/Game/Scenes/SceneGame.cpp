@@ -961,11 +961,6 @@ void SceneGame::Render(float elapsedTime, Camera* camera)
         m_postProcess->EndCapture(renderTime);
     }
 
-#if !defined(_DEBUG)
-    // Release keeps the floating window until ImGui is removed (beta).
-    DrawGUI();
-#endif
-
     if (m_dialogueBox)
     {
         m_dialogueBox->Render(dc);
