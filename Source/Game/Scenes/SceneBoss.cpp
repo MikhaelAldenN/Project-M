@@ -41,7 +41,11 @@ namespace
 
 SceneBoss::SceneBoss()
 {
+#if defined(_DEBUG)
+    // Opens Logs/ChaosLog_*.txt. Release never opens it, so every later log call is a no-op
+    // and a shipped build writes nothing to the player's disk.
     PerformanceLogger::Instance().Initialize();
+#endif
     PerformanceLogger::Instance().LogInfo("[INIT] SceneBoss constructor begin.");
 
     // --- Window Tracking System ---
