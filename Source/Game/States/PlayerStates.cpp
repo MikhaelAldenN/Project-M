@@ -14,23 +14,27 @@
 namespace {
     // Player bindings. Keyboard and mouse buttons are virtual-key codes read through Keyboard.
     // Charged shot and ult are reserved here so no other action takes them; nothing reads them yet.
+    // Player bindings. Keyboard and mouse buttons are virtual-key codes read through Keyboard.
+    // Gamepad: move on the left stick, aim and shoot on the right stick (see IsShootInputPressed).
+    // Space and A also confirm in the pause menu. That never dashes: the scene does not update
+    // the player while paused, and a key still held on the next frame is not triggered again.
     namespace Binding
     {
         constexpr int keyShoot{ VK_LBUTTON };
         constexpr int keyDash{ VK_SPACE };
-        constexpr int keyChargedShot{ VK_SHIFT };
-        constexpr int keyUlt{ 'E' };
+        constexpr int keyDashAlt{ VK_RBUTTON };
 
-        // Gamepad: shoot is the right stick and charged shot is the right trigger (both analog).
-        constexpr GamePadButton padDash{ GamePad::BTN_A };
-        constexpr GamePadButton padUlt{ GamePad::BTN_Y };
+        // Any of these dashes. The left trigger counts as a button past the XInput threshold.
+        constexpr GamePadButton padDash{ GamePad::BTN_A | GamePad::BTN_LEFT_SHOULDER
+            | GamePad::BTN_RIGHT_SHOULDER | GamePad::BTN_LEFT_TRIGGER };
     }
 
     [[nodiscard]] bool IsDashInputTriggered() noexcept
     {
         auto& input{ Input::Instance() };
 
-        const bool isKeyboardDash{ input.GetKeyboard().IsTriggered(Binding::keyDash) };
+        const Keyboard& keyboard{ input.GetKeyboard() };
+        const bool isKeyboardDash{ keyboard.IsTriggered(Binding::keyDash) || keyboard.IsTriggered(Binding::keyDashAlt) };
         const bool isGamepadDash{ (input.GetGamePad().GetButtonDown() & Binding::padDash) != 0 };
 
         return isKeyboardDash || isGamepadDash;

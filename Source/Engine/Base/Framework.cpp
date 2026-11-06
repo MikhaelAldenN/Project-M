@@ -432,6 +432,12 @@ void Framework::Update(float elapsedTime)
         SDL_SetHint(SDL_HINT_WINDOW_ACTIVATE_WHEN_SHOWN, activation);
         m_wasDebugFocused = isDebugFocused;
     }
+#else
+    // Release: while the F9 dev tools are open and ImGui wants the mouse or keyboard (the
+    // cursor is over a panel, or a text field has focus), clicks and keys belong to ImGui,
+    // so the game must not shoot or dash with them. The flags come from the last ImGui frame.
+    const ImGuiIO& io{ ImGui::GetIO() };
+    Input::Instance().SetKeyboardMouseSuppressed(m_isDevToolsVisible && (io.WantCaptureMouse || io.WantCaptureKeyboard));
 #endif
     Input::Instance().Update();
     AudioManager::Instance().Update(elapsedTime);
