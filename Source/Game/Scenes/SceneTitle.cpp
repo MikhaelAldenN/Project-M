@@ -128,7 +128,7 @@ void SceneTitle::Update(float elapsedTime)
 
         if (m_exitTimer >= BOOT_FADE_DURATION)
         {
-            Framework::Instance()->ChangeScene(std::make_unique<SceneGame>());
+            Framework::Instance()->ChangeScene(Scene::Kind::game);
         }
         return;
     }

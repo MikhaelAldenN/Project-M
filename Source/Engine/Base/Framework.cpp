@@ -187,7 +187,21 @@ Framework::~Framework()
 }
 
 Framework* Framework::Instance() { return pInstance; }
-void Framework::ChangeScene(std::unique_ptr<Scene> newScene) { m_nextScene = std::move(newScene); }
+void Framework::ChangeScene(Scene::Kind next) { m_nextSceneKind = next; }
+
+std::unique_ptr<Scene> Framework::CreateScene(Scene::Kind kind)
+{
+    switch (kind)
+    {
+    case Scene::Kind::intro:   return std::make_unique<SceneIntro>();
+    case Scene::Kind::title:   return std::make_unique<SceneTitle>();
+    case Scene::Kind::game:    return std::make_unique<SceneGame>();
+    case Scene::Kind::sandbox: return std::make_unique<SceneSandbox>();
+    case Scene::Kind::boss:    return std::make_unique<SceneBoss>();
+    case Scene::Kind::none:    break;
+    }
+    return nullptr;
+}
 
 Beyond::Window* Framework::GetMainWindow() const
 {
@@ -390,9 +404,15 @@ void Framework::Update(float elapsedTime)
     ProcessWindowLayoutResetRequest();
 #endif
 
-    if (m_nextScene)
+    if (m_nextSceneKind != Scene::Kind::none)
     {
-        m_scene = std::move(m_nextScene); // the previous scene's destructor runs here
+        const Scene::Kind next{ m_nextSceneKind };
+        m_nextSceneKind = Scene::Kind::none;
+
+        // Why reset before CreateScene: assigning CreateScene's result directly would
+        // build the new scene while the old one still owns its windows and singletons.
+        m_scene.reset();
+        m_scene = CreateScene(next);
     }
 
 #if defined(_DEBUG)
@@ -669,7 +689,7 @@ void Framework::ProcessDebugSceneRequest()
     // Why destroy first: scenes own OS windows and drive singletons (WindowManager,
     // audio, effects); the old one must release them before the new one claims them.
     // A scene queued through ChangeScene is dropped, the debug request wins.
-    m_nextScene.reset();
+    m_nextSceneKind = Scene::Kind::none;
     m_scene.reset();
 
     // Why: Windowkill hides the main window and only SceneTitle shows it again.
@@ -680,13 +700,5 @@ void Framework::ProcessDebugSceneRequest()
         SDL_ShowWindow(mainWin->GetSDLWindow());
     }
 
-    switch (request)
-    {
-    case Scene::Kind::intro:   m_scene = std::make_unique<SceneIntro>(); break;
-    case Scene::Kind::title:   m_scene = std::make_unique<SceneTitle>(); break;
-    case Scene::Kind::game:    m_scene = std::make_unique<SceneGame>(); break;
-    case Scene::Kind::sandbox: m_scene = std::make_unique<SceneSandbox>(); break;
-    case Scene::Kind::boss:    m_scene = std::make_unique<SceneBoss>(); break;
-    case Scene::Kind::none:    break;
-    }
+    m_scene = CreateScene(request);
 }

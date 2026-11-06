@@ -24,7 +24,7 @@ void SceneIntro::Update(float elapsedTime)
     // Transition to the Title Scene when Enter is pressed
     if (Input::Instance().GetKeyboard().IsTriggered(VK_RETURN))
     {
-        Framework::Instance()->ChangeScene(std::make_unique<SceneTitle>());
+        Framework::Instance()->ChangeScene(Scene::Kind::title);
     }
 }
 

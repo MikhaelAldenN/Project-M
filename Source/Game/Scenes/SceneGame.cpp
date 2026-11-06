@@ -209,7 +209,7 @@ void SceneGame::UpdatePauseMenu(const float elapsedTime)
 
         if (t >= 1.0f)
         {
-            Framework::Instance()->ChangeScene(std::make_unique<SceneTitle>());
+            Framework::Instance()->ChangeScene(Scene::Kind::title);
         }
         return;
     }
@@ -297,7 +297,7 @@ void SceneGame::Update(const float elapsedTime)
 
             // Clear the camera so SceneBoss can claim it without it getting overridden
             CameraController::Instance().ClearCamera();
-            Framework::Instance()->ChangeScene(std::make_unique<SceneBoss>());
+            Framework::Instance()->ChangeScene(Scene::Kind::boss);
 
             return;
         }

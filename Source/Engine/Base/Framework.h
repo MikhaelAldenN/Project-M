@@ -31,7 +31,9 @@ public:
     void Update(float elapsedTime);
     void Render(float elapsedTime);
     void ForceUpdateRender();
-    void ChangeScene(std::unique_ptr<Scene> newScene);
+    // Queues a scene change for the start of the next Update. The current scene is
+    // destroyed before the requested one is created. Scene::Kind::none does nothing.
+    void ChangeScene(Scene::Kind next);
     void Quit();
 
     // The main window (window index 0)
@@ -87,6 +89,9 @@ private:
     // if no request is pending. Must run outside any DebugUI callback.
     void ProcessDebugSceneRequest();
 
+    // Returns a new scene of the given kind; null for Scene::Kind::none.
+    [[nodiscard]] static std::unique_ptr<Scene> CreateScene(Scene::Kind kind);
+
 #if defined(_DEBUG)
     // Registers the "Time" panel that drives the simulation clock.
     void RegisterDebugTimePanel();
@@ -103,7 +108,10 @@ private:
     HighResolutionTimer m_timer;
 
     std::unique_ptr<Scene> m_scene;
-    std::unique_ptr<Scene> m_nextScene;
+
+    // Set by ChangeScene, consumed at the start of the next Update.
+    // Scene::Kind::none means no change is pending.
+    Scene::Kind m_nextSceneKind{ Scene::Kind::none };
 
     WindowMode m_mainWindowMode{ WindowMode::windowed };
 

@@ -1838,7 +1838,7 @@ void SceneBoss::SpawnTransparentWindow(float bgAlpha, const std::string& typeSuf
 void SceneBoss::RequestReturnToTitle()
 {
     m_isPendingSceneChange = true;
-    Framework::Instance()->ChangeScene(std::make_unique<SceneTitle>());
+    Framework::Instance()->ChangeScene(Scene::Kind::title);
 }
 
 void SceneBoss::OnSubWindowClosed(std::uint32_t sdlWindowID)
