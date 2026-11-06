@@ -139,11 +139,12 @@ public:
     float GetDashDuration() const { return m_dashDuration; }
     DirectX::XMFLOAT2 GetLastValidInput() const { return m_lastValidInput; }
 
-    // Called by PlayerDash on enter. Spends one dash charge, which also grants the dash
-    // invincibility, and restarts the recovery timer. With no charge left the dash still
-    // happens but is penalized: no invincibility and a reduced speed.
-    // Returns the speed multiplier for this dash (1.0 = full dash).
-    [[nodiscard]] float BeginDash();
+    // Called by the player states on a dash press, before entering PlayerDash. Spends one
+    // dash charge, which also grants the dash invincibility, and restarts the recovery
+    // timer. With no charge left the dash fails: the fail cue plays, the timer restarts,
+    // and the call returns false so the caller keeps walking. Overdrive still dashes
+    // without a charge, but without invincibility.
+    [[nodiscard]] bool TryBeginDash();
 
     // Caps how long the state-driven velocity may still move the player, so a timed move
     // covers exactly speed x duration at any frame rate. PlayerDash sets it in Enter and
@@ -195,6 +196,7 @@ private:
     // --- Update pipeline (called in order from Update()) ---
     void UpdateUncapRegen(float elapsedTime);
     void UpdateDashRecovery(float dt);
+    void PlayDashFailCue();
     [[nodiscard]] bool HasFullDash() const { return m_dashCharges > 0; }
     void HandleMovementInput(float dt);
     void HandleAimInput(Camera* camera);
@@ -241,7 +243,6 @@ private:
     float m_dashIFrameDuration{ PlayerConst::DashIFrameDuration };
     int   m_maxDashCharges{ PlayerConst::DashCharges };
     float m_dashRecoveryTime{ PlayerConst::DashRecoveryTime };
-    float m_dashPenaltyScale{ PlayerConst::DashPenaltyScale }; // USULAN DESAIN: tuned from the Player panel
 
     // --- Dash state ---
     int   m_dashCharges{ PlayerConst::DashCharges }; // full dashes left

@@ -36,6 +36,18 @@ namespace {
         return isKeyboardDash || isGamepadDash;
     }
 
+    // Enters PlayerDash on a dash press when Player allows the dash. A refused press
+    // (no charge left) plays the fail cue inside Player and leaves the current state
+    // running, so walking and shooting go on.
+    [[nodiscard]] bool TryStartDash(Player* player)
+    {
+        if (!IsDashInputTriggered()) return false;
+        if (!player->TryBeginDash()) return false;
+
+        player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
+        return true;
+    }
+
     [[nodiscard]] bool IsShootInputPressed(const Player& player) noexcept
     {
         auto& input{ Input::Instance() };
@@ -81,11 +93,7 @@ void PlayerIdle::Update(Player* player, float dt)
     if (!player->IsInputEnabled()) return;
 
     // Dash Priority (Seamlessly checks Keyboard and Gamepad LB)
-    if (IsDashInputTriggered()) 
-    {
-        player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
-        return;
-    }
+    if (TryStartDash(player)) return;
 
     // Shoot
     if (TryStartShoot(player, dt)) return;
@@ -113,11 +121,7 @@ void PlayerMoving::Update(Player* player, float dt)
     if (player->IsInputEnabled())
     {
         // Dash Priority
-        if (IsDashInputTriggered()) 
-        {
-            player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
-            return;
-        }
+        if (TryStartDash(player)) return;
 
         // Shoot
         if (TryStartShoot(player, dt)) return;
@@ -144,14 +148,10 @@ void PlayerDash::Enter(Player* player)
         ? DirectX::XMFLOAT2{ m_dashDir.x / dirLength, m_dashDir.y / dirLength }
     : DirectX::XMFLOAT2{ 0.0f, 1.0f };
 
-    // Player owns the charge rule: it grants invincibility on a full dash and returns
-    // a reduced multiplier on a penalized one.
-    m_speedScale = player->BeginDash();
-
     // Why here and not in Update: movement runs before the state machine in
     // Player::Update, so a velocity set in Update would only move the player two frames
     // after the press.
-    const float speed{ player->GetDashSpeed() * m_speedScale };
+    const float speed{ player->GetDashSpeed() };
     player->GetMovement()->SetVelocity({ m_dashDir.x * speed, 0.0f, m_dashDir.y * speed });
     player->SetStateMoveTimeLimit(m_timer);
 
@@ -204,9 +204,9 @@ void PlayerDash::Update(Player* player, float dt)
 
     if (m_timer <= 0.0f)
     {
-        // A buffered press chains into the next dash; its Enter asks Player::BeginDash
-        // whether that dash is full or penalized.
-        if (m_isDashBuffered)
+        // A buffered press chains into the next dash when Player allows it; a refused one
+        // has already played the fail cue and the player walks on.
+        if (m_isDashBuffered && player->TryBeginDash())
             player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
         else if (player->IsMoving())
             player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerMoving>());
@@ -228,11 +228,7 @@ void PlayerDash::Exit(Player* player)
 void PlayerShoot::Update(Player* player, float dt)
 {
     // Dash Lockout Prevention
-    if (IsDashInputTriggered()) // always allowed; Player::BeginDash decides full or penalized
-    {
-        player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerDash>());
-        return;
-    }
+    if (TryStartDash(player)) return;
 
     // Why no minimum time in this state: the fire interval lives in Player, so leaving
     // and re-entering cannot fire faster than holding.

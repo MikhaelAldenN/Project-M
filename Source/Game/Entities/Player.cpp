@@ -29,6 +29,13 @@ namespace
     // The player stays on stage geometry: moves that would leave every floor are refused.
     constexpr KinematicMover::Settings k_stageMoveSettings{
         PlayerConst::CollisionRadius, PlayerConst::StepOffset, PlayerConst::SkinWidth, true };
+
+    // Placeholder dash-fail cue until the SFX pass (WORKLIST 4.6): a short click and a small
+    // puff at the feet.
+    constexpr const char* k_dashFailSound{ "Data/Sound/SE_Tap.wav" };
+    constexpr float k_dashFailSoundVolume{ 0.3f };
+    constexpr const char* k_dashFailEffect{ "Data/Effect/VFX_Boss_Phalanx_Smoke.efk" };
+    constexpr float k_dashFailEffectScale{ 0.3f };
 }
 
 // ============================================================
@@ -370,22 +377,30 @@ void Player::UpdateDashRecovery(float dt)
     AudioManager::Instance().PlaySFX("Data/Sound/SE_Player_Dash_Ready_01.wav", 0.3f);
 }
 
-float Player::BeginDash()
+bool Player::TryBeginDash()
 {
-    const bool hasCharge{ m_dashCharges > 0 };
-    if (hasCharge)
+    // Why restarted on every press, failed ones included: recovery is counted from the
+    // last press, so mashing an empty dash keeps the charges empty.
+    m_dashRecoveryTimer = m_dashRecoveryTime;
+
+    if (m_dashCharges > 0)
     {
         --m_dashCharges;
         TriggerInvincibility(m_dashIFrameDuration);
+        return true;
     }
 
-    // Why restarted on every dash: recovery is counted from the last dash, so spamming
-    // keeps the penalty active.
-    m_dashRecoveryTimer = m_dashRecoveryTime;
+    // USULAN DESAIN: overdrive still dashes without a charge; invincibility needs a charge.
+    if (m_isPowerUncapped) return true;
 
-    // USULAN DESAIN: overdrive lifts the distance penalty only; invincibility still needs a charge.
-    const bool isPenalized{ !hasCharge && !m_isPowerUncapped };
-    return isPenalized ? m_dashPenaltyScale : 1.0f;
+    PlayDashFailCue();
+    return false;
+}
+
+void Player::PlayDashFailCue()
+{
+    AudioManager::Instance().PlaySFX(k_dashFailSound, k_dashFailSoundVolume);
+    EffectManager::Instance().Play(k_dashFailEffect, m_movement->GetPosition(), k_dashFailEffectScale);
 }
 
 void Player::HandleMovementInput(float dt)
@@ -1104,7 +1119,6 @@ void Player::DrawDebugGUI()
         DebugProperty::Text("Recovery", "%.2f s", (m_dashCharges < m_maxDashCharges) ? m_dashRecoveryTimer : 0.0f);
         DebugProperty::SliderInt("Full dashes", m_maxDashCharges, 1, 5);
         DebugProperty::DragFloat("Recovery time", m_dashRecoveryTime, 0.01f, 0.0f, 5.0f, "%.2f s");
-        DebugProperty::SliderFloat("Penalty speed scale", m_dashPenaltyScale, 0.1f, 1.0f, "%.2f");
         DebugProperty::DragFloat("I-frame duration", m_dashIFrameDuration, 0.01f, 0.0f, 1.0f, "%.2f s");
     }
     ImGui::PopID();

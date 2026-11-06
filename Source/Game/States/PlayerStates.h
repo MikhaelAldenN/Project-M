@@ -35,7 +35,6 @@ public:
 private:
     float m_timer = 0.0f;
     DirectX::XMFLOAT2 m_dashDir = { 0.0f, 0.0f };
-    float m_speedScale{ 1.0f }; // below 1 on a penalized dash, set in Enter
     bool m_isDashBuffered{ false }; // dash pressed during this dash, runs when it ends
     int m_dashGoVfxHandle = -1;
 };
