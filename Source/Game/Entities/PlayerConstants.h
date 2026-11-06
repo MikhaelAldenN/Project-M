@@ -27,6 +27,11 @@ namespace PlayerConst
     inline constexpr int   DashCharges = 2;      // Dashes available before a press fails
     inline constexpr float DashRecoveryTime = 0.8f;   // USULAN DESAIN: time without dashing that restores all charges (s)
 
+    // --- Health ---
+    inline constexpr int   MaxHits = 6;               // USULAN DESAIN: hits that kill the player; every bullet is one hit
+    inline constexpr float HitIFrameDuration = 1.0f;  // Invincibility after a hit (s)
+    inline constexpr float HitBlinkInterval = 0.1f;   // USULAN DESAIN: model hidden, then shown, every this many seconds during it
+
     // --- Shoot ---
     inline constexpr float ShootInterval = 0.15f;           // USULAN DESAIN: seconds between shots while held
     inline constexpr float OverdriveShootInterval = 0.05f;  // Seconds between shots during overdrive

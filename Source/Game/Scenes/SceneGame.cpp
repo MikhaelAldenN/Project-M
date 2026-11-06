@@ -122,7 +122,7 @@ SceneGame::SceneGame()
     m_player->SetPosition(m_playerSpawnPos);
     m_player->SetStageCollider(&m_stage->GetCollider());
 
-    m_player->SetMaxHP(100);
+    m_player->RefillHP();
 
     PlayerConfig gameConfig{};
     gameConfig.moveSpeed = 8.0f;
@@ -528,7 +528,7 @@ void SceneGame::Update(const float elapsedTime)
                     {
                         if (m_player)
                         {
-                            m_player->SetMaxHP(BOSS_MAX_HP);
+                            m_player->RefillHP();
                         }
                         m_hasHealedForBoss = true;
                     }
@@ -816,7 +816,7 @@ void SceneGame::ResetLevel()
     {
         m_player->SetPosition(respawnPos);
         m_player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f });
-        m_player->SetMaxHP(isBossStage ? BOSS_MAX_HP : NORMAL_MAX_HP);
+        m_player->RefillHP();
         m_player->SetInputEnabled(false);
         m_player->m_scale = { 1.0f, 1.0f, 1.0f };
         m_player->GetStateMachine()->ChangeState(m_player.get(), std::make_unique<PlayerIdle>());
@@ -1011,8 +1011,11 @@ void SceneGame::RenderScene(const float elapsedTime, Camera* camera)
 
     if (m_player)
     {
-        modelRenderer->Draw(ShaderId::Phong, m_player->GetModel(), m_player->m_color);
-        m_player->RenderWeapon(modelRenderer);
+        if (!m_player->IsBlinkHidden())
+        {
+            modelRenderer->Draw(ShaderId::Phong, m_player->GetModel(), m_player->m_color);
+            m_player->RenderWeapon(modelRenderer);
+        }
         m_player->RenderProjectiles(modelRenderer);
     }
     if (m_cue) {

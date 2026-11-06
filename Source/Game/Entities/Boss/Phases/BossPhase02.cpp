@@ -696,7 +696,7 @@ void BossPhase02::Render(ID3D11DeviceContext* context, Camera* currentCamera, Cu
         if (m_aiTarget)
         {
             playerHP = m_aiTarget->GetHP();
-            playerMaxHP = 100; // standard player max HP
+            playerMaxHP = m_aiTarget->GetMaxHP();
         }
         m_hudRenderer->Render(context,
             playerHP, playerMaxHP,

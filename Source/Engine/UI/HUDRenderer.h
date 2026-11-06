@@ -21,7 +21,7 @@ public:
     ~HUDRenderer() = default;
 
     // Call this every frame to submit + flush the bar geometry.
-    // playerHP/MaxHP  : from Player::GetHP() / 100
+    // playerHP/MaxHP  : from Player::GetHP() / GetMaxHP() (hits)
     // bossHP/MaxHP    : from current phase GetHP() / GetMaxHP()
     //                   pass bossMaxHP = 0 to hide boss bar
     void Render(ID3D11DeviceContext* dc,

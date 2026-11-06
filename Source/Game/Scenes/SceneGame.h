@@ -123,8 +123,6 @@ private:
     void UpdatePauseMenu(float elapsedTime);
 
 	// HEALTH MANAGEMENT
-    static constexpr float BOSS_MAX_HP{ 150.0f };
-    static constexpr float NORMAL_MAX_HP{ 100.0f };
 
     bool m_hasHealedForBoss{ false };
 

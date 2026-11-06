@@ -158,12 +158,11 @@ void Player::Update(float elapsedTime, Camera* camera)
     {
         m_invincibilityTimer -= elapsedTime;
     }
+    m_hitBlinkTimer = (std::max)(m_hitBlinkTimer - elapsedTime, 0.0f);
 
     // Why it may go below zero: TryFire reads how far past due the next shot is.
     // Floored so a long pause does not grow it without limit.
     m_shootCooldown = (std::max)(m_shootCooldown - elapsedTime, -1.0f);
-
-    UpdateUncapRegen(elapsedTime);
 
     UpdateDashRecovery(elapsedTime);
 
@@ -213,21 +212,6 @@ void Player::Update(float elapsedTime, Camera* camera)
 // ============================================================
 // UPDATE SUB-STEPS
 // ============================================================
-
-void Player::UpdateUncapRegen(float elapsedTime)
-{
-    if (m_isPowerUncapped && m_hp > 0 && m_hp < m_uncapMaxRegenHP) {
-        m_uncapRegenAccumulator += m_uncapHealthRegenPerSecond * elapsedTime;
-        int healAmount = static_cast<int>(m_uncapRegenAccumulator);
-        if (healAmount > 0) {
-            Heal(healAmount);
-            m_uncapRegenAccumulator -= static_cast<float>(healAmount);
-        }
-    }
-    else {
-        m_uncapRegenAccumulator = 0.0f;
-    }
-}
 
 void Player::UpdateActionState(float elapsedTime)
 {
@@ -969,20 +953,23 @@ void Player::StopAllVFX()
 // ============================================================
 // DAMAGE SYSTEM
 // ============================================================
-DamageResult Player::TakeDamage(const DamageInfo& damage)
+DamageResult Player::TakeDamage([[maybe_unused]] const DamageInfo& damage)
 {
-    if (m_hp <= 0.0f || IsInvincible()) return DamageResult::ignored;
+    if (m_hp <= 0 || IsInvincible()) return DamageResult::ignored;
 
-    m_hp -= static_cast<float>(damage.amount);
+    // One hit, one HP: damage.amount belongs to sources that also hit enemies and the boss.
+    --m_hp;
 
-    if (m_enableIFrames) {
+    if (m_enableIFrames)
+    {
         TriggerInvincibility(m_iFrameDuration);
+        m_hitBlinkTimer = m_iFrameDuration;
     }
     m_damageGlitchTimer = DAMAGE_GLITCH_DURATION;
 
-    if (m_hp <= 0.0f)
+    if (m_hp <= 0)
     {
-        m_hp = 0.0f;
+        m_hp = 0;
         StopAllVFX();
         EnterDeathState();
         return DamageResult::killed;
@@ -998,17 +985,15 @@ void Player::EnterDeathState()
     m_stateMachine->ChangeState(this, std::make_unique<PlayerDead>());
 }
 
-void Player::Heal(float amount) {
-    if (amount <= 0.0f || m_hp <= 0.0f) return;
-    m_hp += amount;
-    if (m_hp > m_maxHp) m_hp = m_maxHp;
-}
+bool Player::IsBlinkHidden() const
+{
+    if (m_hitBlinkTimer <= 0.0f) return false;
 
-void Player::Heal(int amount) {
-    if (amount <= 0 || m_hp <= 0) return;
-    m_hp += static_cast<float>(amount);
-    if (m_hp > m_maxHp) m_hp = m_maxHp;
-
+    // Hidden on every other interval, counted from the end of the blink so it always
+    // finishes on a visible step.
+    const float interval{ (std::max)(m_hitBlinkInterval, 0.01f) };
+    const int step{ static_cast<int>(m_hitBlinkTimer / interval) };
+    return (step % 2) == 1;
 }
 // ============================================================
 // GAME FEEL & JUICE
@@ -1040,7 +1025,6 @@ void Player::ReleasePowerCap()
 {
     if (m_isPowerUncapped) return;
     m_isPowerUncapped = true;
-    m_uncapRegenAccumulator = 0.0f;
 
     // Keep the current values so RestorePowerCap can put them back.
     m_normalMoveSpeed = m_moveSpeed;
@@ -1057,7 +1041,6 @@ void Player::RestorePowerCap()
 {
     if (!m_isPowerUncapped) return;
     m_isPowerUncapped = false;
-    m_uncapRegenAccumulator = 0.0f;
 
     // Back to the values saved by ReleasePowerCap
     m_moveSpeed = m_normalMoveSpeed;
@@ -1069,9 +1052,9 @@ void Player::RestorePowerCap()
 void Player::DrawDebugGUI()
 {
     // ---- Head: state ----
-    const float hpFraction{ (m_maxHp > 0.0f) ? (m_hp / m_maxHp) : 0.0f };
+    const float hpFraction{ (m_maxHp > 0) ? (static_cast<float>(m_hp) / static_cast<float>(m_maxHp)) : 0.0f };
     std::array<char, 48> hpText{};
-    std::snprintf(hpText.data(), hpText.size(), "HP %.1f / %.1f", m_hp, m_maxHp);
+    std::snprintf(hpText.data(), hpText.size(), "HP %d / %d", m_hp, m_maxHp);
     ImGui::ProgressBar(hpFraction, ImVec2{ -1.0f, 0.0f }, hpText.data());
 
     const DirectX::XMFLOAT3 playerPos{ GetPosition() };
@@ -1079,8 +1062,7 @@ void Player::DrawDebugGUI()
     DebugProperty::Text("Input", "%s", m_isInputEnabled ? "on" : "off");
 
     // ---- Head: actions ----
-    float hp{ m_hp };
-    if (DebugProperty::DragFloat("Set HP", hp, 1.0f, 0.0f, m_maxHp, "%.0f")) m_hp = hp;
+    DebugProperty::SliderInt("Set HP", m_hp, 0, m_maxHp);
 
     if (ImGui::Button("Heal")) m_hp = m_maxHp;
     ImGui::SameLine();
@@ -1088,6 +1070,8 @@ void Player::DrawDebugGUI()
     if (ImGui::Button("Reset state"))
     {
         m_hp = m_maxHp;
+        m_invincibilityTimer = 0.0f;
+        m_hitBlinkTimer = 0.0f;
         m_scale = { 1.0f, 1.0f, 1.0f }; // the death sequence hides the player by zeroing scale
         m_isInputEnabled = true;
         m_aimLocked = false;
@@ -1123,11 +1107,11 @@ void Player::DrawDebugGUI()
     ImGui::PushID("Health");
     if (ImGui::CollapsingHeader("Health"))
     {
-        float maxHp{ m_maxHp };
-        // SetMaxHP also refills HP to the new maximum.
-        if (DebugProperty::DragFloat("Max HP", maxHp, 1.0f, 1.0f, 9999.0f, "%.0f")) SetMaxHP(maxHp);
+        // Changing the maximum also refills HP.
+        if (DebugProperty::SliderInt("Max HP (hits)", m_maxHp, 1, 20)) RefillHP();
         DebugProperty::Checkbox("I-frames enabled", m_enableIFrames);
         DebugProperty::DragFloat("I-frame duration", m_iFrameDuration, 0.1f, 0.1f, 5.0f, "%.2f s");
+        DebugProperty::DragFloat("Blink interval", m_hitBlinkInterval, 0.01f, 0.02f, 0.5f, "%.2f s");
     }
     ImGui::PopID();
 
@@ -1151,8 +1135,6 @@ void Player::DrawDebugGUI()
         {
             m_dashSpeed = m_uncapDashSpeed;
         }
-        DebugProperty::DragFloat("HP regen per second", m_uncapHealthRegenPerSecond, 0.1f, 0.0f, 100.0f, "%.1f");
-        DebugProperty::DragFloat("Regen max HP", m_uncapMaxRegenHP, 1.0f, 1.0f, 9999.0f, "%.0f");
         if (DebugProperty::ColorEdit4("Glow color", &m_uncapColor.x) && isUncapped) m_color = m_uncapColor;
         DebugProperty::DragFloat("Fire interval", m_overdriveShootInterval, 0.005f, PlayerConst::MinShootInterval, 1.0f, "%.3f s");
     }

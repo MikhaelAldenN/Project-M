@@ -56,7 +56,7 @@ SceneSandbox::SceneSandbox()
     m_player = std::make_unique<Player>();
     m_player->SetPosition(m_playerSpawnPos);
     m_player->SetStageCollider(&m_stage->GetCollider());
-    m_player->SetMaxHP(100);
+    m_player->RefillHP();
 
     PlayerConfig sandboxConfig{};
     sandboxConfig.moveSpeed = 8.0f;
@@ -145,8 +145,11 @@ void SceneSandbox::RenderScene(const float elapsedTime, Camera* camera)
 
     if (m_player)
     {
-        modelRenderer->Draw(ShaderId::Phong, m_player->GetModel(), m_player->m_color);
-        m_player->RenderWeapon(modelRenderer);
+        if (!m_player->IsBlinkHidden())
+        {
+            modelRenderer->Draw(ShaderId::Phong, m_player->GetModel(), m_player->m_color);
+            m_player->RenderWeapon(modelRenderer);
+        }
         m_player->RenderProjectiles(modelRenderer);
     }
     if (m_stage)
@@ -179,7 +182,7 @@ void SceneSandbox::DrawDebugPanel()
         const auto pos{ m_player->GetPosition() };
         ImGui::Separator();
         ImGui::Text("Player Pos: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
-        ImGui::Text("Player HP: %.1f", m_player->GetHP());
+        ImGui::Text("Player HP: %d", m_player->GetHP());
     }
 
     if (m_stage)

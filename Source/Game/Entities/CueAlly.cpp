@@ -409,10 +409,10 @@ void CueAlly::SetPotionedState(bool isPotioned) noexcept
 
     m_isPotioned = isPotioned;
 
-    // When Potioned starts, heal the player to 150 HP
+    // When Potioned starts, the player's HP is refilled
     if (m_isPotioned && m_targetPlayer)
     {
-        m_targetPlayer->SetMaxHP(150);
+        m_targetPlayer->RefillHP();
     }
 }
 

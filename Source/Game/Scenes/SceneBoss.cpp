@@ -672,10 +672,10 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
     if (m_hud && !isTransparentWindow && targetCam == m_mainCamera.get())
     {
         const ICuePhase* hudPhase{ m_cue ? m_cue->GetCurrentPhase() : nullptr };
-        // Whole HP steps: the HUD takes ints, and a 30 HP player shows one step per hit.
+        // Player HP counts hits, so the bar drops one step per hit.
         m_hud->Render(dc,
-            m_player ? static_cast<int>(m_player->GetHP()) : 0,
-            m_player ? static_cast<int>(m_player->GetMaxHP()) : 0,
+            m_player ? m_player->GetHP() : 0,
+            m_player ? m_player->GetMaxHP() : 0,
             hudPhase ? hudPhase->GetHP() : 0,
             hudPhase ? hudPhase->GetMaxHP() : 0);
     }
@@ -950,7 +950,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
                 isInView = true; // always drawn while caged
             }
 
-            if (isInView) {
+            if (isInView && !m_player->IsBlinkHidden()) {
                 m_player->Render(modelRenderer);
             }
         }
@@ -1743,7 +1743,7 @@ void SceneBoss::AddLog(const std::string& message)
         {
             m_player->SetPosition(0.0f, 0.0f, -8.0f);
             m_player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f });
-            m_player->SetMaxHP(m_player->GetMaxHP());
+            m_player->RefillHP();
             m_player->SetInputEnabled(false);
             m_player->m_scale = { 1.0f, 1.0f, 1.0f };
 

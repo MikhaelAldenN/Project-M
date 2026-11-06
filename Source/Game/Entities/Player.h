@@ -153,16 +153,21 @@ public:
     void ClearStateMoveTimeLimit() noexcept { m_isStateMoveTimed = false; }
 
 	// --- Health ---
-    // Applies one hit, starts i-frames if they are enabled, and triggers the damage glitch.
-    // Returns `ignored` while invincible or already dead. A `killed` hit also enters the
-    // death state, so every damage source shares one death path.
+    // HP counts hits: every hit costs one HP, whatever damage.amount the source carries.
+    // Applies one hit, starts i-frames and the blink if they are enabled, and triggers the
+    // damage glitch. Returns `ignored` while invincible or already dead. A `killed` hit also
+    // enters the death state, so every damage source shares one death path.
     DamageResult TakeDamage(const DamageInfo& damage);
 
-    void SetMaxHP(float maxHp) { m_maxHp = maxHp; m_hp = maxHp; } // Sets the cap and refills HP
-    void Heal(float amount);
-    void Heal(int amount);
-    [[nodiscard]] float GetHP() const { return m_hp; }
-    [[nodiscard]] float GetMaxHP() const { return m_maxHp; }
+    // Refills HP to the maximum. Called at the start of an act and on respawn; there is no
+    // other healing.
+    void RefillHP() { m_hp = m_maxHp; }
+    [[nodiscard]] int GetHP() const { return m_hp; }
+    [[nodiscard]] int GetMaxHP() const { return m_maxHp; }
+
+    // True on the frames the post-hit blink hides the player. Scenes then skip drawing the
+    // body and the weapon; the player's bullets are still drawn.
+    [[nodiscard]] bool IsBlinkHidden() const;
 
 	// --- Invincibility (used by PlayerDash and PlayerHit states) ---
     void TriggerInvincibility(float duration) { m_invincibilityTimer = duration; }
@@ -194,7 +199,6 @@ private:
     void StandOnGround();
 
     // --- Update pipeline (called in order from Update()) ---
-    void UpdateUncapRegen(float elapsedTime);
     void UpdateDashRecovery(float dt);
     void PlayDashFailCue();
     [[nodiscard]] bool HasFullDash() const { return m_dashCharges > 0; }
@@ -249,8 +253,8 @@ private:
     float m_dashRecoveryTimer{ 0.0f };
 
     // --- Health ---
-    float m_hp = 30.0f;
-    float m_maxHp = 30.0f;
+    int m_hp{ PlayerConst::MaxHits };
+    int m_maxHp{ PlayerConst::MaxHits };
 
 	// --- Invincibility timer (counts down when active, prevents damage) ---
     float m_invincibilityTimer = 0.0f;
@@ -295,17 +299,16 @@ private:
 
     float m_uncapMoveSpeed = 30.0f;
     float m_uncapDashSpeed = 80.0f;
-    float m_uncapHealthRegenPerSecond = 3.0f;
-    float m_uncapMaxRegenHP = 50.0f;
-    float m_uncapRegenAccumulator = 0.0f;
     DirectX::XMFLOAT4 m_uncapColor = { 1.5f, 1.5f, 1.5f, 1.0f };
 
     float m_normalMoveSpeed = PlayerConst::MoveSpeed;
     float m_normalDashSpeed = PlayerConst::DashSpeed;
     DirectX::XMFLOAT4 m_normalColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-    bool m_enableIFrames = false;
-    float m_iFrameDuration = 1.0f;
+    bool m_enableIFrames{ true };
+    float m_iFrameDuration{ PlayerConst::HitIFrameDuration };
+    float m_hitBlinkInterval{ PlayerConst::HitBlinkInterval };
+    float m_hitBlinkTimer{ 0.0f }; // seconds of blink left after a hit
 
     // Dash Ready VFX handle and Y offset
     int m_dashReadyVfxHandle = -1;
