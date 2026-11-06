@@ -101,7 +101,7 @@ void BossPhase02::UpdateOverlaySizeFromDisplay() {
 
 void BossPhase02::CreateFxWindow(WindowTrackingSystem& windowSystem) {
     // Created when the phase starts, not preloaded.
-    TrackedWindowConfig fxCfg = { "cue_fx", "N.A.V.I - FX", (int)m_screenW, (int)m_screenH, 3 };
+    TrackedWindowConfig fxCfg = { "cue_fx", "C.U.E - FX", (int)m_screenW, (int)m_screenH, 3 };
     fxCfg.role = WindowRole::SUB_VIEWPORT;
     fxCfg.isTransparent = true;
 
@@ -181,7 +181,7 @@ void BossPhase02::StartOpeningDialogue(WindowTrackingSystem& windowSystem) {
     {
         TrackedWindowConfig diagCfg;
         diagCfg.name = m_dialogueWindowName;
-        diagCfg.title = "N.A.V.I";
+        diagCfg.title = "C.U.E";
         diagCfg.width = (int)m_dialogueWindowW;
         diagCfg.height = (int)m_dialogueWindowH;
         diagCfg.role = WindowRole::TRACKED_ENTITY;
