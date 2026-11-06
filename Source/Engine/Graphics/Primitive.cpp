@@ -5,6 +5,7 @@
 #include <cassert>
 #include <vector>
 #include <cstdio>
+#include <algorithm>
 
 Primitive::Primitive(ID3D11Device* device)
 {
@@ -149,27 +150,17 @@ void Primitive::DrawRectInternal(const DirectX::XMFLOAT2& pos, const DirectX::XM
 void Primitive::Render(ID3D11DeviceContext* context)
 {
     if (m_batchVertices.empty()) return;
+    if (!m_vertexBuffer)
+    {
+        m_batchVertices.clear();
+        return;
+    }
 
     UINT num = 1;
     D3D11_VIEWPORT vp;
     context->RSGetViewports(&num, &vp);
     float screenW = vp.Width;
     float screenH = vp.Height;
-
-    D3D11_MAPPED_SUBRESOURCE msr;
-    if (SUCCEEDED(context->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr)))
-    {
-        Vertex* ptr = (Vertex*)msr.pData;
-        for (const auto& v : m_batchVertices)
-        {
-            Vertex finalV = v;
-            // Pixels to NDC
-            finalV.position.x = (v.position.x / screenW) * 2.0f - 1.0f;
-            finalV.position.y = -((v.position.y / screenH) * 2.0f - 1.0f);
-            *ptr++ = finalV;
-        }
-        context->Unmap(m_vertexBuffer.Get(), 0);
-    }
 
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
@@ -183,7 +174,29 @@ void Primitive::Render(ID3D11DeviceContext* context)
     context->RSSetState(m_rasterizerState.Get());
     context->OMSetDepthStencilState(m_depthStencilState.Get(), 0);
 
-    context->Draw((UINT)m_batchVertices.size(), 0);
+    // The queue can hold more vertices than the buffer, so it is drawn in batches.
+    // Why a multiple of 3: a batch must end on a whole triangle, and 2048 is not one.
+    const size_t batchSize{ m_maxVertices - m_maxVertices % 3 };
+    for (size_t first = 0; first < m_batchVertices.size(); first += batchSize)
+    {
+        const size_t count{ (std::min)(batchSize, m_batchVertices.size() - first) };
+
+        D3D11_MAPPED_SUBRESOURCE msr;
+        if (FAILED(context->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr))) break;
+
+        Vertex* ptr = (Vertex*)msr.pData;
+        for (size_t i = first; i < first + count; ++i)
+        {
+            Vertex finalV = m_batchVertices[i];
+            // Pixels to NDC
+            finalV.position.x = (finalV.position.x / screenW) * 2.0f - 1.0f;
+            finalV.position.y = -((finalV.position.y / screenH) * 2.0f - 1.0f);
+            *ptr++ = finalV;
+        }
+        context->Unmap(m_vertexBuffer.Get(), 0);
+
+        context->Draw(static_cast<UINT>(count), 0);
+    }
     m_batchVertices.clear();
 }
 

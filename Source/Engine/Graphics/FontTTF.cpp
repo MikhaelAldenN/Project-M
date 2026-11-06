@@ -4,6 +4,8 @@
 #include "System/Graphics.h"
 #include "System/GpuResourceUtils.h"
 #include <fstream>
+#include <algorithm>
+#include <cstring>
 
 // Same layout as Sprite::Vertex so the engine's built-in sprite shader can be reused.
 struct FontVertex {
@@ -11,6 +13,29 @@ struct FontVertex {
     DirectX::XMFLOAT4 color;
     DirectX::XMFLOAT2 texcoord;
 };
+
+namespace
+{
+    constexpr size_t k_verticesPerGlyph{ 6 }; // two triangles
+    constexpr size_t k_maxGlyphsPerBatch{ 1000 };
+    constexpr size_t k_maxVerticesPerBatch{ k_verticesPerGlyph * k_maxGlyphsPerBatch };
+
+    // Uploads vertices into buffer and draws them, in batches that fit the buffer
+    // (k_maxVerticesPerBatch). The pipeline state must already be bound.
+    void DrawBatched(ID3D11DeviceContext* dc, ID3D11Buffer* buffer, const std::vector<FontVertex>& vertices)
+    {
+        for (size_t first = 0; first < vertices.size(); first += k_maxVerticesPerBatch) {
+            const size_t count{ (std::min)(k_maxVerticesPerBatch, vertices.size() - first) };
+
+            D3D11_MAPPED_SUBRESOURCE ms{};
+            if (FAILED(dc->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms))) return;
+            std::memcpy(ms.pData, vertices.data() + first, sizeof(FontVertex) * count);
+            dc->Unmap(buffer, 0);
+
+            dc->Draw(static_cast<UINT>(count), 0);
+        }
+    }
+}
 
 FontTTF::FontTTF() {}
 
@@ -168,9 +193,9 @@ void FontTTF::CreateShadersAndBuffers(ID3D11Device* device)
     GpuResourceUtils::LoadVertexShader(device, "Data/Shader/SpriteVS.cso", layoutDesc, ARRAYSIZE(layoutDesc), m_inputLayout.GetAddressOf(), m_vertexShader.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Data/Shader/SpritePS.cso", m_pixelShader.GetAddressOf());
 
-    // Dynamic vertex buffer for up to 1000 characters per draw call
+    // Dynamic vertex buffer for one batch; longer text is drawn in several batches
     D3D11_BUFFER_DESC bufDesc = {};
-    bufDesc.ByteWidth = sizeof(FontVertex) * 6 * 1000; // 6 vertices per character (2 triangles)
+    bufDesc.ByteWidth = static_cast<UINT>(sizeof(FontVertex) * k_maxVerticesPerBatch);
     bufDesc.Usage = D3D11_USAGE_DYNAMIC;
     bufDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     bufDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -180,7 +205,7 @@ void FontTTF::CreateShadersAndBuffers(ID3D11Device* device)
 
 void FontTTF::Draw(const std::string& utf8Text, float startX, float startY, float scale, DirectX::XMFLOAT4 color)
 {
-    if (utf8Text.empty() || !m_textureSRV) return;
+    if (utf8Text.empty() || !m_textureSRV || !m_vertexBuffer) return;
 
     std::vector<FontVertex> vertices;
     float cursorX = startX;
@@ -232,11 +257,6 @@ void FontTTF::Draw(const std::string& utf8Text, float startX, float startY, floa
     if (vertices.empty()) return;
 
     auto dc = Graphics::Instance().GetDeviceContext();
-    D3D11_MAPPED_SUBRESOURCE ms;
-    if (SUCCEEDED(dc->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms))) {
-        memcpy(ms.pData, vertices.data(), sizeof(FontVertex) * vertices.size());
-        dc->Unmap(m_vertexBuffer.Get(), 0);
-    }
 
     UINT stride = sizeof(FontVertex);
     UINT offset = 0;
@@ -248,12 +268,12 @@ void FontTTF::Draw(const std::string& utf8Text, float startX, float startY, floa
     dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
     dc->PSSetShaderResources(0, 1, m_textureSRV.GetAddressOf());
 
-    dc->Draw(static_cast<UINT>(vertices.size()), 0);
+    DrawBatched(dc, m_vertexBuffer.Get(), vertices);
 }
 
 void FontTTF::Draw3D(const std::string& utf8Text, const Camera* camera, DirectX::XMFLOAT3 worldPos, float scale, DirectX::XMFLOAT4 color)
 {
-    if (utf8Text.empty() || !m_textureSRV || !camera) return;
+    if (utf8Text.empty() || !m_textureSRV || !m_vertexBuffer || !camera) return;
 
     std::vector<FontVertex> vertices;
     float cursorX = 0.0f;
@@ -315,11 +335,6 @@ void FontTTF::Draw3D(const std::string& utf8Text, const Camera* camera, DirectX:
     if (vertices.empty()) return;
 
     auto dc = Graphics::Instance().GetDeviceContext();
-    D3D11_MAPPED_SUBRESOURCE ms;
-    if (SUCCEEDED(dc->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms))) {
-        memcpy(ms.pData, vertices.data(), sizeof(FontVertex) * vertices.size());
-        dc->Unmap(m_vertexBuffer.Get(), 0);
-    }
 
     UINT stride = sizeof(FontVertex);
     UINT offset = 0;
@@ -331,5 +346,5 @@ void FontTTF::Draw3D(const std::string& utf8Text, const Camera* camera, DirectX:
     
     dc->PSSetShaderResources(0, 1, m_textureSRV.GetAddressOf());
 
-    dc->Draw(static_cast<UINT>(vertices.size()), 0);
+    DrawBatched(dc, m_vertexBuffer.Get(), vertices);
 }
