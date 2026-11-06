@@ -77,11 +77,9 @@ private:
     bool m_showStageDebug{ true };
     bool m_showPlayerInfo{ true };
 
-#if defined(_DEBUG)
     // Keeps the "Sandbox" tab registered while this scene lives.
     // Declared last: destroyed first, before any member the callback reads.
     DebugPanelHandle m_debugPanel{};
     DebugPanelHandle m_playerPanel{};
-#endif
 
 };

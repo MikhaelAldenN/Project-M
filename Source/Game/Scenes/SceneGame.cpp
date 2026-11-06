@@ -178,10 +178,8 @@ SceneGame::SceneGame()
     EffectManager::Instance().PreloadEffect("Data/Effect/Hit.efk");
     EffectManager::Instance().PreloadEffect("Data/Effect/FakeBossPoison.efk");
 
-#if defined(_DEBUG)
     // Capturing `this` is safe: the handle is a member and dies with this scene.
     m_debugPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Game", [this]() { DrawDebugPanel(); }); 
-#endif
 }
 
 SceneGame::~SceneGame()

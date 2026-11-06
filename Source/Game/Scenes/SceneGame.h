@@ -196,9 +196,7 @@ private:
     DirectX::XMFLOAT3 m_cinematicStartTarget{ 0.0f, 0.0f, 0.0f };
     DirectX::XMFLOAT3 m_cinematicEndTarget{ 0.0f, 0.0f, 0.0f };
 
-#if defined(_DEBUG)
     // Keeps the "Stage Debug Inspector" tab registered while this scene lives.
     // Declared last: destroyed first, before any member the callback reads.
     DebugPanelHandle m_debugPanel{};
-#endif
 };

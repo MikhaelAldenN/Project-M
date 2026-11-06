@@ -125,7 +125,6 @@ SceneBoss::SceneBoss()
     AddLog("SceneBoss initialized. Windowkill system online.");
     PerformanceLogger::Instance().LogInfo("[INIT] SceneBoss constructor complete.");
 
-#if defined(_DEBUG)
     m_bossPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Boss", [this]() { DrawBossPanel(); });
     m_attacksPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Attacks", [this]() { DrawAttacksPanel(); });
     m_playerPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Player", [this]() {
@@ -136,7 +135,6 @@ SceneBoss::SceneBoss()
     m_logPanel = DebugUI::Instance().RegisterPanel(DebugPanelSlot::tab, "Log", [this]() { DrawLogPanel(); });
     m_viewMenu = DebugUI::Instance().RegisterPanel(DebugPanelSlot::menuBar, "Boss view", [this]() { DrawViewMenu(); });
     // Capturing `this` is safe: the handle is a member and dies with this scene.
-#endif
 }
 
 SceneBoss::~SceneBoss()

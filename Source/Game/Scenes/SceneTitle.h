@@ -158,9 +158,7 @@ private:
     void DrawDebugPanel();
 
 
-#if defined(_DEBUG)
     // Keeps the "Title Scene Debugger" tab registered while this scene lives.
     // Declared last: destroyed first, before any member the callback reads.
     DebugPanelHandle m_debugPanel{};
-#endif
 };

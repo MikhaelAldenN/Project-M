@@ -61,9 +61,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Texture2D> m_depthStencilTexture;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthStencilView;
 
-#if defined(_DEBUG)
     // Keeps the "Bios Inspector" tab registered while this scene lives.
     // Declared last: destroyed first, before any member the callback reads.
     DebugPanelHandle m_debugPanel{};
-#endif
 };

@@ -207,7 +207,6 @@ private:
     float m_exitToTitleTimer{ 0.0f };
     static constexpr float PAUSE_DIM_ALPHA{ 0.6f };
 
-#if defined(_DEBUG)
     // Keeps the "WINDOWKILL MASTER CONTROL" tab registered while this scene lives.
     // Declared last: destroyed first, before any member the callback reads.
     DebugPanelHandle m_debugPanel{};
@@ -217,5 +216,4 @@ private:
     DebugPanelHandle m_windowsPanel{};
     DebugPanelHandle m_logPanel{};
     DebugPanelHandle m_viewMenu{};
-#endif
 };
