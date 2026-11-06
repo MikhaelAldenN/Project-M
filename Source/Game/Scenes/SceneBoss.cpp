@@ -665,6 +665,19 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
 
     RenderFadeOverlays(dc, rs);
 
+    // Health bars: player bottom-left, boss top-centre. Main camera pass only, so the
+    // sub-windows stay clean. HUDRenderer expects to run after the scene draws.
+    if (m_hud && !isTransparentWindow && targetCam == m_mainCamera.get())
+    {
+        const ICuePhase* hudPhase{ m_cue ? m_cue->GetCurrentPhase() : nullptr };
+        // Whole HP steps: the HUD takes ints, and a 30 HP player shows one step per hit.
+        m_hud->Render(dc,
+            m_player ? static_cast<int>(m_player->GetHP()) : 0,
+            m_player ? static_cast<int>(m_player->GetMaxHP()) : 0,
+            hudPhase ? hudPhase->GetHP() : 0,
+            hudPhase ? hudPhase->GetMaxHP() : 0);
+    }
+
     // Sub-windows keep showing the frozen arena; only the main window carries the menu.
     if (m_isPaused && !isTransparentWindow && targetCam == m_mainCamera.get())
     {
