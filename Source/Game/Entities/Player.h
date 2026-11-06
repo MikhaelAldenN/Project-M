@@ -326,6 +326,7 @@ private:
 
     // Dash standby VFX handle
     int m_dashStandbyVfxHandle = -1;
+    float m_dashVfxDimBrightness{ PlayerConst::DashVfxDimBrightness }; // with only some charges left
 
     int m_overdriveVfxHandle = -1;
 

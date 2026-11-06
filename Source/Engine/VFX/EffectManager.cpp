@@ -1,6 +1,8 @@
 #include "EffectManager.h"
 #include "Camera.h" // Needed to extract View/Projection matrices
 #include <mutex>
+#include <algorithm>
+#include <cstdint>
 
 using namespace DirectX;
 
@@ -159,4 +161,14 @@ void EffectManager::SetRotation(Effekseer::Handle handle, const XMFLOAT3& rotEul
 void EffectManager::SetScale(Effekseer::Handle handle, const XMFLOAT3& scale)
 {
     if (IsPlaying(handle)) m_manager->SetScale(handle, scale.x, scale.y, scale.z);
+}
+
+void EffectManager::SetColor(Effekseer::Handle handle, const XMFLOAT4& rgba)
+{
+    if (!IsPlaying(handle)) return;
+
+    const auto toByte = [](float value) {
+        return static_cast<std::uint8_t>((std::clamp)(value, 0.0f, 1.0f) * 255.0f + 0.5f);
+        };
+    m_manager->SetAllColor(handle, Effekseer::Color{ toByte(rgba.x), toByte(rgba.y), toByte(rgba.z), toByte(rgba.w) });
 }

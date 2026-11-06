@@ -51,6 +51,8 @@ public:
     void SetTargetPosition(Effekseer::Handle handle, const DirectX::XMFLOAT3& pos);
     void SetRotation(Effekseer::Handle handle, const DirectX::XMFLOAT3& rotationEuler);
     void SetScale(Effekseer::Handle handle, const DirectX::XMFLOAT3& scale);
+    // RGBA in 0..1, multiplied into every particle of the effect.
+    void SetColor(Effekseer::Handle handle, const DirectX::XMFLOAT4& rgba);
 
 private:
     EffectManager() = default;

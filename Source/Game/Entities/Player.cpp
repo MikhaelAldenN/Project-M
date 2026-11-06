@@ -257,93 +257,54 @@ void Player::UpdateDashReadyVfx()
 
 void Player::UpdateDashStandbyVfx()
 {
-    if (HasFullDash()) // standby VFX means "a full dash is available"
+    // Shows the dash charges on the player: bright with every charge, dim with only some,
+    // nothing when empty. Overdrive shows its own effect instead.
+    const bool isShown{ HasFullDash() && !m_isPowerUncapped };
+    if (!isShown)
     {
-        // 1. Start the effect when none is playing (first time, or the last one ended)
-        if (m_dashStandbyVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
-        {
-            DirectX::XMFLOAT3 vfxPos = m_movement->GetPosition();
-            vfxPos.y += m_dashReadyOffsetY;
-            m_dashStandbyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Standby.efk", vfxPos, 0.7f);
-        }
-
-        // 2. Keep it on the player while it plays
-        if (m_dashStandbyVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
-        {
-            DirectX::XMFLOAT3 trackPos = m_movement->GetPosition();
-            trackPos.y += m_dashReadyOffsetY;
-            EffectManager::Instance().SetPosition(m_dashStandbyVfxHandle, trackPos);
-        }
-    }
-    else
-    {
-        // 3. No full dash: stop the standby effect
         if (m_dashStandbyVfxHandle != -1) {
             EffectManager::Instance().Stop(m_dashStandbyVfxHandle);
             m_dashStandbyVfxHandle = -1;
         }
+        return;
     }
+
+    DirectX::XMFLOAT3 vfxPos = m_movement->GetPosition();
+    vfxPos.y += m_dashReadyOffsetY;
+
+    // Restarted whenever it ends, so the cue stays on while a charge is left.
+    if (!EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
+    {
+        m_dashStandbyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Standby.efk", vfxPos, 0.7f);
+    }
+    EffectManager::Instance().SetPosition(m_dashStandbyVfxHandle, vfxPos);
+
+    // Why RGB as well as alpha: the effect may blend additively, where alpha alone does not dim.
+    const float brightness{ (m_dashCharges >= m_maxDashCharges) ? 1.0f : m_dashVfxDimBrightness };
+    EffectManager::Instance().SetColor(m_dashStandbyVfxHandle, { brightness, brightness, brightness, brightness });
 }
 
 void Player::UpdateOverdriveVfx()
 {
-    if (IsPowerUncapped())
+    if (!IsPowerUncapped())
     {
-        // 1. Overdrive replaces the dash standby effect
-        if (m_dashStandbyVfxHandle != -1) {
-            EffectManager::Instance().Stop(m_dashStandbyVfxHandle);
-            m_dashStandbyVfxHandle = -1;
-        }
-
-        // 2. Start the overdrive effect when it is not playing
-        if (m_overdriveVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_overdriveVfxHandle))
-        {
-            DirectX::XMFLOAT3 vfxPos = m_movement->GetPosition();
-            vfxPos.y += m_dashReadyOffsetY;
-            m_overdriveVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Overdrive.efk", vfxPos, 1.0f);
-        }
-
-        // 3. Keep it on the player
-        if (m_overdriveVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_overdriveVfxHandle))
-        {
-            DirectX::XMFLOAT3 trackPos = m_movement->GetPosition();
-            trackPos.y += m_dashReadyOffsetY;
-            EffectManager::Instance().SetPosition(m_overdriveVfxHandle, trackPos);
-        }
-    }
-    else
-    {
-        // 1. Stop the overdrive effect once the power cap is back
+        // Stop the overdrive effect once the power cap is back; the dash cue comes back by itself.
         if (m_overdriveVfxHandle != -1) {
             EffectManager::Instance().Stop(m_overdriveVfxHandle);
             m_overdriveVfxHandle = -1;
         }
-
-        // 2. Same dash standby handling as UpdateDashStandbyVfx
-        if (HasFullDash()) // standby VFX means "a full dash is available"
-        {
-            if (m_dashStandbyVfxHandle == -1 || !EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
-            {
-                DirectX::XMFLOAT3 vfxPos = m_movement->GetPosition();
-                vfxPos.y += m_dashReadyOffsetY;
-                m_dashStandbyVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Dash_Standby.efk", vfxPos, 0.7f);
-            }
-
-            if (m_dashStandbyVfxHandle != -1 && EffectManager::Instance().IsPlaying(m_dashStandbyVfxHandle))
-            {
-                DirectX::XMFLOAT3 trackPos = m_movement->GetPosition();
-                trackPos.y += m_dashReadyOffsetY;
-                EffectManager::Instance().SetPosition(m_dashStandbyVfxHandle, trackPos);
-            }
-        }
-        else
-        {
-            if (m_dashStandbyVfxHandle != -1) {
-                EffectManager::Instance().Stop(m_dashStandbyVfxHandle);
-                m_dashStandbyVfxHandle = -1;
-            }
-        }
+        return;
     }
+
+    DirectX::XMFLOAT3 vfxPos = m_movement->GetPosition();
+    vfxPos.y += m_dashReadyOffsetY;
+
+    // Start the overdrive effect when it is not playing, then keep it on the player.
+    if (!EffectManager::Instance().IsPlaying(m_overdriveVfxHandle))
+    {
+        m_overdriveVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Overdrive.efk", vfxPos, 1.0f);
+    }
+    EffectManager::Instance().SetPosition(m_overdriveVfxHandle, vfxPos);
 }
 
 void Player::UpdateDashRecovery(float dt)
@@ -1134,7 +1095,9 @@ void Player::DrawDebugGUI()
         DebugProperty::SliderInt("Full dashes", m_maxDashCharges, 1, 5);
         DebugProperty::DragFloat("Recovery time", m_dashRecoveryTime, 0.01f, 0.0f, 5.0f, "%.2f s");
         DebugProperty::DragFloat("I-frame duration", m_dashIFrameDuration, 0.01f, 0.0f, 1.0f, "%.2f s");
+        DebugProperty::SliderFloat("Charge VFX dim", m_dashVfxDimBrightness, 0.0f, 1.0f, "%.2f");
         DebugProperty::Text("Perfect dodges", "%d", m_perfectDodgeCount);
+
         DebugProperty::DragFloat("Dodge slow duration", m_perfectDodgeSlowDuration, 0.01f, 0.0f, 1.0f, "%.2f s");
         DebugProperty::SliderFloat("Dodge time scale", m_perfectDodgeTimeScale, 0.0f, 1.0f, "%.2f");
     }

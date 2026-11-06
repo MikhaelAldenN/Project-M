@@ -26,6 +26,7 @@ namespace PlayerConst
     inline constexpr float DashIFrameDuration = 0.2f;  // Invincibility granted by a full dash (s)
     inline constexpr int   DashCharges = 2;      // Dashes available before a press fails
     inline constexpr float DashRecoveryTime = 0.8f;   // USULAN DESAIN: time without dashing that restores all charges (s)
+    inline constexpr float DashVfxDimBrightness = 0.35f; // USULAN DESAIN: charge cue brightness with only some charges left
 
     // --- Perfect dodge (a hit that lands inside a dash's invincibility) ---
     inline constexpr float PerfectDodgeSlowDuration = 0.1f;  // Real seconds the game runs slowed
