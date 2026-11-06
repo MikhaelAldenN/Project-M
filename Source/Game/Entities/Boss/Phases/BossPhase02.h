@@ -193,7 +193,7 @@ private:
     DirectX::XMFLOAT3      m_dialogueWorldPos = { 0.0f, 0.0f, 0.0f };
     const float            m_dialogueWindowW = 420.0f;
     const float            m_dialogueWindowH = 160.0f;
-    const std::string      m_dialogueWindowName = "navi_dialogue";
+    const std::string      m_dialogueWindowName = "cue_dialogue";
     bool                   m_isDialogueActive = false;
 
     bool m_overdriveDialogueTriggered = false;

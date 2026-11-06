@@ -56,13 +56,13 @@ private:
     void RequestReturnToTitle();
     // --- Update steps, called in this order by Update ---
     void UpdatePlayerDeathSequence(float elapsedTime);
-    void UpdateNaviDefeatFade(float elapsedTime);
+    void UpdateCueDefeatFade(float elapsedTime);
     // Returns true when it requested the return to title; Update must stop.
     [[nodiscard]] bool UpdateWindowkillMainWindow();
     void UpdateArenaCamera(float elapsedTime);
     void UpdatePlayerStretch(float scaledDt);
     // Returns true when it requested the return to title; Update must stop.
-    [[nodiscard]] bool UpdateNavi(float scaledDt);
+    [[nodiscard]] bool UpdateCue(float scaledDt);
     void UpdateEntitiesAndEffects(float scaledDt, Camera* activeCam);
     void UpdateSubWindows(float elapsedTime);
     // --- Pause (Update runs only these while m_isPaused) ---
@@ -75,7 +75,7 @@ private:
     [[nodiscard]] bool IsTransparentWindowCamera(const Camera* camera) const;
     // Re-clears the render target and depth stencil bound by WindowManager.
     void ClearBoundTargets(ID3D11DeviceContext* dc);
-    // Starts the post-process capture on the main camera while Windowkill runs and Navi is alive.
+    // Starts the post-process capture on the main camera while Windowkill runs and Cue is alive.
     // Returns true when a capture was started and must be ended after the scene.
     [[nodiscard]] bool BeginMainCameraPostProcess(const Camera* targetCam, bool isTransparentWindow);
     void RenderShapesAndHitboxes(ID3D11DeviceContext* dc, Camera* targetCam);
@@ -124,7 +124,7 @@ private:
     std::unique_ptr<ItemManager>          m_itemManager;
     std::unique_ptr<Stage>                m_stage;
     std::unique_ptr<CollisionManager>     m_collisionManager;
-    std::unique_ptr<CueBoss>             m_navi;
+    std::unique_ptr<CueBoss>             m_cue;
 
     // =========================================================
     // HUD
@@ -191,10 +191,10 @@ private:
     bool m_isPendingSceneChange{ false };
     std::unique_ptr<Sprite> m_whiteSprite{};
     float m_whiteAlpha{ 0.0f };
-    bool  m_isNaviDefeated{ false };
-    float m_naviDefeatTimer{ 0.0f };
+    bool  m_isCueDefeated{ false };
+    float m_cueDefeatTimer{ 0.0f };
 
-    static constexpr float NAVI_DEATH_ANIM_DURATION{ 4.0f };
+    static constexpr float CUE_DEATH_ANIM_DURATION{ 4.0f };
     static constexpr float WHITE_FADE_DURATION{ 2.0f };
 
 private:

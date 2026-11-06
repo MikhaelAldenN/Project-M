@@ -47,7 +47,7 @@ public:
 
     void OnHitByPlayerBullet() { /* Add your HP reduction logic here */ }
 
-    // Applies one hit with a hit sound. Clears Navi's bullets when HP reaches zero.
+    // Applies one hit with a hit sound. Clears Cue's bullets when HP reaches zero.
     DamageResult TakeDamage(const DamageInfo& damage);
 
     [[nodiscard]] bool IsAlive() const noexcept { return m_hp > 0; }
@@ -78,7 +78,7 @@ private:
     DirectX::XMFLOAT4 m_color{ 1.0f, 1.0f, 1.0f, 1.0f };
     float m_lazyHoverYaw{ 0.0f };
 
-    // Navi's bullets. When every slot is in flight, a new bullet replaces the oldest one.
+    // Cue's bullets. When every slot is in flight, a new bullet replaces the oldest one.
     ProjectilePool m_projectiles{ static_cast<std::size_t>(MAX_BULLETS) };
     ProjectileMesh m_projectileMesh; // one model drawn for every bullet
 

@@ -20,11 +20,11 @@ CueAlly::CueAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* enemy
     : m_targetPlayer(targetPlayer) 
     , m_enemyManager(enemyManager)
 {
-    m_model = std::make_shared<Model>(device, "Data/Model/Character/MDL_Navi.glb");
+    m_model = std::make_shared<Model>(device, "Data/Model/Character/MDL_Cue.glb");
     m_scale = { 0.4f, 0.4f, 0.4f };
     m_movement->SetRotation({ 0.0f, 0.0f, 0.0f });
 
-    OutputDebugStringA("\n=== NAVI ANIMATIONS LOADED ===\n");
+    OutputDebugStringA("\n=== CUE ANIMATIONS LOADED ===\n");
     const auto& anims = m_model->GetAnimations();
     for (size_t i = 0; i < anims.size(); ++i)
     {
@@ -135,7 +135,7 @@ void CueAlly::UpdateHoverLogic(float elapsedTime)
         if (!pMovement || !pModel) return;
 
         // 1. EXTRACT BONE POSITION
-        // By pulling translation directly from the "body" matrix, Navi will naturally 
+        // By pulling translation directly from the "body" matrix, Cue will naturally 
         // sway with the player's idle breathing and run cycles!
         DirectX::XMFLOAT3 anchorPos{ pMovement->GetPosition() }; // Safe fallback
         const int bodyIndex{ pModel->GetNodeIndex("body") };
@@ -164,8 +164,8 @@ void CueAlly::UpdateHoverLogic(float elapsedTime)
         }
 
         // --- BUG PREVENTION: THE SHORTEST-PATH ANGLE WRAP ---
-        // If Navi is at -179deg and target is +179deg, this forces the delta to be 
-        // 2deg instead of forcing Navi to orbit 358deg the wrong way.
+        // If Cue is at -179deg and target is +179deg, this forces the delta to be 
+        // 2deg instead of forcing Cue to orbit 358deg the wrong way.
         float angleDiff{ targetYaw - m_lazyHoverYaw };
         while (angleDiff > DirectX::XM_PI)  angleDiff -= DirectX::XM_2PI;
         while (angleDiff < -DirectX::XM_PI) angleDiff += DirectX::XM_2PI;
@@ -363,7 +363,7 @@ void CueAlly::UpdateShootingLogic(float elapsedTime, Camera* camera)
 
 void CueAlly::UpdateProjectiles(float elapsedTime)
 {
-    // Navi's bullets fly straight, so there is no target to steer toward.
+    // Cue's bullets fly straight, so there is no target to steer toward.
     m_projectiles.Update(elapsedTime, ProjectileTargets{});
 
     XMFLOAT3 myPos{ m_movement->GetPosition() };
@@ -448,13 +448,13 @@ void CueAlly::RenderProjectiles(ModelRenderer* renderer)
 {
     if (!IsAlive()) return;
 
-    const DirectX::XMFLOAT4 navibulletColor{ 6.0f, 6.0f, 6.0f, 6.0f };
+    const DirectX::XMFLOAT4 cueBulletColor{ 6.0f, 6.0f, 6.0f, 6.0f };
 
     for (const Projectile& bullet : m_projectiles.Slots())
     {
         if (bullet.isActive)
         {
-            m_projectileMesh.Draw(*renderer, ShaderId::Phong, navibulletColor, bullet.position, bullet.visualScale, 0.0f);
+            m_projectileMesh.Draw(*renderer, ShaderId::Phong, cueBulletColor, bullet.position, bullet.visualScale, 0.0f);
         }
     }
 }

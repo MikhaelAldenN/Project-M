@@ -80,7 +80,7 @@ namespace
     // BUG PREVENTION: Do not allow pausing during death, respawn, or boot transitions.
     // This prevents soft-locks where timers freeze during critical system states.
     // The fade to Title is excluded too: unpausing there would resume play with music fading out.
-    if (m_isDying || m_isNaviDefeatSequenceActive || m_bootTimer > 0.0f || m_isExitingToTitle)
+    if (m_isDying || m_isCueDefeatSequenceActive || m_bootTimer > 0.0f || m_isExitingToTitle)
     {
         return false;
     }
@@ -134,14 +134,14 @@ SceneGame::SceneGame()
     m_enemyManager = std::make_unique<EnemyManager>();
     m_enemyManager->Initialize(Graphics::Instance().GetDevice());
 
-    m_navi = std::make_unique<CueAlly>(Graphics::Instance().GetDevice(), m_player.get(), m_enemyManager.get());
+    m_cue = std::make_unique<CueAlly>(Graphics::Instance().GetDevice(), m_player.get(), m_enemyManager.get());
 
     m_itemManager = std::make_unique<ItemManager>();
     m_itemManager->Initialize(Graphics::Instance().GetDevice());
 
     m_collisionManager = std::make_unique<CollisionManager>();
     m_collisionManager->Initialize(m_player.get(), m_stage.get(), m_enemyManager.get(), m_itemManager.get());
-    m_collisionManager->SetNavi(m_navi.get());
+    m_collisionManager->SetCue(m_cue.get());
 
     m_player->SetCollisionManager(m_collisionManager.get());
 
@@ -262,21 +262,21 @@ void SceneGame::Update(const float elapsedTime)
     m_globalTime += elapsedTime;
     if (m_globalTime > Config::TIME_LOOP_MAX) m_globalTime -= Config::TIME_LOOP_MAX;
 
-    if (m_navi && !m_navi->IsAlive() && !m_isNaviDefeatSequenceActive)
+    if (m_cue && !m_cue->IsAlive() && !m_isCueDefeatSequenceActive)
     {
-        StartNaviDefeatSequence();
+        StartCueDefeatSequence();
     }
 
-    if (m_player && m_player->GetHP() <= 0 && !m_isDying && !m_isNaviDefeatSequenceActive && m_respawnTimer <= 0.0f)
+    if (m_player && m_player->GetHP() <= 0 && !m_isDying && !m_isCueDefeatSequenceActive && m_respawnTimer <= 0.0f)
     {
         StartPlayerDeathSequence();
     }
 
-    if (m_isNaviDefeatSequenceActive)
+    if (m_isCueDefeatSequenceActive)
     {
-        m_naviDefeatTimer += elapsedTime;
+        m_cueDefeatTimer += elapsedTime;
 
-        const float linearT{ std::clamp(m_naviDefeatTimer / NAVI_DEFEAT_FADE_DURATION, 0.0f, 1.0f) };
+        const float linearT{ std::clamp(m_cueDefeatTimer / CUE_DEFEAT_FADE_DURATION, 0.0f, 1.0f) };
         const float t{ linearT * linearT * (3.0f - 2.0f * linearT) };
 
         m_uberParams.smoothness = FX_BASE_SMOOTHNESS + (FX_BLACK_SMOOTHNESS - FX_BASE_SMOOTHNESS) * t;
@@ -288,10 +288,10 @@ void SceneGame::Update(const float elapsedTime)
             m_uberParams.smoothness = FX_BLACK_SMOOTHNESS;
             m_uberParams.intensity = FX_BLACK_INTENSITY;
             m_fadeAlpha = 1.0f;
-            m_isNaviDefeatReadyForNextScene = true;
+            m_isCueDefeatReadyForNextScene = true;
             m_levelTriggers.reset();
             m_player.reset();
-            m_navi.reset();
+            m_cue.reset();
             m_enemyManager.reset();
             m_itemManager.reset();
             m_stage.reset();
@@ -395,7 +395,7 @@ void SceneGame::Update(const float elapsedTime)
         m_bootTimer <= 0.0f &&
         m_respawnTimer <= 0.0f &&
         !m_isDying &&
-        !m_isNaviDefeatSequenceActive)
+        !m_isCueDefeatSequenceActive)
     {
         StartIntroDialogueTest();
     }
@@ -408,7 +408,7 @@ void SceneGame::Update(const float elapsedTime)
     Camera* activeCam{ CameraController::Instance().GetActiveCamera().get() };
     if (m_player) {
         m_player->Update(elapsedTime, activeCam);
-        if (m_navi) m_navi->Update(elapsedTime, activeCam);
+        if (m_cue) m_cue->Update(elapsedTime, activeCam);
     }
 
     if (m_enemyManager) {
@@ -502,7 +502,7 @@ void SceneGame::Update(const float elapsedTime)
                 }
             }
 
-            // PHASE 4: the player closed Navi's scream; the dialogue box is gone. Fade to white.
+            // PHASE 4: the player closed Cue's scream; the dialogue box is gone. Fade to white.
             if (m_bossEffectTriggered && !m_dialogueBox->IsActive())
             {
                 AudioManager::Instance().FadeOutAmbientSFX(1.5f);
@@ -541,11 +541,11 @@ void SceneGame::Update(const float elapsedTime)
                     float fadeOutTime = timeInFade - (WHITEOUT_FADE_DURATION + WHITEOUT_HOLD_DURATION);
                     m_whiteAlpha = 1.0f - std::clamp(fadeOutTime / FADE_BACK_DURATION, 0.0f, 1.0f);
 
-                    if (m_navi)
+                    if (m_cue)
                     {
-                        m_navi->SetPotionedState(true);
+                        m_cue->SetPotionedState(true);
 
-                        m_navi->StartAttackDelay(999.0f);
+                        m_cue->StartAttackDelay(999.0f);
                     }
 
                     // Final cleanup once the white alpha is back to 0
@@ -554,7 +554,7 @@ void SceneGame::Update(const float elapsedTime)
                         m_whiteAlpha = 0.0f;
                         m_isBossCinematicActive = false;
 
-                        // The player is still locked and Navi does not attack yet.
+                        // The player is still locked and Cue does not attack yet.
                         if (!m_hasTriggeredPoisonDialogue)
                         {
                             StartPoisonDialogue();
@@ -677,10 +677,10 @@ void SceneGame::Update(const float elapsedTime)
             m_player->SetAimLocked(false);
         }
 
-        // Navi attacks after a short 0.5 s delay.
-        if (m_navi)
+        // Cue attacks after a short 0.5 s delay.
+        if (m_cue)
         {
-            m_navi->StartAttackDelay(0.5f);
+            m_cue->StartAttackDelay(0.5f);
         }
 
     }
@@ -710,15 +710,15 @@ void SceneGame::StartPlayerDeathSequence()
     }
 }
 
-void SceneGame::StartNaviDefeatSequence()
+void SceneGame::StartCueDefeatSequence()
 {
-    if (m_isNaviDefeatSequenceActive) return;
+    if (m_isCueDefeatSequenceActive) return;
 
-    m_isNaviDefeatSequenceActive = true;
-    m_naviDefeatTimer = 0.0f;
-    m_isNaviDefeatReadyForNextScene = false;
+    m_isCueDefeatSequenceActive = true;
+    m_cueDefeatTimer = 0.0f;
+    m_isCueDefeatReadyForNextScene = false;
 
-    AudioManager::Instance().FadeOutMusic(NAVI_DEFEAT_FADE_DURATION);
+    AudioManager::Instance().FadeOutMusic(CUE_DEFEAT_FADE_DURATION);
 
     if (m_player)
     {
@@ -800,7 +800,7 @@ void SceneGame::ResetLevel()
 
     if (isBossStage)
     {
-        // If Navi is poisoned / Boss stage is active, respawn exactly where you died
+        // If Cue is poisoned / Boss stage is active, respawn exactly where you died
         if (m_player)
         {
             respawnPos = m_player->GetPosition(); 
@@ -835,18 +835,18 @@ void SceneGame::ResetLevel()
         }
     }
 
-    // 4. Reset Navi Ally
-    if (m_navi)
+    // 4. Reset Cue Ally
+    if (m_cue)
     {
-        m_navi->Reset();
-        m_navi->SetPotionedState(isBossStage);
+        m_cue->Reset();
+        m_cue->SetPotionedState(isBossStage);
 
-        // Position Navi near Player
-        m_navi->SetPosition({ respawnPos.x + 1.0f, respawnPos.y + 2.0f, respawnPos.z + 0.5f });
+        // Position Cue near Player
+        m_cue->SetPosition({ respawnPos.x + 1.0f, respawnPos.y + 2.0f, respawnPos.z + 0.5f });
 
         if (isBossStage)
         {
-            m_navi->StartAttackDelay(3.0f);
+            m_cue->StartAttackDelay(3.0f);
         }
     }
 
@@ -873,7 +873,7 @@ void SceneGame::Render(float elapsedTime, Camera* camera)
 
     activeData.psxEnabled = (m_fxState.MasterEnabled && m_fxState.EnablePSX);
 
-    if (!m_fxState.EnableVignette && !m_isDying && !m_isNaviDefeatSequenceActive && m_respawnTimer <= 0.0f)
+    if (!m_fxState.EnableVignette && !m_isDying && !m_isCueDefeatSequenceActive && m_respawnTimer <= 0.0f)
     {
         activeData.intensity = 0.0f;
     }
@@ -1017,9 +1017,9 @@ void SceneGame::RenderScene(const float elapsedTime, Camera* camera)
         m_player->RenderWeapon(modelRenderer);
         m_player->RenderProjectiles(modelRenderer);
     }
-    if (m_navi) {
-        m_navi->Render(modelRenderer);
-        m_navi->RenderProjectiles(modelRenderer);
+    if (m_cue) {
+        m_cue->Render(modelRenderer);
+        m_cue->RenderProjectiles(modelRenderer);
     }
     if (m_enemyManager) m_enemyManager->Render(modelRenderer);
     if (m_itemManager) m_itemManager->Render(modelRenderer);
@@ -1045,7 +1045,7 @@ void SceneGame::DrawGUI()
 
 void SceneGame::DrawDebugPanel()
 {
-    // Why: the stage is destroyed in the Navi defeat sequence while this scene still lives.
+    // Why: the stage is destroyed in the Cue defeat sequence while this scene still lives.
     if (!m_stage) return;
 
     ImGui::Spacing();

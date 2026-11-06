@@ -59,7 +59,7 @@ public:
 
     // ----- System Access -----
     WindowTrackingSystem* GetWindowSystem() const { return m_windowSystem; }
-    Beyond::Window* GetMainWindow()   const { return m_naviWindow; }
+    Beyond::Window* GetMainWindow()   const { return m_cueWindow; }
 
     // ----- Breathing Animation -----
     void  SetCoreBreathParams(float speed, float intensity) { m_breathSpeed = speed; m_breathIntensity = intensity; }
@@ -105,8 +105,8 @@ private:
     std::unique_ptr<ICuePhase> m_currentPhase;
 
     // ----- OS Window Handles -----
-    Beyond::Window* m_naviWindow = nullptr;
-    std::shared_ptr<Camera>  m_naviCamera;
+    Beyond::Window* m_cueWindow = nullptr;
+    std::shared_ptr<Camera>  m_cueCamera;
     HWND                     m_hHeadWindow = nullptr;
     std::string              m_currentTitle = "mat_grass.png";
     std::vector<std::string> m_glitchTitles;

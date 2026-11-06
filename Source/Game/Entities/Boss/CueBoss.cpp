@@ -47,7 +47,7 @@ void CueBoss::SpawnHeadWindow() {
     if (!m_windowSystem) return;
 
     // Register the boss head as a tracked window
-    TrackedWindowConfig headCfg = { "navi_head", m_currentTitle, (int)m_windowSize.x, (int)m_windowSize.y, 2 };
+    TrackedWindowConfig headCfg = { "cue_head", m_currentTitle, (int)m_windowSize.x, (int)m_windowSize.y, 2 };
     headCfg.role = WindowRole::TRACKED_ENTITY;
     
     headCfg.isAlwaysOnTop = true;
@@ -58,12 +58,12 @@ void CueBoss::SpawnHeadWindow() {
         [this]() { return m_windowSize; }
     );
 
-    auto* headWin = m_windowSystem->GetTrackedWindow("navi_head");
+    auto* headWin = m_windowSystem->GetTrackedWindow("cue_head");
     if (headWin) {
-        m_naviWindow = headWin->window;
-        m_naviCamera = headWin->camera;
-        m_naviWindow->SetDraggable(false);
-        m_naviWindow->SetClickThrough(true);
+        m_cueWindow = headWin->window;
+        m_cueCamera = headWin->camera;
+        m_cueWindow->SetDraggable(false);
+        m_cueWindow->SetClickThrough(true);
     }
 
     // Lock the OS window handle and configure its style
@@ -132,11 +132,11 @@ void CueBoss::Render(ID3D11DeviceContext* context, Camera* currentCamera) {
     if (!currentCamera) return;
 
     // Only render face content when using the boss's own camera
-    if (currentCamera == m_naviCamera.get()) {
-        if (m_naviWindow)
+    if (currentCamera == m_cueCamera.get()) {
+        if (m_cueWindow)
             RenderFaceGrid(context, currentCamera);
 
-        if (m_isFaceSpriteVisible && m_faceSprite && m_naviWindow) {
+        if (m_isFaceSpriteVisible && m_faceSprite && m_cueWindow) {
             float unitW = m_windowSize.x / m_pixelToUnit;
             float unitH = m_windowSize.y / m_pixelToUnit;
             m_faceSprite->Render(

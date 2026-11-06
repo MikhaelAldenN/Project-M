@@ -101,7 +101,7 @@ void BossPhase02::UpdateOverlaySizeFromDisplay() {
 
 void BossPhase02::CreateFxWindow(WindowTrackingSystem& windowSystem) {
     // Created when the phase starts, not preloaded.
-    TrackedWindowConfig fxCfg = { "navi_fx", "N.A.V.I - FX", (int)m_screenW, (int)m_screenH, 3 };
+    TrackedWindowConfig fxCfg = { "cue_fx", "N.A.V.I - FX", (int)m_screenW, (int)m_screenH, 3 };
     fxCfg.role = WindowRole::SUB_VIEWPORT;
     fxCfg.isTransparent = true;
 
@@ -110,7 +110,7 @@ void BossPhase02::CreateFxWindow(WindowTrackingSystem& windowSystem) {
         [this]() { return DirectX::XMFLOAT2(m_screenW, m_screenH); }
     );
 
-    auto* fxWin = windowSystem.GetTrackedWindow("navi_fx");
+    auto* fxWin = windowSystem.GetTrackedWindow("cue_fx");
     if (fxWin) {
         m_fxWindow = fxWin->window;
         m_fxCamera = fxWin->camera;
@@ -261,7 +261,7 @@ void BossPhase02::Exit(CueBoss* boss) {
 
     // 1. Remove the phase windows (FX, dialogue, cage)
     if (boss && boss->GetWindowSystem()) {
-        boss->GetWindowSystem()->RemoveTrackedWindow("navi_fx");
+        boss->GetWindowSystem()->RemoveTrackedWindow("cue_fx");
         boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
         boss->GetWindowSystem()->RemoveTrackedWindow(m_cageWindowName);
     }
@@ -301,7 +301,7 @@ void BossPhase02::Exit(CueBoss* boss) {
     m_deathWindowRaised = false;
 
     if (boss && boss->GetWindowSystem()) {
-        boss->GetWindowSystem()->RemoveTrackedWindow("navi_fx");
+        boss->GetWindowSystem()->RemoveTrackedWindow("cue_fx");
         boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
         boss->GetWindowSystem()->RemoveTrackedWindow(m_cageWindowName);
         boss->GetWindowSystem()->RemoveTrackedWindow("click_blocker");
@@ -470,8 +470,8 @@ bool BossPhase02::UpdateBossDeath(float dt, CueBoss* boss) {
             }
             AudioManager::Instance().StopMusic();
 
-            if (boss && boss->GetWindowSystem() && boss->GetWindowSystem()->GetTrackedWindow("navi_head")) {
-                boss->GetWindowSystem()->RemoveTrackedWindow("navi_head");
+            if (boss && boss->GetWindowSystem() && boss->GetWindowSystem()->GetTrackedWindow("cue_head")) {
+                boss->GetWindowSystem()->RemoveTrackedWindow("cue_head");
             }
 
             if (boss && boss->GetMainWindow() && boss->GetMainWindow()->GetSDLWindow()) {

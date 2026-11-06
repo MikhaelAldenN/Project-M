@@ -96,14 +96,14 @@ SceneBoss::SceneBoss()
     // The player sends its collision queries through this scene's CollisionManager.
     m_player->SetCollisionManager(m_collisionManager.get());
 
-    m_navi = std::make_unique<CueBoss>();
-    m_navi->Initialize(m_windowSystem.get());
+    m_cue = std::make_unique<CueBoss>();
+    m_cue->Initialize(m_windowSystem.get());
 
-    m_navi->ChangePhase(std::make_unique<BossPhase01>(m_player.get()));
+    m_cue->ChangePhase(std::make_unique<BossPhase01>(m_player.get()));
 
 
     if (m_collisionManager) {
-        m_collisionManager->SetBoss(m_navi.get());
+        m_collisionManager->SetBoss(m_cue.get());
         m_playerWindowTransparent = false;
     }
 
@@ -149,7 +149,7 @@ void SceneBoss::Shutdown()
     PerformanceLogger::Instance().LogInfo("[TEARDOWN] SceneBoss Shutdown initiated.");
 
     // CLEAR WINDOWS FIRST (CRITICAL)
-    // Destroys sub-windows and unbinds callbacks before the objects they point to (Navi/Player) are deleted.
+    // Destroys sub-windows and unbinds callbacks before the objects they point to (Cue/Player) are deleted.
     if (m_windowSystem) {
         m_windowSystem->ClearAll();
     }
@@ -173,7 +173,7 @@ void SceneBoss::Shutdown()
     CameraController::Instance().ClearCamera();
 
     // EXPLICIT ENTITY DESTRUCTION ORDER
-    m_navi.reset();
+    m_cue.reset();
     m_player.reset();
     m_enemyManager.reset();
     m_itemManager.reset();
@@ -194,7 +194,7 @@ void SceneBoss::InitializeSubWindows()
     // Never spawn the "player" window while the boss
     // is in the Windowkill phase.
     // =========================================================
-    const bool isWindowkillPhase{ m_navi && IsWindowkill(m_navi->GetCurrentPhase()) };
+    const bool isWindowkillPhase{ m_cue && IsWindowkill(m_cue->GetCurrentPhase()) };
 
     if (!isWindowkillPhase)
     {
@@ -276,7 +276,7 @@ void SceneBoss::Update(float elapsedTime)
 
     Camera* activeCam = CameraController::Instance().GetActiveCamera().get();
 
-    UpdateNaviDefeatFade(elapsedTime);
+    UpdateCueDefeatFade(elapsedTime);
     if (UpdateWindowkillMainWindow()) return;
 
     UpdateArenaCamera(elapsedTime);
@@ -289,7 +289,7 @@ void SceneBoss::Update(float elapsedTime)
 
     UpdatePlayerStretch(scaledDt);
 
-    if (UpdateNavi(scaledDt)) return;
+    if (UpdateCue(scaledDt)) return;
     if (m_isPendingSceneChange) return;
     UpdateEntitiesAndEffects(scaledDt, activeCam);
 
@@ -304,14 +304,14 @@ bool SceneBoss::CheckPauseToggleTriggered() const
 {
     // Timed sequences (death, respawn, defeat, scene change, fade to Title) must keep
     // running; freezing their timers would soft-lock the scene.
-    if (m_isDying || m_respawnTimer > 0.0f || m_isNaviDefeated
+    if (m_isDying || m_respawnTimer > 0.0f || m_isCueDefeated
         || m_isPendingSceneChange || m_isExitingToTitle)
     {
         return false;
     }
 
     // Windowkill hides the main window, so the menu would not be visible there.
-    if (m_navi && IsWindowkill(m_navi->GetCurrentPhase()))
+    if (m_cue && IsWindowkill(m_cue->GetCurrentPhase()))
     {
         return false;
     }
@@ -417,9 +417,9 @@ void SceneBoss::UpdatePlayerDeathSequence(float elapsedTime)
         {
             m_player->SetInputEnabled(true);
 
-            if (m_navi)
+            if (m_cue)
             {
-                if (ICuePhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAIEnabled(true);
+                if (ICuePhase * phase{ m_cue->GetCurrentPhase() }) phase->SetAIEnabled(true);
             }
         }
     }
@@ -431,27 +431,27 @@ void SceneBoss::UpdatePlayerDeathSequence(float elapsedTime)
     }
 }
 
-void SceneBoss::UpdateNaviDefeatFade(float elapsedTime)
+void SceneBoss::UpdateCueDefeatFade(float elapsedTime)
 {
-    if (!m_navi) return;
+    if (!m_cue) return;
 
-    const ICuePhase* phase{ m_navi->GetCurrentPhase() };
+    const ICuePhase* phase{ m_cue->GetCurrentPhase() };
 
     // Trigger the start of the death sequence
-    if (IsWindowkill(phase) && phase->IsDead() && !m_isNaviDefeated)
+    if (IsWindowkill(phase) && phase->IsDead() && !m_isCueDefeated)
     {
-        m_isNaviDefeated = true;
-        m_naviDefeatTimer = 0.0f;
-        AddLog("Navi defeated. Starting death sequence.");
+        m_isCueDefeated = true;
+        m_cueDefeatTimer = 0.0f;
+        AddLog("Cue defeated. Starting death sequence.");
     }
 
     // Logic for the Fade-In
-    if (m_isNaviDefeated)
+    if (m_isCueDefeated)
     {
-        m_naviDefeatTimer += elapsedTime;
-        if (m_naviDefeatTimer > NAVI_DEATH_ANIM_DURATION)
+        m_cueDefeatTimer += elapsedTime;
+        if (m_cueDefeatTimer > CUE_DEATH_ANIM_DURATION)
         {
-            float fadeTime = m_naviDefeatTimer - NAVI_DEATH_ANIM_DURATION;
+            float fadeTime = m_cueDefeatTimer - CUE_DEATH_ANIM_DURATION;
             m_whiteAlpha = std::clamp(fadeTime / WHITE_FADE_DURATION, 0.0f, 1.0f);
         }
     }
@@ -459,9 +459,9 @@ void SceneBoss::UpdateNaviDefeatFade(float elapsedTime)
 
 bool SceneBoss::UpdateWindowkillMainWindow()
 {
-    if (!m_navi) return false;
+    if (!m_cue) return false;
 
-    const ICuePhase* phase{ m_navi->GetCurrentPhase() };
+    const ICuePhase* phase{ m_cue->GetCurrentPhase() };
     Beyond::Window* mw = WindowManager::Instance().GetWindowByIndex(0);
 
     if (IsWindowkill(phase)) {
@@ -559,18 +559,18 @@ void SceneBoss::UpdatePlayerStretch(float scaledDt)
     m_stretchOffset.y += (targetOffset.y - m_stretchOffset.y) * lerpSpeed * scaledDt;
 }
 
-bool SceneBoss::UpdateNavi(float scaledDt)
+bool SceneBoss::UpdateCue(float scaledDt)
 {
-    if (!m_navi) return false;
+    if (!m_cue) return false;
 
     // Hand the player to the AI director.
     // Why every frame: a phase created mid-fight has no target until the scene hands it one.
-    if (ICuePhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAITarget(m_player.get());
+    if (ICuePhase * phase{ m_cue->GetCurrentPhase() }) phase->SetAITarget(m_player.get());
 
-    m_navi->Update(scaledDt);
+    m_cue->Update(scaledDt);
 
     // Why fetched here: Boss::Update can swap the phase, so an earlier pointer may be stale.
-    const ICuePhase* updatedPhase{ m_navi->GetCurrentPhase() };
+    const ICuePhase* updatedPhase{ m_cue->GetCurrentPhase() };
     if (updatedPhase && !m_isPendingSceneChange && updatedPhase->IsReadyToChangeScene()) {
         RequestReturnToTitle();
         return true;
@@ -723,7 +723,7 @@ bool SceneBoss::BeginMainCameraPostProcess(const Camera* targetCam, bool isTrans
     // =========================================================
     // POST-PROCESS VIGNETTE (Only applied to Main Window)
     // =========================================================
-    const ICuePhase* activePhase{ m_navi ? m_navi->GetCurrentPhase() : nullptr };
+    const ICuePhase* activePhase{ m_cue ? m_cue->GetCurrentPhase() : nullptr };
 
     // 2. Determine if Windowkill is active AND the boss is NOT dead
     const bool isWindowkillAndAlive{ IsWindowkill(activePhase) && !activePhase->IsDead() };
@@ -767,7 +767,7 @@ void SceneBoss::RenderShapesAndHitboxes(ID3D11DeviceContext* dc, Camera* targetC
         }
 
         // 2. Boss bullet hitboxes: red in bullet hell, lime in Windowkill (bouncing bullets).
-        if (const ICuePhase * phase{ m_navi ? m_navi->GetCurrentPhase() : nullptr })
+        if (const ICuePhase * phase{ m_cue ? m_cue->GetCurrentPhase() : nullptr })
         {
             const bool isWindowkill{ IsWindowkill(phase) };
             if (const ProjectilePool * pool{ phase->GetProjectilePool() })
@@ -883,9 +883,9 @@ void SceneBoss::StartPlayerDeathSequence()
         }
     }
 
-    if (m_navi)
+    if (m_cue)
     {
-        if (ICuePhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAIEnabled(false);
+        if (ICuePhase * phase{ m_cue->GetCurrentPhase() }) phase->SetAIEnabled(false);
     }
 }
 
@@ -902,8 +902,8 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
     rc.isTransparentWindow = isTransparentWindow;
     // --- 1. Is this the wing (FX) camera? ---
     bool isWingCamera = false;
-    if (m_navi) {
-        if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase())) {
+    if (m_cue) {
+        if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_cue->GetCurrentPhase())) {
             isWingCamera = (camera == wkPhase->GetFXCamera());
         }
     }
@@ -919,7 +919,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
         bool shouldRenderHere = m_playerWindowTransparent ? isWingCamera : !isWingCamera;
 
         // Why: in Windowkill every tracked window can show the player, not only the wing camera.
-        if (m_navi && IsWindowkill(m_navi->GetCurrentPhase())) {
+        if (m_cue && IsWindowkill(m_cue->GetCurrentPhase())) {
             shouldRenderHere = true;
         }
 
@@ -929,7 +929,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
             // The sphere check is bypassed while the player is caged (below).
             bool isInView = camera->CheckSphere(pPos.x, pPos.y, pPos.z, 1.5f);
 
-            auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase());
+            auto* wkPhase = dynamic_cast<BossPhase02*>(m_cue->GetCurrentPhase());
             if (wkPhase && wkPhase->IsPlayerCaged()) {
                 isInView = true; // always drawn while caged
             }
@@ -946,8 +946,8 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
         if (m_itemManager) m_itemManager->Render(modelRenderer);
     }
 
-    // --- 3. Navi (face and background) ---
-    if (m_navi) m_navi->Render(dc, camera);
+    // --- 3. Cue (face and background) ---
+    if (m_cue) m_cue->Render(dc, camera);
 
     modelRenderer->Render(rc);
     EffectManager::Instance().Render(camera);
@@ -996,13 +996,13 @@ void SceneBoss::DrawBossPanel()
     // Why: once the scene change is pending, phase and window state are being torn down.
     if (m_isPendingSceneChange) return;
 
-    if (!m_navi)
+    if (!m_cue)
     {
         ImGui::TextDisabled("Boss not created.");
         return;
     }
 
-    ICuePhase* phase{ m_navi->GetCurrentPhase() };
+    ICuePhase* phase{ m_cue->GetCurrentPhase() };
     if (!phase)
     {
         ImGui::TextDisabled("No active phase.");
@@ -1052,7 +1052,7 @@ void SceneBoss::DrawBossPanel()
     {
         if (ImGui::Button("Go to Windowkill"))
         {
-            m_navi->ChangePhase(std::make_unique<BossPhase02>(m_player.get()));
+            m_cue->ChangePhase(std::make_unique<BossPhase02>(m_player.get()));
             m_playerWindowTransparent = true;
             AddLog("Phase changed to Windowkill.");
             return; // the phase pointers above are dangling now
@@ -1066,7 +1066,7 @@ void SceneBoss::DrawBossPanel()
     if (ImGui::Button("Restart at Bullet hell"))
     {
         const bool wasWindowkill{ windowkill != nullptr };
-        m_navi->ChangePhase(std::make_unique<BossPhase01>(m_player.get()));
+        m_cue->ChangePhase(std::make_unique<BossPhase01>(m_player.get()));
         if (wasWindowkill)
         {
             m_playerWindowTransparent = false;
@@ -1080,19 +1080,19 @@ void SceneBoss::DrawBossPanel()
     ImGui::PushID("Core");
     if (ImGui::CollapsingHeader("Core", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        float speed{ m_navi->GetCoreBreathSpeed() };
-        float intensity{ m_navi->GetCoreBreathIntensity() };
+        float speed{ m_cue->GetCoreBreathSpeed() };
+        float intensity{ m_cue->GetCoreBreathIntensity() };
         bool isEdited{ false };
         isEdited |= DebugProperty::SliderFloat("Breath speed", speed, 0.1f, 20.0f);
         isEdited |= DebugProperty::SliderFloat("Breath intensity", intensity, 0.0f, 200.0f);
-        if (isEdited) m_navi->SetCoreBreathParams(speed, intensity);
+        if (isEdited) m_cue->SetCoreBreathParams(speed, intensity);
     }
     ImGui::PopID();
 
     ImGui::PushID("Face");
     if (ImGui::CollapsingHeader("Face"))
     {
-        FaceParams& face{ m_navi->GetFaceParams() };
+        FaceParams& face{ m_cue->GetFaceParams() };
         DebugProperty::Checkbox("Glitch enabled", face.enableGlitch);
         DebugProperty::SliderFloat("Face size", face.faceTotalSize, 1.0f, 15.0f, "%.1f units");
         DebugProperty::DragFloatRange("Interval range", face.minInterval, face.maxInterval, 0.01f, 0.01f, 2.0f, "%.2f s");
@@ -1362,7 +1362,7 @@ void SceneBoss::DrawAttacksPanel()
     // Why: once the scene change is pending, phase and window state are being torn down.
     if (m_isPendingSceneChange) return;
 
-    if (!m_navi)
+    if (!m_cue)
     {
         ImGui::TextDisabled("Boss not created.");
         return;
@@ -1378,13 +1378,13 @@ void SceneBoss::DrawAttacksPanel()
             : "AttackParams.json reload failed, params unchanged.");
     }
 
-    if (auto * bulletHell{ dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase()) })
+    if (auto * bulletHell{ dynamic_cast<BossPhase01*>(m_cue->GetCurrentPhase()) })
     {
         DrawBulletHellAttacks(*bulletHell);
         return;
     }
 
-    auto* windowkill{ dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase()) };
+    auto* windowkill{ dynamic_cast<BossPhase02*>(m_cue->GetCurrentPhase()) };
     if (!windowkill)
     {
         ImGui::TextDisabled("No active phase.");
@@ -1478,7 +1478,7 @@ void SceneBoss::DrawBulletHellAttacks(BossPhase01& phase)
     // Angle from boss to player at the moment of the click, for the two Fan sets.
     const auto getAngleToPlayer{ [this]() {
         const DirectX::XMFLOAT3 playerPos{ m_player->GetPosition() };
-        const DirectX::XMFLOAT3 bossPos{ m_navi->GetPosition() };
+        const DirectX::XMFLOAT3 bossPos{ m_cue->GetPosition() };
         return std::atan2(playerPos.x - bossPos.x, playerPos.z - bossPos.z);
     } };
     switch (static_cast<BulletHellSet>(m_selectedBulletHellSet))
@@ -1741,14 +1741,14 @@ void SceneBoss::AddLog(const std::string& message)
         }
 
         // Reset Boss 
-        if (m_navi)
+        if (m_cue)
         {
-            if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_navi->GetCurrentPhase()))
+            if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_cue->GetCurrentPhase()))
             {
                 normalPhase->SetHP(normalPhase->GetMaxHP());
                 m_playerWindowTransparent = false; // Normal mode = solid player
             }
-            else if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_navi->GetCurrentPhase()))
+            else if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_cue->GetCurrentPhase()))
             {
                 wkPhase->SetHP(wkPhase->GetMaxHP());
                 m_playerWindowTransparent = true;  // Windowkill mode = transparent player

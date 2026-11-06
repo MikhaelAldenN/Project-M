@@ -34,8 +34,8 @@ void CollisionManager::Update(float elapsedTime)
 {
     CheckEnemyProjectilesFull(elapsedTime);
     CheckPlayerProjectilesVsEnemies(elapsedTime);
-    CheckPlayerProjectilesVsNavi(elapsedTime);
-    CheckNaviAllyProjectilesVsPlayer(elapsedTime);
+    CheckPlayerProjectilesVsCue(elapsedTime);
+    CheckCueAllyProjectilesVsPlayer(elapsedTime);
     CheckPlayerVsEnemies();
 
     if (m_itemManager)
@@ -43,7 +43,7 @@ void CollisionManager::Update(float elapsedTime)
         CheckPlayerVsItems();
     }
     
-    CheckNaviProjectilesVsEnemies(elapsedTime);
+    CheckCueProjectilesVsEnemies(elapsedTime);
     CheckBossProjectilesVsPlayer(elapsedTime);
     CheckBossProjectilesVsBoss(elapsedTime);
     CheckPlayerProjectilesVsBoss();
@@ -429,11 +429,11 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
     }
 }
 
-void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
+void CollisionManager::CheckCueProjectilesVsEnemies(float elapsedTime)
 {
-    if (!m_navi || !m_enemyManager) return;
+    if (!m_cue || !m_enemyManager) return;
 
-    ProjectilePool& projectiles{ m_navi->GetProjectiles() };
+    ProjectilePool& projectiles{ m_cue->GetProjectiles() };
     auto& enemies = m_enemyManager->GetEnemies();
 
     constexpr float BULLET_HITBOX_RADIUS = 0.1f;
@@ -476,7 +476,7 @@ void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
 
             if (distToPath <= exactHitDistance)
             {
-                enemy->TakeDamage(DamageInfo{ m_damageConfig.naviBulletToEnemy, currentPos });
+                enemy->TakeDamage(DamageInfo{ m_damageConfig.cueBulletToEnemy, currentPos });
                 projectiles.Despawn(i);
                 break; // Stop checking this bullet against other enemies
             }
@@ -484,15 +484,15 @@ void CollisionManager::CheckNaviProjectilesVsEnemies(float elapsedTime)
     }
 }
 
-void CollisionManager::CheckPlayerProjectilesVsNavi(const float elapsedTime)
+void CollisionManager::CheckPlayerProjectilesVsCue(const float elapsedTime)
 {
     // Fast fail: Early exit prevents unnecessary pointer dereferencing
-    if (!m_player || !m_navi || !m_navi->IsAlive() || !m_navi->IsPotioned()) return;
+    if (!m_player || !m_cue || !m_cue->IsAlive() || !m_cue->IsPotioned()) return;
 
     ProjectilePool& projectiles{ m_player->GetProjectiles() };
-    const DirectX::XMFLOAT3 naviPos{ m_navi->GetMovement()->GetPosition() };
+    const DirectX::XMFLOAT3 cuePos{ m_cue->GetMovement()->GetPosition() };
 
-    constexpr float NAVI_HITBOX_RADIUS_XZ{ 0.8f };
+    constexpr float CUE_HITBOX_RADIUS_XZ{ 0.8f };
 
     const std::vector<Projectile>& slots{ projectiles.Slots() };
     for (std::size_t i{ 0 }; i < slots.size(); ++i)
@@ -509,25 +509,25 @@ void CollisionManager::CheckPlayerProjectilesVsNavi(const float elapsedTime)
         };
 
         // Anti-tunneling CCD (Continuous Collision Detection) 
-        const float distToPath{ DistancePointToLineSegment2D(prevPos, currentPos, naviPos) };
+        const float distToPath{ DistancePointToLineSegment2D(prevPos, currentPos, cuePos) };
 
         // 2D Cylinder Collision: Completely ignore the Y-axis vertical distance
-        if (distToPath <= NAVI_HITBOX_RADIUS_XZ)
+        if (distToPath <= CUE_HITBOX_RADIUS_XZ)
         {
-            m_navi->TakeDamage(DamageInfo{ m_damageConfig.playerBulletToNavi, currentPos });
-            EffectManager::Instance().Play("Data/Effect/Hit.efk", naviPos, 1.0f);
+            m_cue->TakeDamage(DamageInfo{ m_damageConfig.playerBulletToCue, currentPos });
+            EffectManager::Instance().Play("Data/Effect/Hit.efk", cuePos, 1.0f);
             projectiles.Despawn(i);
         }
     }
 }
 
-void CollisionManager::CheckNaviAllyProjectilesVsPlayer(const float elapsedTime)
+void CollisionManager::CheckCueAllyProjectilesVsPlayer(const float elapsedTime)
 {
-    // If the player is dead, Navi isn't potioned, OR the player is currently Dashing (Invincible),
-    if (!m_player || !m_navi || m_player->GetHP() <= 0 || !m_navi->IsPotioned() || m_player->IsInvincible()) return;
+    // If the player is dead, Cue isn't potioned, OR the player is currently Dashing (Invincible),
+    if (!m_player || !m_cue || m_player->GetHP() <= 0 || !m_cue->IsPotioned() || m_player->IsInvincible()) return;
 
     // Reference bindings (No copying)
-    ProjectilePool& projectiles{ m_navi->GetProjectiles() };
+    ProjectilePool& projectiles{ m_cue->GetProjectiles() };
     const DirectX::XMFLOAT3 playerPos{ m_player->GetMovement()->GetPosition() };
 
     constexpr float PLAYER_HURTBOX_RADIUS{ 0.3f };
@@ -553,7 +553,7 @@ void CollisionManager::CheckNaviAllyProjectilesVsPlayer(const float elapsedTime)
         {
             projectiles.Despawn(i); // Destroy the bullet
 
-            m_player->TakeDamage(DamageInfo{ m_damageConfig.naviBulletToPlayer, currentPos });
+            m_player->TakeDamage(DamageInfo{ m_damageConfig.cueBulletToPlayer, currentPos });
         }
     }
 }
@@ -718,7 +718,7 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
 
         const DamageResult result{ m_player->TakeDamage(DamageInfo{ damage, position }) };
         // Why: an invincible player (dash) passes through. The projectile stays alive and
-        // there is no hit feedback, the same as enemy and Navi bullets.
+        // there is no hit feedback, the same as enemy and Cue bullets.
         if (result == DamageResult::ignored) return false;
 
         CameraController::Instance().AddTrauma(0.2f);
