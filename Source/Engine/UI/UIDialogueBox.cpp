@@ -130,7 +130,6 @@ void UIDialogueBox::Initialize()
     };
 
     m_font = std::make_unique<FontTTF>();
-    m_font->Initialize("Data/Font/zpix.ttf", 28.0f, requiredKanji);
     m_font->Initialize("Data/Font/PixelMplus10-Regular.ttf", 32.0f, requiredKanji);
 }
 
