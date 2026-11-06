@@ -27,6 +27,10 @@ namespace PlayerConst
     inline constexpr int   DashCharges = 2;      // Dashes available before a press fails
     inline constexpr float DashRecoveryTime = 0.8f;   // USULAN DESAIN: time without dashing that restores all charges (s)
 
+    // --- Perfect dodge (a hit that lands inside a dash's invincibility) ---
+    inline constexpr float PerfectDodgeSlowDuration = 0.1f;  // Real seconds the game runs slowed
+    inline constexpr float PerfectDodgeTimeScale = 0.3f;     // USULAN DESAIN: game speed during the slowdown
+
     // --- Health ---
     inline constexpr int   MaxHits = 6;               // USULAN DESAIN: hits that kill the player; every bullet is one hit
     inline constexpr float HitIFrameDuration = 1.0f;  // Invincibility after a hit (s)

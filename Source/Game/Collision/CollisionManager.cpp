@@ -158,7 +158,7 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
             XMFLOAT3 nextPosFloat;
             XMStoreFloat3(&nextPosFloat, vNextPos);
 
-            if (m_player && bullet.target == ProjectileTarget::none && m_player->GetHP() > 0 && !m_player->IsInvincible())
+            if (m_player && bullet.target == ProjectileTarget::none && m_player->GetHP() > 0)
             {
                 DirectX::XMFLOAT3 playerPos = m_player->GetMovement()->GetPosition();
 
@@ -169,10 +169,11 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                 // Mathematical CCD (Prevents Tunneling)
                 float distToPath = DistancePointToLineSegment2D(currentPos, nextPosFloat, playerPos);
 
-                if (distToPath <= combinedRadius)
+                // Why TakeDamage is called while invincible: it detects the perfect dodge.
+                // An ignored hit leaves the bullet flying through the player.
+                if (distToPath <= combinedRadius &&
+                    m_player->TakeDamage(DamageInfo{ m_damageConfig.enemyBulletToPlayer, currentPos }) != DamageResult::ignored)
                 {
-                    m_player->TakeDamage(DamageInfo{ m_damageConfig.enemyBulletToPlayer, currentPos });
-
                     // Destroy the bullet
                     projectiles.Despawn(i);
                     continue;
@@ -483,8 +484,9 @@ void CollisionManager::CheckPlayerProjectilesVsCue(const float elapsedTime)
 
 void CollisionManager::CheckCueAllyProjectilesVsPlayer(const float elapsedTime)
 {
-    // If the player is dead, Cue isn't potioned, OR the player is currently Dashing (Invincible),
-    if (!m_player || !m_cue || m_player->GetHP() <= 0 || !m_cue->IsPotioned() || m_player->IsInvincible()) return;
+    // Skipped while the player is dead or Cue is not potioned. An invincible player is still
+    // tested: TakeDamage detects the perfect dodge and the bullet flies on.
+    if (!m_player || !m_cue || m_player->GetHP() <= 0 || !m_cue->IsPotioned()) return;
 
     // Reference bindings (No copying)
     ProjectilePool& projectiles{ m_cue->GetProjectiles() };
@@ -509,11 +511,10 @@ void CollisionManager::CheckCueAllyProjectilesVsPlayer(const float elapsedTime)
         const float distToPath{ DistancePointToLineSegment2D(prevPos, currentPos, playerPos) };
         const float combinedRadius{ PLAYER_HURTBOX_RADIUS + slots[i].radius };
 
-        if (distToPath <= combinedRadius)
+        if (distToPath <= combinedRadius &&
+            m_player->TakeDamage(DamageInfo{ m_damageConfig.cueBulletToPlayer, currentPos }) != DamageResult::ignored)
         {
             projectiles.Despawn(i); // Destroy the bullet
-
-            m_player->TakeDamage(DamageInfo{ m_damageConfig.cueBulletToPlayer, currentPos });
         }
     }
 }
@@ -553,8 +554,8 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
         if (distSq > (totalRadius * totalRadius)) return false;
 
         const DamageResult result{ m_player->TakeDamage(DamageInfo{ damage, position }) };
-        // Why: an invincible player (dash) passes through. The projectile stays alive and
-        // there is no hit feedback, the same as enemy and Cue bullets.
+        // Why: an invincible player passes through. The projectile stays alive and there is
+        // no hit feedback, the same as enemy and Cue bullets; a dash there is a perfect dodge.
         if (result == DamageResult::ignored) return false;
 
         CameraController::Instance().AddTrauma(0.2f);

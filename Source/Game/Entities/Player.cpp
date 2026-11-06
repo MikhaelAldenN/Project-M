@@ -21,6 +21,7 @@
 #include "Game/Collision/KinematicMover.h"
 #include "Game/Collision/StageCollider.h"
 #include "Engine/Base/MathUtils.h"
+#include "TimeManager.h"
 
 using namespace DirectX;
 
@@ -34,6 +35,12 @@ namespace
     constexpr const char* k_dashFailSound{ "Data/Sound/SE_Dash_01.wav" };
     constexpr float k_dashFailSoundVolume{ 0.1f };   // same as the dash sound
     constexpr float k_dashFailSoundSpeed{ 1.6f };    // USULAN DESAIN: playback speed and pitch ratio
+
+    // Perfect-dodge cue, reusing the dash-ready effect and the second ready sound.
+    constexpr const char* k_perfectDodgeEffect{ "Data/Effect/VFX_Player_Dash_Ready.efk" };
+    constexpr float k_perfectDodgeEffectScale{ 1.0f };   // USULAN DESAIN: twice the ready cue
+    constexpr const char* k_perfectDodgeSound{ "Data/Sound/SE_Player_Dash_Ready_02.wav" };
+    constexpr float k_perfectDodgeSoundVolume{ 0.3f };
 }
 
 // ============================================================
@@ -159,6 +166,7 @@ void Player::Update(float elapsedTime, Camera* camera)
         m_invincibilityTimer -= elapsedTime;
     }
     m_hitBlinkTimer = (std::max)(m_hitBlinkTimer - elapsedTime, 0.0f);
+    m_dodgeWindowTimer = (std::max)(m_dodgeWindowTimer - elapsedTime, 0.0f);
 
     // Why it may go below zero: TryFire reads how far past due the next shot is.
     // Floored so a long pause does not grow it without limit.
@@ -369,6 +377,7 @@ bool Player::TryBeginDash()
     {
         --m_dashCharges;
         TriggerInvincibility(m_dashIFrameDuration);
+        m_dodgeWindowTimer = m_dashIFrameDuration;
         return true;
     }
 
@@ -377,6 +386,23 @@ bool Player::TryBeginDash()
 
     PlayDashFailCue();
     return false;
+}
+
+void Player::TriggerPerfectDodge()
+{
+    m_dodgeWindowTimer = 0.0f; // one reward per dash
+    ++m_perfectDodgeCount;
+
+    m_dashCharges = (std::min)(m_dashCharges + 1, m_maxDashCharges);
+
+    // Why real seconds: TimeManager counts the slowdown with unscaled time, so it lasts
+    // the same at any frame rate. Only SceneBoss reads TimeManager today.
+    TimeManager::Instance().TriggerHitStop(m_perfectDodgeSlowDuration, m_perfectDodgeTimeScale);
+
+    DirectX::XMFLOAT3 pos{ m_movement->GetPosition() };
+    pos.y += 1.0f; // middle of the body, like the dash effect
+    EffectManager::Instance().Play(k_perfectDodgeEffect, pos, k_perfectDodgeEffectScale);
+    AudioManager::Instance().PlaySFX(k_perfectDodgeSound, k_perfectDodgeSoundVolume);
 }
 
 void Player::PlayDashFailCue()
@@ -955,7 +981,14 @@ void Player::StopAllVFX()
 // ============================================================
 DamageResult Player::TakeDamage([[maybe_unused]] const DamageInfo& damage)
 {
-    if (m_hp <= 0 || IsInvincible()) return DamageResult::ignored;
+    if (m_hp <= 0) return DamageResult::ignored;
+
+    if (IsInvincible())
+    {
+        // A hit inside a charged dash's invincibility is a perfect dodge.
+        if (m_dodgeWindowTimer > 0.0f) TriggerPerfectDodge();
+        return DamageResult::ignored;
+    }
 
     // One hit, one HP: damage.amount belongs to sources that also hit enemies and the boss.
     --m_hp;
@@ -1101,6 +1134,9 @@ void Player::DrawDebugGUI()
         DebugProperty::SliderInt("Full dashes", m_maxDashCharges, 1, 5);
         DebugProperty::DragFloat("Recovery time", m_dashRecoveryTime, 0.01f, 0.0f, 5.0f, "%.2f s");
         DebugProperty::DragFloat("I-frame duration", m_dashIFrameDuration, 0.01f, 0.0f, 1.0f, "%.2f s");
+        DebugProperty::Text("Perfect dodges", "%d", m_perfectDodgeCount);
+        DebugProperty::DragFloat("Dodge slow duration", m_perfectDodgeSlowDuration, 0.01f, 0.0f, 1.0f, "%.2f s");
+        DebugProperty::SliderFloat("Dodge time scale", m_perfectDodgeTimeScale, 0.0f, 1.0f, "%.2f");
     }
     ImGui::PopID();
 

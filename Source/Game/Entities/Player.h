@@ -169,8 +169,9 @@ public:
     // body and the weapon; the player's bullets are still drawn.
     [[nodiscard]] bool IsBlinkHidden() const;
 
-	// --- Invincibility (used by PlayerDash and PlayerHit states) ---
-    void TriggerInvincibility(float duration) { m_invincibilityTimer = duration; }
+    // --- Invincibility (used by PlayerDash and PlayerHit states) ---
+    // Never shortens invincibility that is already running (a dash right after a hit).
+    void TriggerInvincibility(float duration) { m_invincibilityTimer = (duration > m_invincibilityTimer) ? duration : m_invincibilityTimer; }
     [[nodiscard]] bool IsInvincible() const { return m_invincibilityTimer > 0.0f; }
 
     // --- Aim lock (scripted moments in SceneGame and SceneBoss) ---
@@ -201,7 +202,10 @@ private:
     // --- Update pipeline (called in order from Update()) ---
     void UpdateDashRecovery(float dt);
     void PlayDashFailCue();
+    // Charge back, short slowdown, flash and sound. Called by TakeDamage, once per dash.
+    void TriggerPerfectDodge();
     [[nodiscard]] bool HasFullDash() const { return m_dashCharges > 0; }
+
     void HandleMovementInput(float dt);
     void HandleAimInput(Camera* camera);
     void UpdateHorizontalMovement(float dt);
@@ -309,6 +313,12 @@ private:
     float m_iFrameDuration{ PlayerConst::HitIFrameDuration };
     float m_hitBlinkInterval{ PlayerConst::HitBlinkInterval };
     float m_hitBlinkTimer{ 0.0f }; // seconds of blink left after a hit
+
+    // --- Perfect dodge ---
+    float m_dodgeWindowTimer{ 0.0f }; // open while a charged dash's invincibility runs; closed by the reward
+    float m_perfectDodgeSlowDuration{ PlayerConst::PerfectDodgeSlowDuration };
+    float m_perfectDodgeTimeScale{ PlayerConst::PerfectDodgeTimeScale };
+    int   m_perfectDodgeCount{ 0 }; // shown in the Player panel
 
     // Dash Ready VFX handle and Y offset
     int m_dashReadyVfxHandle = -1;
