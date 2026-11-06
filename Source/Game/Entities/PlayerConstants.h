@@ -25,7 +25,7 @@ namespace PlayerConst
     inline constexpr float DashDuration = 0.15f;  // How long the dash lasts (s)
     inline constexpr float DashIFrameDuration = 0.2f;  // Invincibility granted by a full dash (s)
     inline constexpr int   DashCharges = 2;      // Full dashes available before the penalty starts
-    inline constexpr float DashRecoveryTime = 1.0f;   // Time without dashing that restores all charges (s)
+    inline constexpr float DashRecoveryTime = 0.8f;   // USULAN DESAIN: time without dashing that restores all charges (s)
     inline constexpr float DashPenaltyScale = 0.5f;   // USULAN DESAIN: speed multiplier of a penalized dash
 
     // --- Shoot ---
