@@ -147,19 +147,12 @@ int main(int argc, char* argv[])
                 }
 #endif
 
+                // Closing any game window (Alt+F4, title bar X) quits the whole game, so a
+                // Windowkill window can neither be dismissed as a cheat nor leave the game
+                // running behind a hidden main window. The debug host never gets here.
                 if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
                 {
-                    SDL_Window* closedWin = SDL_GetWindowFromID(event.window.windowID);
-                    Beyond::Window* mainWin = framework ? framework->GetMainWindow() : nullptr;
-
-                    if (mainWin && closedWin == mainWin->GetSDLWindow()) {
-                        // Closing the main window quits the game.
-                        running = false;
-                    }
-                    else {
-                        // A closed sub-window is handed to the framework to clean up.
-                        if (framework) framework->OnSubWindowClosed(event.window.windowID);
-                    }
+                    running = false;
                 }
 
                 if (event.type == SDL_EVENT_WINDOW_RESIZED || event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED)
