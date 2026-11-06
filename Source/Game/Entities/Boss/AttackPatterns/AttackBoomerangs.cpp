@@ -5,6 +5,7 @@
 #include "CameraController.h"
 #include <SDL3/SDL.h>
 #include <cassert>
+#include "Engine/Base/MathUtils.h"
 
 using namespace DirectX;
 
@@ -90,7 +91,7 @@ void AttackBoomerangs::Update(float dt, CueBoss* boss) {
 
         DirectX::XMFLOAT3 vel = projectile->velocity;
         // Smooth Velocity Lerp
-        vel.x += (bw.targetVelX - vel.x) * m_params.turnSpeed * dt;
+        vel.x += (bw.targetVelX - vel.x) * MathUtils::ExpDecayFactor(m_params.turnSpeed, dt);
 
         projectile->velocity = vel;
         ProjectilePool::Advance(*projectile, dt);

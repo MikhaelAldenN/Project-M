@@ -5,6 +5,7 @@
 #include <cmath>
 #include <algorithm>
 #include "JuiceEngine.h"
+#include "Engine/Base/MathUtils.h"
 
 using namespace DirectX;
 
@@ -315,7 +316,7 @@ void CameraController::UpdateFixedFollow(float dt, std::shared_ptr<Camera>& came
     // DYNAMIC COMBAT ZOOM (Smooth Lerp)
     // How fast the camera zooms in and out during combat
     float zoomLerpSpeed = 2.5f;
-    m_currentZoomOffset += (m_targetZoomOffset - m_currentZoomOffset) * zoomLerpSpeed * dt;
+    m_currentZoomOffset += (m_targetZoomOffset - m_currentZoomOffset) * MathUtils::ExpDecayFactor(zoomLerpSpeed, dt);
 
     XMFLOAT3 dynamicOffset = m_fixedPos;
     // Lower the Y height based on the zoom
@@ -331,13 +332,14 @@ void CameraController::UpdateFixedFollow(float dt, std::shared_ptr<Camera>& came
 
     // SOFT FOLLOW (Lerp)
     float followSpeed = 5.0f;
+    const float follow{ MathUtils::ExpDecayFactor(followSpeed, dt) };
 
     XMFLOAT3 currentPos = camera->GetPosition();
     XMFLOAT3 newPos;
 
-    newPos.x = currentPos.x + (desiredPos.x - currentPos.x) * followSpeed * dt;
-    newPos.y = currentPos.y + (desiredPos.y - currentPos.y) * followSpeed * dt;
-    newPos.z = currentPos.z + (desiredPos.z - currentPos.z) * followSpeed * dt;
+    newPos.x = currentPos.x + (desiredPos.x - currentPos.x) * follow;
+    newPos.y = currentPos.y + (desiredPos.y - currentPos.y) * follow;
+    newPos.z = currentPos.z + (desiredPos.z - currentPos.z) * follow;
 
     camera->SetPosition(newPos);
 

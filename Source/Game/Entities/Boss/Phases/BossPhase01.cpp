@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cassert>
 #include <random>
+#include "Engine/Base/MathUtils.h"
 
 using namespace DirectX;
 
@@ -357,15 +358,16 @@ void BossPhase01::UpdateIdleHover(float dt, CueBoss* boss) {
     m_idleHoverTimer += dt;
     m_targetPosition.x = sinf(m_idleHoverTimer * 0.8f) * 6.0f;
     m_targetPosition.z = cosf(m_idleHoverTimer * 1.1f) * 3.0f;
-    m_moveLerpSpeed += (1.5f - m_moveLerpSpeed) * 2.0f * dt;
+    m_moveLerpSpeed += (1.5f - m_moveLerpSpeed) * MathUtils::ExpDecayFactor(2.0f, dt);
 }
 
 void BossPhase01::UpdateBossMovement(float dt, CueBoss* boss) {
-    m_currentMoveLerpSpeed += (m_moveLerpSpeed - m_currentMoveLerpSpeed) * m_moveAcceleration * dt;
+    m_currentMoveLerpSpeed += (m_moveLerpSpeed - m_currentMoveLerpSpeed) * MathUtils::ExpDecayFactor(m_moveAcceleration, dt);
 
+    const float follow{ MathUtils::ExpDecayFactor(m_currentMoveLerpSpeed, dt) };
     XMFLOAT3 pos = boss->GetPosition();
-    pos.x += (m_targetPosition.x - pos.x) * m_currentMoveLerpSpeed * dt;
-    pos.z += (m_targetPosition.z - pos.z) * m_currentMoveLerpSpeed * dt;
+    pos.x += (m_targetPosition.x - pos.x) * follow;
+    pos.z += (m_targetPosition.z - pos.z) * follow;
     boss->SetPosition(pos);
 }
 

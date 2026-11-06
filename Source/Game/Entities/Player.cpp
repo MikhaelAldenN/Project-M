@@ -19,6 +19,7 @@
 #include "System/AudioManager.h"
 #include "Game/Collision/KinematicMover.h"
 #include "Game/Collision/StageCollider.h"
+#include "Engine/Base/MathUtils.h"
 
 using namespace DirectX;
 
@@ -464,8 +465,8 @@ void Player::HandleMovementInput(float dt)
     const float smoothX{ (std::abs(targetX) > inputEpsilon) ? m_acceleration : m_deceleration };
     const float smoothZ{ (std::abs(targetZ) > inputEpsilon) ? m_acceleration : m_deceleration };
 
-    m_currentSmoothInput.x += (targetX - m_currentSmoothInput.x) * smoothX * dt;
-    m_currentSmoothInput.y += (targetZ - m_currentSmoothInput.y) * smoothZ * dt;
+    m_currentSmoothInput.x += (targetX - m_currentSmoothInput.x) * MathUtils::ExpDecayFactor(smoothX, dt);
+    m_currentSmoothInput.y += (targetZ - m_currentSmoothInput.y) * MathUtils::ExpDecayFactor(smoothZ, dt);
 
     // 8. Snap to zero below threshold (Defends against creeping floating-point drift over time)
     if (std::abs(m_currentSmoothInput.x) < inputEpsilon) m_currentSmoothInput.x = 0.0f;

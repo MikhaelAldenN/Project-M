@@ -9,6 +9,7 @@
 #include <DirectXMath.h>
 #include <random>
 #include <cmath>
+#include "Engine/Base/MathUtils.h"
 
 using namespace DirectX;
 
@@ -59,10 +60,10 @@ void AttackPhalanx::Update(float dt, CueBoss* boss) {
         hoverPos.z += cosf(bulletAngle) * m_params.hoverRadius;
         hoverPos.y += 1.0f;
 
-        float s = m_params.smoothSpeed;
-        projectile->position.x += (hoverPos.x - projectile->position.x) * s * dt;
-        projectile->position.y += (hoverPos.y - projectile->position.y) * s * dt;
-        projectile->position.z += (hoverPos.z - projectile->position.z) * s * dt;
+        const float s{ MathUtils::ExpDecayFactor(m_params.smoothSpeed, dt) };
+        projectile->position.x += (hoverPos.x - projectile->position.x) * s;
+        projectile->position.y += (hoverPos.y - projectile->position.y) * s;
+        projectile->position.z += (hoverPos.z - projectile->position.z) * s;
         projectile->yawDegrees = XMConvertToDegrees(angleToPlayer);
     }
 

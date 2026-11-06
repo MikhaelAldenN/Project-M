@@ -6,6 +6,7 @@
 #include "CameraController.h"
 #include "EffectManager.h"
 #include <SDL3/SDL.h>
+#include "Engine/Base/MathUtils.h"
 
 using namespace DirectX;
 
@@ -88,7 +89,7 @@ void AttackBlasters::Update(float dt, CueBoss* boss) {
         };
 
         if (b->state == 1) { // DROP IN
-            b->pos.z += (b->targetPos.z - b->pos.z) * 12.0f * dt;
+            b->pos.z += (b->targetPos.z - b->pos.z) * MathUtils::ExpDecayFactor(12.0f, dt);
             if (b->timer >= m_params.dropInDuration) {
                 b->state = 2; b->timer = 0.0f;
                 AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Laser_Charge.wav", 0.1f);
@@ -98,7 +99,7 @@ void AttackBlasters::Update(float dt, CueBoss* boss) {
         }
         else if (b->state == 2) { // CHARGE
             b->beamScaleX = 0.2f; // Thin warning line
-            b->beamCurrentLength += (m_params.beamMaxLength - b->beamCurrentLength) * m_params.beamSlideSpeed * dt;
+            b->beamCurrentLength += (m_params.beamMaxLength - b->beamCurrentLength) * MathUtils::ExpDecayFactor(m_params.beamSlideSpeed, dt);
             EffectManager::Instance().SetPosition(b->chargeEffectHandle, vfxPos);
 
             if (b->timer >= m_params.chargeDelay) {
@@ -113,7 +114,7 @@ void AttackBlasters::Update(float dt, CueBoss* boss) {
         }
         else if (b->state == 3) { // FIRE
             b->pos.x = b->baseX; // Lock X against shake drift
-            b->beamScaleX += (m_params.beamVisualWidth - b->beamScaleX) * m_params.beamGrowSpeed * dt;
+            b->beamScaleX += (m_params.beamVisualWidth - b->beamScaleX) * MathUtils::ExpDecayFactor(m_params.beamGrowSpeed, dt);
             CameraController::Instance().AddTrauma(0.1f);
             EffectManager::Instance().SetPosition(b->fireEffectHandle, vfxPos);
 

@@ -13,6 +13,7 @@
 #include "EffectManager.h"
 #include "CameraController.h"
 #include "AttackParamManager.h"
+#include "Engine/Base/MathUtils.h"
 
 using namespace DirectX;
 
@@ -640,15 +641,17 @@ void BossPhase02::UpdateWingNodes(float dt) {
     updateNodeAnimations(m_leftWingData);
     updateNodeAnimations(m_rightWingData);
 
+    const float wingFollow{ MathUtils::ExpDecayFactor(2.0f, dt) };
+
     for (auto& node : m_leftWingData) {
-        node.localOffset.x += (node.targetOffset.x - node.localOffset.x) * dt * 2.0f;
-        node.localOffset.y += (node.targetOffset.y - node.localOffset.y) * dt * 2.0f;
+        node.localOffset.x += (node.targetOffset.x - node.localOffset.x) * wingFollow;
+        node.localOffset.y += (node.targetOffset.y - node.localOffset.y) * wingFollow;
         node.localOffset.x -= sinf(m_glitchTimer * m_wingFlapSpeed + node.flapOffset) * m_wingFlapIntensity;
     }
 
     for (auto& node : m_rightWingData) {
-        node.localOffset.x += (node.targetOffset.x - node.localOffset.x) * dt * 2.0f;
-        node.localOffset.y += (node.targetOffset.y - node.localOffset.y) * dt * 2.0f;
+        node.localOffset.x += (node.targetOffset.x - node.localOffset.x) * wingFollow;
+        node.localOffset.y += (node.targetOffset.y - node.localOffset.y) * wingFollow;
         node.localOffset.x += sinf(m_glitchTimer * m_wingFlapSpeed + node.flapOffset) * m_wingFlapIntensity;
     }
 }

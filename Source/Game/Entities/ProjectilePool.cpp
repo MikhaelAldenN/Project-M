@@ -5,6 +5,7 @@
 #include <cmath>
 #include <optional>
 #include "EffectManager.h"
+#include "Engine/Base/MathUtils.h"
 
 using namespace DirectX;
 
@@ -106,7 +107,7 @@ namespace
             turnSpeed *= k_closeSteerDistance / (std::max)(distance, k_minSteerDistance);
         }
 
-        velocity = XMVectorLerp(velocity, XMVectorScale(toTarget, speed), turnSpeed * dt);
+        velocity = XMVectorLerp(velocity, XMVectorScale(toTarget, speed), MathUtils::ExpDecayFactor(turnSpeed, dt));
         XMStoreFloat3(&p.velocity, XMVectorScale(XMVector3Normalize(velocity), speed));
     }
 

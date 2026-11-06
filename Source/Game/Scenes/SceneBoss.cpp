@@ -26,6 +26,7 @@
 #include "WindowShatter.h"
 #include "AttackParamManager.h"
 #include "Engine/Common/Constants.h"
+#include "Engine/Base/MathUtils.h"
 using namespace DirectX;
 
 namespace
@@ -551,10 +552,11 @@ void SceneBoss::UpdatePlayerStretch(float scaledDt)
         }
     }
 
-    m_currentStretch.x += (targetStretch.x - m_currentStretch.x) * lerpSpeed * scaledDt;
-    m_currentStretch.y += (targetStretch.y - m_currentStretch.y) * lerpSpeed * scaledDt;
-    m_stretchOffset.x += (targetOffset.x - m_stretchOffset.x) * lerpSpeed * scaledDt;
-    m_stretchOffset.y += (targetOffset.y - m_stretchOffset.y) * lerpSpeed * scaledDt;
+    const float follow{ MathUtils::ExpDecayFactor(lerpSpeed, scaledDt) };
+    m_currentStretch.x += (targetStretch.x - m_currentStretch.x) * follow;
+    m_currentStretch.y += (targetStretch.y - m_currentStretch.y) * follow;
+    m_stretchOffset.x += (targetOffset.x - m_stretchOffset.x) * follow;
+    m_stretchOffset.y += (targetOffset.y - m_stretchOffset.y) * follow;
 }
 
 bool SceneBoss::UpdateCue(float scaledDt)
