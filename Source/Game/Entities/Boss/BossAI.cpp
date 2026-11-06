@@ -2,7 +2,7 @@
 #include "BossPhase01.h"
 #include "BossPhase02.h"
 #include "Player.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "AttackParamManager.h"
 #include <cmath>
 
@@ -10,7 +10,7 @@
 #include "BossPhase01.h"
 #include "BossPhase02.h"
 #include "Player.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "AttackParamManager.h"
 #include <cmath>
 
@@ -44,7 +44,7 @@ BossAI_Phase01::AttackSequence BossAI_Phase01::GetNextTacticianAttack() {
     return nextAttack;
 }
 
-void BossAI_Phase01::Update(float dt, Boss* boss) {
+void BossAI_Phase01::Update(float dt, CueBoss* boss) {
     if (!m_enabled || !m_target || !m_phase) return;
 
     if (m_phase->HasActiveAttacks() || m_phase->HasRainActive()) return;
@@ -167,7 +167,7 @@ void BossAI_Phase01::Update(float dt, Boss* boss) {
 BossAI_Phase02::BossAI_Phase02(BossPhase02* phase, Player* target)
     : m_phase(phase), m_target(target) {}
 
-void BossAI_Phase02::Update(float dt, Boss* boss) {
+void BossAI_Phase02::Update(float dt, CueBoss* boss) {
     // No attacks while the player is still caged.
     if (!m_enabled || !m_target || !m_phase || m_phase->IsPlayerCaged()) return;
 

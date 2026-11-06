@@ -17,7 +17,7 @@
 #include "ItemManager.h"
 #include "Stage.h"
 #include <random>
-#include "Boss.h"
+#include "CueBoss.h"
 #include "BossPhase02.h"
 #include "BossPhase01.h"
 #include "HUDRenderer.h"
@@ -31,7 +31,7 @@ using namespace DirectX;
 namespace
 {
     // Null-safe: no boss phase counts as "not Windowkill".
-    [[nodiscard]] bool IsWindowkill(const INaviPhase* phase)
+    [[nodiscard]] bool IsWindowkill(const ICuePhase* phase)
     {
         return phase && phase->GetKind() == BossPhaseKind::windowkill;
     }
@@ -96,7 +96,7 @@ SceneBoss::SceneBoss()
     // The player sends its collision queries through this scene's CollisionManager.
     m_player->SetCollisionManager(m_collisionManager.get());
 
-    m_navi = std::make_unique<Boss>();
+    m_navi = std::make_unique<CueBoss>();
     m_navi->Initialize(m_windowSystem.get());
 
     m_navi->ChangePhase(std::make_unique<BossPhase01>(m_player.get()));
@@ -419,7 +419,7 @@ void SceneBoss::UpdatePlayerDeathSequence(float elapsedTime)
 
             if (m_navi)
             {
-                if (INaviPhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAIEnabled(true);
+                if (ICuePhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAIEnabled(true);
             }
         }
     }
@@ -435,7 +435,7 @@ void SceneBoss::UpdateNaviDefeatFade(float elapsedTime)
 {
     if (!m_navi) return;
 
-    const INaviPhase* phase{ m_navi->GetCurrentPhase() };
+    const ICuePhase* phase{ m_navi->GetCurrentPhase() };
 
     // Trigger the start of the death sequence
     if (IsWindowkill(phase) && phase->IsDead() && !m_isNaviDefeated)
@@ -461,7 +461,7 @@ bool SceneBoss::UpdateWindowkillMainWindow()
 {
     if (!m_navi) return false;
 
-    const INaviPhase* phase{ m_navi->GetCurrentPhase() };
+    const ICuePhase* phase{ m_navi->GetCurrentPhase() };
     Beyond::Window* mw = WindowManager::Instance().GetWindowByIndex(0);
 
     if (IsWindowkill(phase)) {
@@ -565,12 +565,12 @@ bool SceneBoss::UpdateNavi(float scaledDt)
 
     // Hand the player to the AI director.
     // Why every frame: a phase created mid-fight has no target until the scene hands it one.
-    if (INaviPhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAITarget(m_player.get());
+    if (ICuePhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAITarget(m_player.get());
 
     m_navi->Update(scaledDt);
 
     // Why fetched here: Boss::Update can swap the phase, so an earlier pointer may be stale.
-    const INaviPhase* updatedPhase{ m_navi->GetCurrentPhase() };
+    const ICuePhase* updatedPhase{ m_navi->GetCurrentPhase() };
     if (updatedPhase && !m_isPendingSceneChange && updatedPhase->IsReadyToChangeScene()) {
         RequestReturnToTitle();
         return true;
@@ -723,7 +723,7 @@ bool SceneBoss::BeginMainCameraPostProcess(const Camera* targetCam, bool isTrans
     // =========================================================
     // POST-PROCESS VIGNETTE (Only applied to Main Window)
     // =========================================================
-    const INaviPhase* activePhase{ m_navi ? m_navi->GetCurrentPhase() : nullptr };
+    const ICuePhase* activePhase{ m_navi ? m_navi->GetCurrentPhase() : nullptr };
 
     // 2. Determine if Windowkill is active AND the boss is NOT dead
     const bool isWindowkillAndAlive{ IsWindowkill(activePhase) && !activePhase->IsDead() };
@@ -767,7 +767,7 @@ void SceneBoss::RenderShapesAndHitboxes(ID3D11DeviceContext* dc, Camera* targetC
         }
 
         // 2. Boss bullet hitboxes: red in bullet hell, lime in Windowkill (bouncing bullets).
-        if (const INaviPhase * phase{ m_navi ? m_navi->GetCurrentPhase() : nullptr })
+        if (const ICuePhase * phase{ m_navi ? m_navi->GetCurrentPhase() : nullptr })
         {
             const bool isWindowkill{ IsWindowkill(phase) };
             if (const ProjectilePool * pool{ phase->GetProjectilePool() })
@@ -885,7 +885,7 @@ void SceneBoss::StartPlayerDeathSequence()
 
     if (m_navi)
     {
-        if (INaviPhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAIEnabled(false);
+        if (ICuePhase * phase{ m_navi->GetCurrentPhase() }) phase->SetAIEnabled(false);
     }
 }
 
@@ -1002,7 +1002,7 @@ void SceneBoss::DrawBossPanel()
         return;
     }
 
-    INaviPhase* phase{ m_navi->GetCurrentPhase() };
+    ICuePhase* phase{ m_navi->GetCurrentPhase() };
     if (!phase)
     {
         ImGui::TextDisabled("No active phase.");

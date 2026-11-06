@@ -8,7 +8,7 @@
 #include "DamageTypes.h"
 #include "IBossAttackPattern.h"
 
-class Boss;
+class CueBoss;
 class Camera;
 class Player;
 class ProjectilePool;
@@ -21,14 +21,14 @@ enum class BossPhaseKind : std::uint8_t
     windowkill, // Act 3: OS windows on the desktop
 };
 
-class INaviPhase {
+class ICuePhase {
 public:
-    virtual ~INaviPhase() = default;
+    virtual ~ICuePhase() = default;
 
-    virtual void Enter(Boss* boss) = 0;
-    virtual void Update(float dt, Boss* boss) = 0;
-    virtual void Render(ID3D11DeviceContext* context, Camera* currentCamera, Boss* boss) = 0;
-    virtual void Exit(Boss* boss) = 0;
+    virtual void Enter(CueBoss* boss) = 0;
+    virtual void Update(float dt, CueBoss* boss) = 0;
+    virtual void Render(ID3D11DeviceContext* context, Camera* currentCamera, CueBoss* boss) = 0;
+    virtual void Exit(CueBoss* boss) = 0;
 
     [[nodiscard]] virtual BossPhaseKind GetKind() const = 0;
 
@@ -47,7 +47,7 @@ public:
     virtual bool TryAbsorbPlayerBullet(const DirectX::XMFLOAT3& /*bulletPosition*/, int /*damage*/) { return false; }
     // The player parried at `parryPosition`. Returns where the parried projectile was,
     // or nothing when no running attack can be parried right now.
-    virtual std::optional<DirectX::XMFLOAT3> TryParryAttack(const DirectX::XMFLOAT3& /*parryPosition*/, Boss* /*boss*/) { return std::nullopt; }
+    virtual std::optional<DirectX::XMFLOAT3> TryParryAttack(const DirectX::XMFLOAT3& /*parryPosition*/, CueBoss* /*boss*/) { return std::nullopt; }
 
     // ----- AI -----
     // `target` is borrowed: the scene owns the player and outlives the phase.

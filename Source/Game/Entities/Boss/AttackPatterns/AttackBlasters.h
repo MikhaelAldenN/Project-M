@@ -37,10 +37,10 @@ public:
     AttackBlasters(const BlasterParams& params, bool isTargeted, float targetX = 0.0f);
     ~AttackBlasters() override = default;
 
-    void Start(Boss* boss, ProjectilePool* pool) override;
-    void Update(float dt, Boss* boss) override;
-    void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) override;
-    void Stop(Boss* boss) override;
+    void Start(CueBoss* boss, ProjectilePool* pool) override;
+    void Update(float dt, CueBoss* boss) override;
+    void Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) override;
+    void Stop(CueBoss* boss) override;
 
     bool IsFinished() const override;
 

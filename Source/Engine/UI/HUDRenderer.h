@@ -4,8 +4,8 @@
 #include <memory>
 #include "Primitive.h"
 
-class Boss;
-class INaviPhase;
+class CueBoss;
+class ICuePhase;
 
 // ============================================================
 // HUDRenderer

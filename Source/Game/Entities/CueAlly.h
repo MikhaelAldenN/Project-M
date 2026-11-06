@@ -16,11 +16,11 @@ class Camera;
 class ModelRenderer;
 class AnimationController;
 
-class NaviAlly : public Character
+class CueAlly : public Character
 {
 public:
-    explicit NaviAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* enemyManager);
-    ~NaviAlly() override = default;
+    explicit CueAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* enemyManager);
+    ~CueAlly() override = default;
 
     void Reset() noexcept;
 

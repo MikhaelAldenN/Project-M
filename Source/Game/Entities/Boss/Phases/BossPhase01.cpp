@@ -2,7 +2,7 @@
 
 #include "BossPhase01.h"
 #include "BossPhase02.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "WindowManager.h"
 #include "System/Graphics.h"
 #include "System/Input.h"
@@ -24,7 +24,7 @@ using namespace DirectX;
 BossPhase01::BossPhase01(Player* target)
     : m_aiTarget(target) {}
 
-void BossPhase01::Enter(Boss* boss) {
+void BossPhase01::Enter(CueBoss* boss) {
     m_bossRef = boss;
 
     // ----- Reset boss HP & state -----
@@ -115,7 +115,7 @@ void BossPhase01::Enter(Boss* boss) {
 #endif
 }
 
-void BossPhase01::Exit(Boss* boss) {
+void BossPhase01::Exit(CueBoss* boss) {
     // Why this order: attacks despawn the projectiles they still hold when stopped.
     StopAllAttacks(boss);
     m_projectiles.Clear();
@@ -130,7 +130,7 @@ void BossPhase01::Exit(Boss* boss) {
     }
 }
 
-void BossPhase01::Update(float dt, Boss* boss) {
+void BossPhase01::Update(float dt, CueBoss* boss) {
     if (!boss) return;
 
     if (m_aiTarget && m_aiTarget->GetHP() <= 0) {
@@ -235,7 +235,7 @@ void BossPhase01::Update(float dt, Boss* boss) {
     UpdateBulletPool(dt, boss);
 }
 
-void BossPhase01::Render(ID3D11DeviceContext* context, Camera* currentCamera, Boss* boss) {
+void BossPhase01::Render(ID3D11DeviceContext* context, Camera* currentCamera, CueBoss* boss) {
     if (!currentCamera) return;
 
     auto renderer = Graphics::Instance().GetModelRenderer();
@@ -279,7 +279,7 @@ void BossPhase01::AddAttack(std::unique_ptr<IBossAttackPattern> attack) {
     m_activeAttacks.push_back(std::move(attack));
 }
 
-void BossPhase01::StopAllAttacks(Boss* boss) {
+void BossPhase01::StopAllAttacks(CueBoss* boss) {
     for (auto& attack : m_activeAttacks) {
         attack->Stop(boss);
     }
@@ -323,7 +323,7 @@ void BossPhase01::TriggerRain(const RainParams& params, RainMode mode, bool isPo
     m_rainAttack->Start(m_bossRef, &m_projectiles);
 }
 
-std::optional<XMFLOAT3> BossPhase01::TryParryAttack(const XMFLOAT3& parryPosition, Boss* boss) {
+std::optional<XMFLOAT3> BossPhase01::TryParryAttack(const XMFLOAT3& parryPosition, CueBoss* boss) {
     for (auto& attack : m_activeAttacks) {
         if (const std::optional<XMFLOAT3> parried{ attack->TryParry(parryPosition, boss) }) return parried;
     }
@@ -342,7 +342,7 @@ DamageResult BossPhase01::TakeDamage(const DamageInfo& damage) {
     return (m_bossHP <= 0) ? DamageResult::killed : DamageResult::damaged;
 }
 
-void BossPhase01::UpdateIdleHover(float dt, Boss* boss) {
+void BossPhase01::UpdateIdleHover(float dt, CueBoss* boss) {
     // Runs after finished attacks are erased, so an attack that ended this frame no longer holds the boss.
     m_isAttackMovingBoss = false;
     for (const auto& attack : m_activeAttacks) {
@@ -359,7 +359,7 @@ void BossPhase01::UpdateIdleHover(float dt, Boss* boss) {
     m_moveLerpSpeed += (1.5f - m_moveLerpSpeed) * 2.0f * dt;
 }
 
-void BossPhase01::UpdateBossMovement(float dt, Boss* boss) {
+void BossPhase01::UpdateBossMovement(float dt, CueBoss* boss) {
     m_currentMoveLerpSpeed += (m_moveLerpSpeed - m_currentMoveLerpSpeed) * m_moveAcceleration * dt;
 
     XMFLOAT3 pos = boss->GetPosition();
@@ -368,7 +368,7 @@ void BossPhase01::UpdateBossMovement(float dt, Boss* boss) {
     boss->SetPosition(pos);
 }
 
-void BossPhase01::UpdateBulletPool(float dt, Boss* boss) {
+void BossPhase01::UpdateBulletPool(float dt, CueBoss* boss) {
     ProjectileTargets targets{};
     if (boss) targets.bossPosition = boss->GetPosition();
     if (m_aiTarget) {
@@ -393,7 +393,7 @@ void BossPhase01::UpdateBulletPool(float dt, Boss* boss) {
     }
 }
 
-void BossPhase01::UpdateGlitchVFX(float dt, Boss* boss) {
+void BossPhase01::UpdateGlitchVFX(float dt, CueBoss* boss) {
     m_bossGlitchVfxTimer += dt;
 
     if (m_bossGlitchVfxTimer >= 2.0f) {
@@ -424,7 +424,7 @@ void BossPhase01::UpdateGlitchVFX(float dt, Boss* boss) {
     }
 }
 
-void BossPhase01::UpdateDeathSequence(float dt, Boss* boss) {
+void BossPhase01::UpdateDeathSequence(float dt, CueBoss* boss) {
     if (!m_isDying) {
         m_isDying = true;
         m_deathTimer = 0.0f;

@@ -267,7 +267,7 @@
     <ClCompile Include="Source\Engine\VFX\EffectManager.cpp">
       <Filter>Source\Engine\VFX</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Entities\NaviAlly.cpp">
+    <ClCompile Include="Source\Game\Entities\CueAlly.cpp">
       <Filter>Source\Game\Entities</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Entities\Weapon.cpp">
@@ -321,7 +321,7 @@
     <ClCompile Include="Source\Game\Entities\Boss\Phases\BossPhase02.cpp">
       <Filter>Source\Game\Entities\Boss\Phases</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Entities\Boss\Boss.cpp">
+    <ClCompile Include="Source\Game\Entities\Boss\CueBoss.cpp">
       <Filter>Source\Game\Entities\Boss</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.cpp">
@@ -647,7 +647,7 @@
     <ClInclude Include="Source\Engine\Helpers\CapeSimulator.h" />
     <ClInclude Include="Source\Engine\Helpers\TimeManager.h" />
     <ClInclude Include="Source\Engine\VFX\EffectManager.h" />
-    <ClInclude Include="Source\Game\Entities\NaviAlly.h" />
+    <ClInclude Include="Source\Game\Entities\CueAlly.h" />
     <ClInclude Include="Source\Game\Entities\Weapon.h" />
     <ClInclude Include="Source\Engine\Graphics\FontTTF.h">
       <Filter>Source\Engine\Graphics</Filter>
@@ -700,10 +700,10 @@
     <ClInclude Include="Source\Game\Entities\Boss\Phases\BossPhase02.h">
       <Filter>Source\Game\Entities\Boss\Phases</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Entities\Boss\Phases\INaviPhase.h">
+    <ClInclude Include="Source\Game\Entities\Boss\Phases\ICuePhase.h">
       <Filter>Source\Game\Entities\Boss\Phases</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Entities\Boss\Boss.h">
+    <ClInclude Include="Source\Game\Entities\Boss\CueBoss.h">
       <Filter>Source\Game\Entities\Boss</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.h">
@@ -745,7 +745,7 @@
     <ClInclude Include="Source\Game\Entities\DamageTypes.h">
       <Filter>Source\Game\Entities</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Entities\NaviAlly.h">
+    <ClInclude Include="Source\Game\Entities\CueAlly.h">
       <Filter>Source\Game\Entities</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Entities\Player.h">

@@ -21,7 +21,7 @@
 #include "Enemy.h"
 #include "EnemyManager.h"
 #include "ItemManager.h"
-#include "NaviAlly.h"
+#include "CueAlly.h"
 #include "Player.h"
 #include "PlayerStates.h"
 #include "Stage.h"
@@ -134,7 +134,7 @@ SceneGame::SceneGame()
     m_enemyManager = std::make_unique<EnemyManager>();
     m_enemyManager->Initialize(Graphics::Instance().GetDevice());
 
-    m_navi = std::make_unique<NaviAlly>(Graphics::Instance().GetDevice(), m_player.get(), m_enemyManager.get());
+    m_navi = std::make_unique<CueAlly>(Graphics::Instance().GetDevice(), m_player.get(), m_enemyManager.get());
 
     m_itemManager = std::make_unique<ItemManager>();
     m_itemManager->Initialize(Graphics::Instance().GetDevice());

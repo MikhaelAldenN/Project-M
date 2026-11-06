@@ -1,5 +1,5 @@
 #include "AttackBoomerangs.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "WindowTrackingSystem.h"
 #include "System/Graphics.h"
 #include "CameraController.h"
@@ -11,7 +11,7 @@ using namespace DirectX;
 AttackBoomerangs::AttackBoomerangs(const BoomerangParams& params)
     : m_params(params) {}
 
-void AttackBoomerangs::Start(Boss* boss, ProjectilePool* pool) {
+void AttackBoomerangs::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackBoomerangs needs the phase's projectile pool");
     m_pool = pool;
     if (!m_mesh.IsLoaded()) m_mesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");
@@ -21,7 +21,7 @@ void AttackBoomerangs::Start(Boss* boss, ProjectilePool* pool) {
     m_spawnTimer = m_params.spawnDelay;
 }
 
-void AttackBoomerangs::Update(float dt, Boss* boss) {
+void AttackBoomerangs::Update(float dt, CueBoss* boss) {
     if (!boss || !boss->GetWindowSystem()) return;
 
     // Edges of the arena in world units, the same on every monitor.
@@ -115,7 +115,7 @@ void AttackBoomerangs::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackBoomerangs::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackBoomerangs::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     if (!m_pool || !m_mesh.IsLoaded()) return;
     auto modelRenderer = Graphics::Instance().GetModelRenderer();
     for (const auto& bw : m_bullets) {
@@ -126,7 +126,7 @@ void AttackBoomerangs::Render(ID3D11DeviceContext* context, Camera* camera, Boss
     }
 }
 
-void AttackBoomerangs::Stop(Boss* boss) {
+void AttackBoomerangs::Stop(CueBoss* boss) {
     if (boss && boss->GetWindowSystem()) {
         for (auto& bw : m_bullets) {
             boss->GetWindowSystem()->RemoveTrackedWindow(bw.windowName);

@@ -1,6 +1,6 @@
 #pragma execution_character_set("utf-8")
 #include "AttackDirect.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "ProjectilePool.h"
 #include "Player.h"
 #include "System/AudioManager.h"
@@ -12,7 +12,7 @@ using namespace DirectX;
 AttackDirect::AttackDirect(const DirectParams& params, Player* target)
     : m_params(params), m_target(target) {}
 
-void AttackDirect::Start(Boss* boss, ProjectilePool* pool) {
+void AttackDirect::Start(CueBoss* boss, ProjectilePool* pool) {
     // Why: without the pool the attack spawns nothing and never reports a cause.
     assert(pool && "AttackDirect needs the phase's shared bullet pool");
     m_pool = pool;
@@ -27,7 +27,7 @@ void AttackDirect::Start(Boss* boss, ProjectilePool* pool) {
     m_spawnTimer = m_params.spawnDelay;
 }
 
-void AttackDirect::Update(float dt, Boss* boss) {
+void AttackDirect::Update(float dt, CueBoss* boss) {
     if (!m_active || !m_pool || !m_boss || !m_target) return;
 
     if (m_isTriggerWaiting) {
@@ -59,11 +59,11 @@ void AttackDirect::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackDirect::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackDirect::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     // Bullets are rendered by the phase's central render loop
 }
 
-void AttackDirect::Stop(Boss* boss) {
+void AttackDirect::Stop(CueBoss* boss) {
     m_active = false;
 }
 

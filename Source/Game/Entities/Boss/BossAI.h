@@ -21,7 +21,7 @@
 
 class BossPhase01;
 class BossPhase02;
-class Boss;
+class CueBoss;
 class Player;
 
 // ========================================================
@@ -35,7 +35,7 @@ public:
     };
 
     BossAI_Phase01(BossPhase01* phase, Player* target);
-    void Update(float dt, Boss* boss);
+    void Update(float dt, CueBoss* boss);
 
     void SetEnabled(bool enabled) { m_enabled = enabled; }
     bool IsEnabled() const { return m_enabled; }
@@ -79,7 +79,7 @@ public:
     };
 
     BossAI_Phase02(BossPhase02* phase, Player* target);
-    void Update(float dt, Boss* boss);
+    void Update(float dt, CueBoss* boss);
 
     void SetEnabled(bool enabled) { m_enabled = enabled; }
     bool IsEnabled() const { return m_enabled; }

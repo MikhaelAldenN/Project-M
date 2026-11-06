@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <DirectXMath.h>
 
-// One hit, as passed to every damage receiver (Player, Enemy, NaviAlly, boss phases).
+// One hit, as passed to every damage receiver (Player, Enemy, CueAlly, boss phases).
 struct DamageInfo
 {
     int amount{ 0 };                 // HP to remove

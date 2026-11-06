@@ -5,7 +5,7 @@
 #include <string>
 #include "BeyondWindow.h"
 #include "Camera.h"
-#include "INaviPhase.h"
+#include "ICuePhase.h"
 
 class WindowTrackingSystem;
 class Sprite;
@@ -36,12 +36,12 @@ struct FaceParams {
 
 // ============================================================
 // Boss - Top-level boss entity. Delegates gameplay logic
-//            to INaviPhase implementations (State Machine).
+//            to ICuePhase implementations (State Machine).
 // ============================================================
-class Boss {
+class CueBoss {
 public:
-    Boss();
-    ~Boss();
+    CueBoss();
+    ~CueBoss();
 
     // ----- Lifecycle -----
     void Initialize(WindowTrackingSystem* windowSystem);
@@ -50,8 +50,8 @@ public:
     void Render(ID3D11DeviceContext* context, Camera* currentCamera);
 
     // ----- State Machine -----
-    void ChangePhase(std::unique_ptr<INaviPhase> newPhase);
-    INaviPhase* GetCurrentPhase() const { return m_currentPhase.get(); }
+    void ChangePhase(std::unique_ptr<ICuePhase> newPhase);
+    ICuePhase* GetCurrentPhase() const { return m_currentPhase.get(); }
 
     // ----- Transform -----
     DirectX::XMFLOAT3 GetPosition() const { return m_position; }
@@ -102,7 +102,7 @@ private:
     WindowTrackingSystem* m_windowSystem = nullptr;
 
     // ----- State Machine -----
-    std::unique_ptr<INaviPhase> m_currentPhase;
+    std::unique_ptr<ICuePhase> m_currentPhase;
 
     // ----- OS Window Handles -----
     Beyond::Window* m_naviWindow = nullptr;

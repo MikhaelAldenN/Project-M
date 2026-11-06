@@ -1,5 +1,5 @@
 #include "AttackSpears.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "WindowTrackingSystem.h"
 #include "WindowManager.h"
 #include "Player.h"
@@ -13,7 +13,7 @@ using namespace DirectX;
 AttackSpears::AttackSpears(const UndyneSpearParams& params, Player* target)
     : m_params(params), m_playerTarget(target) {}
 
-void AttackSpears::Start(Boss* boss, ProjectilePool* pool) {
+void AttackSpears::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackSpears needs the phase's projectile pool");
     m_pool = pool;
     if (!m_mesh.IsLoaded()) m_mesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");
@@ -31,7 +31,7 @@ void AttackSpears::Start(Boss* boss, ProjectilePool* pool) {
     std::shuffle(m_spawnIndices.begin(), m_spawnIndices.end(), gen);
 }
 
-void AttackSpears::Update(float dt, Boss* boss) {
+void AttackSpears::Update(float dt, CueBoss* boss) {
     if (!boss || !boss->GetWindowSystem()) return;
 
     // 1. Spawning Rainbow Arc
@@ -132,7 +132,7 @@ void AttackSpears::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackSpears::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackSpears::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     if (!m_pool || !m_mesh.IsLoaded()) return;
     auto modelRenderer = Graphics::Instance().GetModelRenderer();
     for (const auto& spear : m_spears) {
@@ -144,7 +144,7 @@ void AttackSpears::Render(ID3D11DeviceContext* context, Camera* camera, Boss* bo
     }
 }
 
-void AttackSpears::Stop(Boss* boss) {
+void AttackSpears::Stop(CueBoss* boss) {
     if (boss && boss->GetWindowSystem()) {
         for (auto& spear : m_spears) {
             if (!spear.isPreparedForDestroy) {
@@ -167,7 +167,7 @@ bool AttackSpears::IsFinished() const {
     return true;
 }
 
-void AttackSpears::RetireSpear(UndyneSpearWindow& spear, Boss* boss) {
+void AttackSpears::RetireSpear(UndyneSpearWindow& spear, CueBoss* boss) {
     spear.isPreparedForDestroy = true;
     m_pool->Despawn(spear.projectile);
 

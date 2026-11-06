@@ -1,4 +1,4 @@
-#include "NaviAlly.h"
+#include "CueAlly.h"
 #include "Player.h"
 #include "EnemyManager.h"
 #include "Enemy.h"
@@ -10,13 +10,13 @@
 
 using namespace DirectX;
 
-float NaviAlly::GetRandomFloat(float min, float max)
+float CueAlly::GetRandomFloat(float min, float max)
 {
     float random = ((float)rand()) / (float)RAND_MAX;
     return min + random * (max - min);
 }
 
-NaviAlly::NaviAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* enemyManager)
+CueAlly::CueAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* enemyManager)
     : m_targetPlayer(targetPlayer) 
     , m_enemyManager(enemyManager)
 {
@@ -51,14 +51,14 @@ NaviAlly::NaviAlly(ID3D11Device* device, Player* targetPlayer, EnemyManager* ene
     SyncData();
 }
 
-void NaviAlly::Reset() noexcept
+void CueAlly::Reset() noexcept
 {
     m_hp = MAX_HP;          
     m_projectiles.Clear();  
     m_pulseTimer = 0.0f;    
 }
 
-void NaviAlly::UpdateAttackDelay(float dt) noexcept
+void CueAlly::UpdateAttackDelay(float dt) noexcept
 {
     if (m_attackDelayTimer > 0.0f)
     {
@@ -67,7 +67,7 @@ void NaviAlly::UpdateAttackDelay(float dt) noexcept
     }
 }
 
-void NaviAlly::Update(float elapsedTime, Camera* camera)
+void CueAlly::Update(float elapsedTime, Camera* camera)
 {
     if (!IsAlive()) return;
 
@@ -86,7 +86,7 @@ void NaviAlly::Update(float elapsedTime, Camera* camera)
     UpdateProjectiles(elapsedTime);
 }
 
-void NaviAlly::UpdateHoverLogic(float elapsedTime)
+void CueAlly::UpdateHoverLogic(float elapsedTime)
 {
     if (!m_targetPlayer) return;
     m_animTime += elapsedTime;
@@ -210,7 +210,7 @@ void NaviAlly::UpdateHoverLogic(float elapsedTime)
     SyncData();
 }
 
-void NaviAlly::SpawnBullet(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& fwd, float speed) noexcept
+void CueAlly::SpawnBullet(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& fwd, float speed) noexcept
 {
     if (m_projectiles.CountActive() >= m_projectiles.Slots().size()) m_projectiles.DespawnOldest();
 
@@ -220,7 +220,7 @@ void NaviAlly::SpawnBullet(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3
     ProjectilePool::Launch(*bullet, pos, fwd, speed);
 }
 
-void NaviAlly::FireAtTarget(const DirectX::XMFLOAT3& targetPos)
+void CueAlly::FireAtTarget(const DirectX::XMFLOAT3& targetPos)
 {
     XMFLOAT3 myPos{ m_movement->GetPosition() };
     float dx{ targetPos.x - myPos.x };
@@ -238,7 +238,7 @@ void NaviAlly::FireAtTarget(const DirectX::XMFLOAT3& targetPos)
     SpawnBullet(myPos, fwd, BULLET_SPEED);
 }
 
-void NaviAlly::FireRadialBurst() noexcept
+void CueAlly::FireRadialBurst() noexcept
 {
     XMFLOAT3 myPos{ m_movement->GetPosition() };
     constexpr int bulletCount = 24;
@@ -252,7 +252,7 @@ void NaviAlly::FireRadialBurst() noexcept
     }
 }
 
-void NaviAlly::FireFanBurst(const DirectX::XMFLOAT3& targetPos) noexcept
+void CueAlly::FireFanBurst(const DirectX::XMFLOAT3& targetPos) noexcept
 {
     XMFLOAT3 myPos{ m_movement->GetPosition() };
     float dx{ targetPos.x - myPos.x };
@@ -275,7 +275,7 @@ void NaviAlly::FireFanBurst(const DirectX::XMFLOAT3& targetPos) noexcept
     }
 }
 
-void NaviAlly::UpdateShootingLogic(float elapsedTime, Camera* camera)
+void CueAlly::UpdateShootingLogic(float elapsedTime, Camera* camera)
 {
     if (m_targetPlayer && m_targetPlayer->GetHP() <= 0) return;
 
@@ -361,7 +361,7 @@ void NaviAlly::UpdateShootingLogic(float elapsedTime, Camera* camera)
     }
 }
 
-void NaviAlly::UpdateProjectiles(float elapsedTime)
+void CueAlly::UpdateProjectiles(float elapsedTime)
 {
     // Navi's bullets fly straight, so there is no target to steer toward.
     m_projectiles.Update(elapsedTime, ProjectileTargets{});
@@ -385,7 +385,7 @@ void NaviAlly::UpdateProjectiles(float elapsedTime)
     }
 }
 
-DamageResult NaviAlly::TakeDamage(const DamageInfo& damage)
+DamageResult CueAlly::TakeDamage(const DamageInfo& damage)
 {
     if (!IsAlive()) return DamageResult::ignored;
 
@@ -403,7 +403,7 @@ DamageResult NaviAlly::TakeDamage(const DamageInfo& damage)
     return DamageResult::damaged;
 }
 
-void NaviAlly::SetPotionedState(bool isPotioned) noexcept
+void CueAlly::SetPotionedState(bool isPotioned) noexcept
 {
     if (m_isPotioned == isPotioned) return; // No state change
 
@@ -416,14 +416,14 @@ void NaviAlly::SetPotionedState(bool isPotioned) noexcept
     }
 }
 
-void NaviAlly::SetPosition(const DirectX::XMFLOAT3& pos)
+void CueAlly::SetPosition(const DirectX::XMFLOAT3& pos)
 {
     m_movement->SetPosition(pos);
 
     SyncData();
 }
 
-void NaviAlly::Render(ModelRenderer* renderer)
+void CueAlly::Render(ModelRenderer* renderer)
 {
     if (!IsAlive() || !m_model) return;
     DirectX::XMFLOAT4 renderColor = m_color;
@@ -444,7 +444,7 @@ void NaviAlly::Render(ModelRenderer* renderer)
     renderer->Draw(ShaderId::Phong, m_model, renderColor);
 }
 
-void NaviAlly::RenderProjectiles(ModelRenderer* renderer)
+void CueAlly::RenderProjectiles(ModelRenderer* renderer)
 {
     if (!IsAlive()) return;
 
@@ -459,7 +459,7 @@ void NaviAlly::RenderProjectiles(ModelRenderer* renderer)
     }
 }
 
-void NaviAlly::RenderDebug(ShapeRenderer* shapeRenderer)
+void CueAlly::RenderDebug(ShapeRenderer* shapeRenderer)
 {
     if (!IsAlive() || !shapeRenderer) return;
 

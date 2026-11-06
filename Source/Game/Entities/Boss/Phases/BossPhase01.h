@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "INaviPhase.h"
+#include "ICuePhase.h"
 #include "Primitive.h"
 #include "UIDialogueBox.h"
 #include "IBossAttackPattern.h"
@@ -17,16 +17,16 @@ class Player;
 
 #define DEBUG_SKIP_INTRO 1
 
-class BossPhase01 : public INaviPhase {
+class BossPhase01 : public ICuePhase {
 public:
     explicit BossPhase01(Player* target = nullptr);
     ~BossPhase01() override = default;
 
-    // ----- INaviPhase Interface -----
-    void Enter(Boss* boss) override;
-    void Update(float dt, Boss* boss) override;
-    void Render(ID3D11DeviceContext* context, Camera* currentCamera, Boss* boss) override;
-    void Exit(Boss* boss) override;
+    // ----- ICuePhase Interface -----
+    void Enter(CueBoss* boss) override;
+    void Update(float dt, CueBoss* boss) override;
+    void Render(ID3D11DeviceContext* context, Camera* currentCamera, CueBoss* boss) override;
+    void Exit(CueBoss* boss) override;
     [[nodiscard]] BossPhaseKind GetKind() const override { return BossPhaseKind::bulletHell; }
 
     // ----- Attack Management -----
@@ -42,7 +42,7 @@ public:
     bool HasRainActive() const { return m_rainAttack != nullptr && !m_rainAttack->IsFinished(); }
 
     // Offers the parry to each running attack; the first one that accepts wins.
-    std::optional<DirectX::XMFLOAT3> TryParryAttack(const DirectX::XMFLOAT3& parryPosition, Boss* boss) override;
+    std::optional<DirectX::XMFLOAT3> TryParryAttack(const DirectX::XMFLOAT3& parryPosition, CueBoss* boss) override;
 
     // ----- Boss HP -----
     DamageResult TakeDamage(const DamageInfo& damage) override;
@@ -67,15 +67,15 @@ public:
 private:
     // Stops and destroys every running attack, including the Rain.
     // Runs before m_projectiles is cleared: Stop() despawns what an attack still holds.
-    void StopAllAttacks(Boss* boss);
-    void UpdateBossMovement(float dt, Boss* boss);
-    void UpdateIdleHover(float dt, Boss* boss);
-    void UpdateBulletPool(float dt, Boss* boss);
-    void UpdateGlitchVFX(float dt, Boss* boss);
-    void UpdateDeathSequence(float dt, Boss* boss);
+    void StopAllAttacks(CueBoss* boss);
+    void UpdateBossMovement(float dt, CueBoss* boss);
+    void UpdateIdleHover(float dt, CueBoss* boss);
+    void UpdateBulletPool(float dt, CueBoss* boss);
+    void UpdateGlitchVFX(float dt, CueBoss* boss);
+    void UpdateDeathSequence(float dt, CueBoss* boss);
 
 private:
-    Boss* m_bossRef = nullptr;
+    CueBoss* m_bossRef = nullptr;
 
     // ---- Projectile pool ----
     static constexpr std::size_t k_projectileCapacity{ 500 };

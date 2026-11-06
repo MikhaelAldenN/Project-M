@@ -4,7 +4,7 @@
 #include <optional>
 #include <vector>
 
-class Boss;
+class CueBoss;
 class Camera;
 class ProjectilePool;
 struct ID3D11DeviceContext;
@@ -22,16 +22,16 @@ public:
     // Starts the attack: resources, tracking windows, VFX, first bullets.
     // `boss` and `pool` are borrowed and outlive the attack. `pool` is the running phase's
     // shared projectile pool.
-    virtual void Start(Boss* boss, ProjectilePool* pool) = 0;
+    virtual void Start(CueBoss* boss, ProjectilePool* pool) = 0;
 
     // Processes bullet physics, window tracking, and spawning logic.
-    virtual void Update(float dt, Boss* boss) = 0;
+    virtual void Update(float dt, CueBoss* boss) = 0;
 
     // Renders specific 3D models or UI related to this attack.
-    virtual void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) = 0;
+    virtual void Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) = 0;
 
     // Cleans up tracking windows and VFX if the attack is forcefully stopped.
-    virtual void Stop(Boss* boss) = 0;
+    virtual void Stop(CueBoss* boss) = 0;
 
     // Returns true when all projectiles are destroyed and the attack is over.
     virtual bool IsFinished() const = 0;
@@ -42,5 +42,5 @@ public:
 
     // The player parried at `parryPosition`. Returns where the parried projectile was,
     // or nothing when this attack has nothing to parry right now.
-    virtual std::optional<DirectX::XMFLOAT3> TryParry(const DirectX::XMFLOAT3& /*parryPosition*/, Boss* /*boss*/) { return std::nullopt; }
+    virtual std::optional<DirectX::XMFLOAT3> TryParry(const DirectX::XMFLOAT3& /*parryPosition*/, CueBoss* /*boss*/) { return std::nullopt; }
 };

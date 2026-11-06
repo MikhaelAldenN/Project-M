@@ -4,7 +4,7 @@
 #include "AnimationController.h"
 #include "Camera.h"
 #include "Framework.h"
-#include "NaviAlly.h"
+#include "CueAlly.h"
 #include "Player.h"
 #include "PlayerConstants.h"
 #include "PlayerStates.h"

@@ -1,6 +1,6 @@
 #pragma execution_character_set("utf-8")
 #include "AttackMeteor.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "ProjectilePool.h"
 #include "System/AudioManager.h"
 #include <DirectXMath.h>
@@ -11,7 +11,7 @@ using namespace DirectX;
 AttackMeteor::AttackMeteor(const MeteorParams& params)
     : m_params(params) {}
 
-void AttackMeteor::Start(Boss* boss, ProjectilePool* pool) {
+void AttackMeteor::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackMeteor needs the phase's bullet pool");
     m_pool = pool;
     m_active = true;
@@ -24,7 +24,7 @@ void AttackMeteor::Start(Boss* boss, ProjectilePool* pool) {
     m_spawnTimer = m_params.spawnDelay;
 }
 
-void AttackMeteor::Update(float dt, Boss* boss) {
+void AttackMeteor::Update(float dt, CueBoss* boss) {
     if (!m_active || !m_pool) return;
 
     if (m_isTriggerWaiting) {
@@ -56,11 +56,11 @@ void AttackMeteor::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackMeteor::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackMeteor::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     // Bullets are rendered by the phase's central render loop
 }
 
-void AttackMeteor::Stop(Boss* boss) {
+void AttackMeteor::Stop(CueBoss* boss) {
     m_active = false;
 }
 

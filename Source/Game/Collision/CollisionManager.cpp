@@ -1,5 +1,5 @@
 #include "CollisionManager.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "CollisionGeometry.h"
 #include "ProjectilePool.h"
 #include "EffectManager.h"
@@ -53,7 +53,7 @@ void CollisionManager::CheckPlayerProjectilesVsBoss()
 {
     if (!m_Boss || !m_player) return;
 
-    INaviPhase* phase{ m_Boss->GetCurrentPhase() };
+    ICuePhase* phase{ m_Boss->GetCurrentPhase() };
     if (!phase || !phase->IsVulnerable()) return;
 
     // The boss window is 5 x 5 world units, so half of that on each axis.
@@ -373,7 +373,7 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
 
         const DirectX::XMFLOAT3 currentPos{ bullet.position };
 
-        if (INaviPhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr }) {
+        if (ICuePhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr }) {
             if (phase->TryAbsorbPlayerBullet(currentPos, bullet.damage)) {
                 projectiles.Despawn(i);
                 continue;
@@ -677,7 +677,7 @@ bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float t
     // =========================================================
     // 2. BOSS ATTACKS (BIJUUDAMA)
     // =========================================================
-    if (INaviPhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr })
+    if (ICuePhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr })
     {
         // The attack decides whether it can be parried now, and shatters itself if so.
         if (const std::optional<XMFLOAT3> ballPosition{ phase->TryParryAttack(playerPos, m_Boss) })
@@ -696,7 +696,7 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
 {
     if (!m_player || !m_Boss || m_player->GetHP() <= 0) return;
 
-    INaviPhase* phase{ m_Boss->GetCurrentPhase() };
+    ICuePhase* phase{ m_Boss->GetCurrentPhase() };
     if (!phase) return;
 
     // Player hitbox radius against boss projectiles.
@@ -748,7 +748,7 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
 void CollisionManager::CheckBossProjectilesVsBoss(float elapsedTime)
 {
     if (!m_Boss) return;
-    INaviPhase* phase{ m_Boss->GetCurrentPhase() };
+    ICuePhase* phase{ m_Boss->GetCurrentPhase() };
     // Why bullet hell only: the parry that sends bullets back (GetParryableProjectile) exists only there.
     if (!phase || phase->GetKind() != BossPhaseKind::bulletHell) return;
 

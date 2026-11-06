@@ -1,6 +1,6 @@
 #pragma execution_character_set("utf-8")
 #include "AttackWave.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "ProjectilePool.h"
 #include "System/AudioManager.h"
 #include <DirectXMath.h>
@@ -10,7 +10,7 @@ using namespace DirectX;
 AttackWave::AttackWave(const WaveParams& params)
     : m_params(params) {}
 
-void AttackWave::Start(Boss* boss, ProjectilePool* pool) {
+void AttackWave::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackWave needs the phase's bullet pool");
     m_pool = pool;
     m_boss = boss;
@@ -20,7 +20,7 @@ void AttackWave::Start(Boss* boss, ProjectilePool* pool) {
     m_nextIsRight = true;             // the first wave comes from the right
 }
 
-void AttackWave::Update(float dt, Boss* boss) {
+void AttackWave::Update(float dt, CueBoss* boss) {
     if (!m_active || !m_pool) return;
 
     m_waveTimer += dt;
@@ -37,11 +37,11 @@ void AttackWave::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackWave::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackWave::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     // Bullets are rendered by the phase's central render loop
 }
 
-void AttackWave::Stop(Boss* boss) {
+void AttackWave::Stop(CueBoss* boss) {
     m_active = false;
 }
 

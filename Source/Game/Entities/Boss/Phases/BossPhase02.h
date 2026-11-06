@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "INaviPhase.h"
+#include "ICuePhase.h"
 #include <DirectXMath.h>
 #include <vector>
 #include <memory>
@@ -27,15 +27,15 @@ struct WingNode {
     bool isClosing = false;
 };
 
-class BossPhase02 : public INaviPhase {
+class BossPhase02 : public ICuePhase {
 public:
     BossPhase02(Player* player = nullptr);
     ~BossPhase02() override = default;
 
-    void Enter(Boss* boss) override;
-    void Update(float dt, Boss* boss) override;
-    void Render(ID3D11DeviceContext* context, Camera* currentCamera, Boss* boss) override;
-    void Exit(Boss* boss) override;
+    void Enter(CueBoss* boss) override;
+    void Update(float dt, CueBoss* boss) override;
+    void Render(ID3D11DeviceContext* context, Camera* currentCamera, CueBoss* boss) override;
+    void Exit(CueBoss* boss) override;
 
     [[nodiscard]] BossPhaseKind GetKind() const override { return BossPhaseKind::windowkill; }
 
@@ -98,7 +98,7 @@ public:
 
 private:
     void GenerateButterflyWings();
-    void TriggerCageFirstHitDialogue(Boss* boss);
+    void TriggerCageFirstHitDialogue(CueBoss* boss);
     void DamageCage(int dmg);
 
     // Enter steps, called in this order by Enter.
@@ -110,19 +110,19 @@ private:
     void CreateClickBlocker(WindowTrackingSystem& windowSystem);
 
     // Update steps, called in this order by Update.
-    void RaiseClickBlocker(Boss* boss);
-    void StopForDeadPlayer(Boss* boss);
+    void RaiseClickBlocker(CueBoss* boss);
+    void StopForDeadPlayer(CueBoss* boss);
     // Runs the boss death sequence while HP is zero or below. Returns true on
     // every frame after the 7 s sequence has ended; Update must stop then.
-    [[nodiscard]] bool UpdateBossDeath(float dt, Boss* boss);
-    void UpdateOpeningDialogue(float dt, Boss* boss);
+    [[nodiscard]] bool UpdateBossDeath(float dt, CueBoss* boss);
+    void UpdateOpeningDialogue(float dt, CueBoss* boss);
     void UpdateCageShake(float dt);
-    void UpdateOverdrive(float dt, Boss* boss);
+    void UpdateOverdrive(float dt, CueBoss* boss);
     void ClampPlayerToCage();
-    void UpdateBossPosition(Boss* boss);
+    void UpdateBossPosition(CueBoss* boss);
     void UpdateWingState(float dt);
     void UpdateWingNodes(float dt);
-    void UpdateAttacks(float dt, Boss* boss);
+    void UpdateAttacks(float dt, CueBoss* boss);
 
 private:
     Beyond::Window* m_fxWindow = nullptr;
@@ -166,7 +166,7 @@ private:
     int   m_bossHP = 10000;
     float m_hitFlashTimer = 0.0f;
 
-    Boss* m_bossRef = nullptr;
+    CueBoss* m_bossRef = nullptr;
     bool m_isPlayerCaged = false;
     int m_cageMaxHP = 1000;
     int m_cageHP = 1000;

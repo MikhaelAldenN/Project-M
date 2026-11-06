@@ -1,6 +1,6 @@
 #pragma execution_character_set("utf-8")
 #include "AttackRadial.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "ProjectilePool.h"
 #include "System/AudioManager.h"
 #include <DirectXMath.h>
@@ -11,7 +11,7 @@ using namespace DirectX;
 AttackRadial::AttackRadial(const RadialParams& params)
     : m_params(params) {}
 
-void AttackRadial::Start(Boss* boss, ProjectilePool* pool) {
+void AttackRadial::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackRadial needs the phase's bullet pool");
     m_pool = pool;
     m_boss = boss;
@@ -25,7 +25,7 @@ void AttackRadial::Start(Boss* boss, ProjectilePool* pool) {
     m_burstsFired++;
 }
 
-void AttackRadial::Update(float dt, Boss* boss) {
+void AttackRadial::Update(float dt, CueBoss* boss) {
     if (!m_active || !m_pool) return;
 
     // ========================================================
@@ -63,11 +63,11 @@ void AttackRadial::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackRadial::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackRadial::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     // Bullets are rendered by the phase's central render loop
 }
 
-void AttackRadial::Stop(Boss* boss) {
+void AttackRadial::Stop(CueBoss* boss) {
     m_active = false;
 }
 
@@ -79,7 +79,7 @@ bool AttackRadial::IsFinished() const {
 // Internal
 // ============================================================
 
-void AttackRadial::FireBurst(Boss* boss, float angleOffset) {
+void AttackRadial::FireBurst(CueBoss* boss, float angleOffset) {
     if (!m_pool || !boss) return;
 
     float angleStep = XM_2PI / (float)m_params.count;

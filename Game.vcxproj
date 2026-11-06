@@ -181,7 +181,7 @@
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackMeteor.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackWave.h" />
-    <ClInclude Include="Source\Game\Entities\Boss\Boss.h" />
+    <ClInclude Include="Source\Game\Entities\Boss\CueBoss.h" />
     <ClInclude Include="Source\Game\Entities\Boss\BossAI.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackBoomerangs.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackBouncing.h" />
@@ -195,7 +195,7 @@
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\IBossAttackPattern.h" />
     <ClInclude Include="Source\Game\Entities\Boss\Phases\BossPhase01.h" />
     <ClInclude Include="Source\Game\Entities\Boss\Phases\BossPhase02.h" />
-    <ClInclude Include="Source\Game\Entities\Boss\Phases\INaviPhase.h" />
+    <ClInclude Include="Source\Game\Entities\Boss\Phases\ICuePhase.h" />
     <ClInclude Include="Source\Game\Entities\Character.h" />
     <ClInclude Include="Source\Game\Entities\CharacterMovement.h" />
     <ClInclude Include="Source\Game\Entities\DamageTypes.h" />
@@ -203,7 +203,7 @@
     <ClInclude Include="Source\Game\Entities\EnemyManager.h" />
     <ClInclude Include="Source\Game\Entities\Item.h" />
     <ClInclude Include="Source\Game\Entities\ItemManager.h" />
-    <ClInclude Include="Source\Game\Entities\NaviAlly.h" />
+    <ClInclude Include="Source\Game\Entities\CueAlly.h" />
     <ClInclude Include="Source\Game\Entities\Player.h" />
     <ClInclude Include="Source\Game\Entities\PlayerConstants.h" />
     <ClInclude Include="Source\Game\Entities\ProjectileMesh.h" />
@@ -302,7 +302,7 @@
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackMeteor.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackWave.cpp" />
-    <ClCompile Include="Source\Game\Entities\Boss\Boss.cpp" />
+    <ClCompile Include="Source\Game\Entities\Boss\CueBoss.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\BossAI.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackBoomerangs.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackBouncing.cpp" />
@@ -321,7 +321,7 @@
     <ClCompile Include="Source\Game\Entities\EnemyManager.cpp" />
     <ClCompile Include="Source\Game\Entities\Item.cpp" />
     <ClCompile Include="Source\Game\Entities\ItemManager.cpp" />
-    <ClCompile Include="Source\Game\Entities\NaviAlly.cpp" />
+    <ClCompile Include="Source\Game\Entities\CueAlly.cpp" />
     <ClCompile Include="Source\Game\Entities\Player.cpp" />
     <ClCompile Include="Source\Game\Entities\ProjectileMesh.cpp" />
     <ClCompile Include="Source\Game\Entities\ProjectilePool.cpp" />

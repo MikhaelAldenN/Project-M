@@ -1,5 +1,5 @@
 #include "AttackBlasters.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "WindowTrackingSystem.h"
 #include "System/Graphics.h"
 #include "System/AudioManager.h"
@@ -12,7 +12,7 @@ using namespace DirectX;
 AttackBlasters::AttackBlasters(const BlasterParams& params, bool isTargeted, float targetX)
     : m_params(params), m_isTargeted(isTargeted), m_targetX(targetX) {}
 
-void AttackBlasters::Start(Boss* boss, ProjectilePool* /*pool*/) 
+void AttackBlasters::Start(CueBoss* boss, ProjectilePool* /*pool*/) 
 {
     auto device = Graphics::Instance().GetDevice();
     m_solidRenderer = std::make_unique<Primitive>(device);
@@ -23,7 +23,7 @@ void AttackBlasters::Start(Boss* boss, ProjectilePool* /*pool*/)
     m_spawnTimer = m_params.spawnDelay;
 }
 
-void AttackBlasters::Update(float dt, Boss* boss) {
+void AttackBlasters::Update(float dt, CueBoss* boss) {
     if (!boss || !boss->GetWindowSystem()) return;
 
     // 1. Spawning Sequence
@@ -139,7 +139,7 @@ void AttackBlasters::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackBlasters::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackBlasters::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     if (!m_placeholderModel || !m_solidRenderer) return;
     auto modelRenderer = Graphics::Instance().GetModelRenderer();
 
@@ -178,7 +178,7 @@ void AttackBlasters::Render(ID3D11DeviceContext* context, Camera* camera, Boss* 
     }
 }
 
-void AttackBlasters::Stop(Boss* boss) {
+void AttackBlasters::Stop(CueBoss* boss) {
     for (auto& b : m_blasters) {
         EffectManager::Instance().Stop(b->chargeEffectHandle);
         EffectManager::Instance().Stop(b->fireEffectHandle);

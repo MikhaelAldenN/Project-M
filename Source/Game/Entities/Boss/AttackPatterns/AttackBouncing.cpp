@@ -1,5 +1,5 @@
 #include "AttackBouncing.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "WindowTrackingSystem.h"
 #include "System/Graphics.h"
 #include "System/AudioManager.h"
@@ -12,7 +12,7 @@ using namespace DirectX;
 AttackBouncing::AttackBouncing(const BouncingBulletParams& params)
     : m_params(params) {}
 
-void AttackBouncing::Start(Boss* boss, ProjectilePool* pool) {
+void AttackBouncing::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackBouncing needs the phase's projectile pool");
     m_pool = pool;
     if (!m_mesh.IsLoaded()) m_mesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");
@@ -26,7 +26,7 @@ void AttackBouncing::Start(Boss* boss, ProjectilePool* pool) {
     m_screenLimitZ = Beyond::Config::ARENA_HEIGHT_UNITS * 0.5f;
 }
 
-void AttackBouncing::Update(float dt, Boss* boss) {
+void AttackBouncing::Update(float dt, CueBoss* boss) {
     if (!boss || !boss->GetWindowSystem()) return;
 
     // 1. Handle Spawning Sequence
@@ -147,7 +147,7 @@ void AttackBouncing::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackBouncing::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackBouncing::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     if (!m_pool || !m_mesh.IsLoaded()) return;
     auto modelRenderer = Graphics::Instance().GetModelRenderer();
     for (const auto& bwb : m_bullets) {
@@ -158,7 +158,7 @@ void AttackBouncing::Render(ID3D11DeviceContext* context, Camera* camera, Boss* 
     }
 }
 
-void AttackBouncing::Stop(Boss* boss) {
+void AttackBouncing::Stop(CueBoss* boss) {
     if (boss && boss->GetWindowSystem()) {
         for (auto& bwb : m_bullets) {
             boss->GetWindowSystem()->RemoveTrackedWindow(bwb.windowName);

@@ -1,6 +1,6 @@
 #pragma execution_character_set("utf-8")
 #include "AttackFan.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "ProjectilePool.h"
 #include "Player.h"
 #include "System/AudioManager.h"
@@ -12,7 +12,7 @@ using namespace DirectX;
 AttackFan::AttackFan(const FanParams& params, float lockedBaseAngle, Player* target)
     : m_params(params), m_lockedBaseAngle(lockedBaseAngle), m_target(target) {}
 
-void AttackFan::Start(Boss* boss, ProjectilePool* pool) {
+void AttackFan::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackFan needs the phase's bullet pool");
     m_pool = pool;
     m_boss = boss;
@@ -26,7 +26,7 @@ void AttackFan::Start(Boss* boss, ProjectilePool* pool) {
     m_waveTimer = m_params.waveDelay;
 }
 
-void AttackFan::Update(float dt, Boss* boss) {
+void AttackFan::Update(float dt, CueBoss* boss) {
     if (!m_active || !m_pool) return;
 
     // 1. Between triggers: wait for the next one
@@ -68,11 +68,11 @@ void AttackFan::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackFan::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackFan::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     // Bullets are rendered by the phase's central render loop
 }
 
-void AttackFan::Stop(Boss* boss) {
+void AttackFan::Stop(CueBoss* boss) {
     m_active = false;
 }
 
@@ -84,7 +84,7 @@ bool AttackFan::IsFinished() const {
 // Internal
 // ============================================================
 
-void AttackFan::FireWave(Boss* boss) {
+void AttackFan::FireWave(CueBoss* boss) {
     if (!m_pool || !boss) return;
 
     float startAngle = m_lockedBaseAngle - ((m_params.rows - 1) * m_params.spreadAngle * 0.5f);

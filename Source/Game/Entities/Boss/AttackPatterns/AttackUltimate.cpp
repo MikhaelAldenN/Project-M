@@ -1,6 +1,6 @@
 ﻿#pragma execution_character_set("utf-8")
 #include "AttackUltimate.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "ProjectilePool.h"
 #include "Player.h"
 #include "System/Graphics.h"
@@ -16,7 +16,7 @@ using namespace DirectX;
 AttackUltimate::AttackUltimate(const UltimateParams& params, Player* target)
     : m_params(params), m_target(target) {}
 
-void AttackUltimate::Start(Boss* boss, ProjectilePool* pool) {
+void AttackUltimate::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackUltimate needs the phase's bullet pool");
     m_pool = pool;
     m_state = State::Moving;
@@ -31,7 +31,7 @@ void AttackUltimate::Start(Boss* boss, ProjectilePool* pool) {
     ClaimBall();
 }
 
-void AttackUltimate::Update(float dt, Boss* boss) {
+void AttackUltimate::Update(float dt, CueBoss* boss) {
     if (m_state == State::Done || !m_pool || !boss) return;
 
     XMFLOAT3 bPos = boss->GetPosition();
@@ -115,7 +115,7 @@ void AttackUltimate::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackUltimate::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackUltimate::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     if (m_state != State::Charging || !m_target) return;
 
     auto shapeRenderer = Graphics::Instance().GetShapeRenderer();
@@ -133,7 +133,7 @@ void AttackUltimate::Render(ID3D11DeviceContext* context, Camera* camera, Boss* 
     shapeRenderer->DrawSphere(pPos, ringRadius, ringColor);
 }
 
-void AttackUltimate::Stop(Boss* boss) {
+void AttackUltimate::Stop(CueBoss* boss) {
     CancelCharge();
     if (m_pool) m_pool->Despawn(m_ball);
     m_ball = ProjectileHandle{};
@@ -148,7 +148,7 @@ bool AttackUltimate::IsInParryWindow() const {
     return fabsf(m_chargeTimer - m_params.laserDuration) <= m_params.parryWindow;
 }
 
-std::optional<XMFLOAT3> AttackUltimate::TryParry(const XMFLOAT3& parryPosition, Boss* boss) {
+std::optional<XMFLOAT3> AttackUltimate::TryParry(const XMFLOAT3& parryPosition, CueBoss* boss) {
     if (m_state != State::Charging || !IsInParryWindow()) return std::nullopt;
     const Projectile* ball{ m_pool ? m_pool->Get(m_ball) : nullptr };
     if (!ball) return std::nullopt;
@@ -163,7 +163,7 @@ std::optional<XMFLOAT3> AttackUltimate::TryParry(const XMFLOAT3& parryPosition, 
 // // ShatterBijuudama — Called by TryParry
 // ============================================================
 
-void AttackUltimate::ShatterBijuudama(XMFLOAT3 parryPos, Boss* boss) {
+void AttackUltimate::ShatterBijuudama(XMFLOAT3 parryPos, CueBoss* boss) {
     if (!m_pool || !boss) return;
 
     m_pool->Despawn(m_ball);
@@ -230,7 +230,7 @@ void AttackUltimate::ClaimBall() {
     ball->damage = m_params.ballDamage;
 }
 
-void AttackUltimate::LaunchBall(Boss* boss) {
+void AttackUltimate::LaunchBall(CueBoss* boss) {
     CancelCharge();
 
     m_state = State::Recovering;

@@ -27,10 +27,10 @@ public:
     AttackSpears(const UndyneSpearParams& params, Player* target);
     ~AttackSpears() override = default;
 
-    void Start(Boss* boss, ProjectilePool* pool) override;
-    void Update(float dt, Boss* boss) override;
-    void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) override;
-    void Stop(Boss* boss) override;
+    void Start(CueBoss* boss, ProjectilePool* pool) override;
+    void Update(float dt, CueBoss* boss) override;
+    void Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) override;
+    void Stop(CueBoss* boss) override;
 
     bool IsFinished() const override;
 
@@ -46,7 +46,7 @@ private:
     };
 
     // Despawns the spear's projectile and destroys its window. The spear then counts as finished.
-    void RetireSpear(UndyneSpearWindow& spear, Boss* boss);
+    void RetireSpear(UndyneSpearWindow& spear, CueBoss* boss);
 
     UndyneSpearParams m_params;
     Player* m_playerTarget;

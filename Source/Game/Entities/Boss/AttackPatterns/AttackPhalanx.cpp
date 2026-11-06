@@ -1,6 +1,6 @@
 #pragma execution_character_set("utf-8")
 #include "AttackPhalanx.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "ProjectilePool.h"
 #include "System/AudioManager.h"
 #include "System/Graphics.h"
@@ -15,7 +15,7 @@ using namespace DirectX;
 AttackPhalanx::AttackPhalanx(const PhalanxParams& params, Player* target)
     : m_params(params), m_target(target) {}
 
-void AttackPhalanx::Start(Boss* boss, ProjectilePool* pool) {
+void AttackPhalanx::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackPhalanx needs the phase's bullet pool");
     m_pool = pool;
     m_boss = boss;
@@ -33,7 +33,7 @@ void AttackPhalanx::Start(Boss* boss, ProjectilePool* pool) {
     m_moveTarget.lerpSpeed = m_params.attackMoveSpeed;
 }
 
-void AttackPhalanx::Update(float dt, Boss* boss) {
+void AttackPhalanx::Update(float dt, CueBoss* boss) {
     if (m_state == 0 || !m_pool || !boss) return;
 
     m_timer += dt;
@@ -167,11 +167,11 @@ void AttackPhalanx::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackPhalanx::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackPhalanx::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     // Bullets are rendered by the phase's central render loop
 }
 
-void AttackPhalanx::Stop(Boss* boss) {
+void AttackPhalanx::Stop(CueBoss* boss) {
     // Despawn the projectiles this attack still holds (orbiting, or fired in the current volley)
     if (m_pool) {
         for (const ProjectileHandle handle : m_bullets) {

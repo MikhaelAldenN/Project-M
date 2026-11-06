@@ -1,5 +1,5 @@
 ﻿#include "BossPhase02.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "WindowTrackingSystem.h"
 #include "System/Graphics.h"
 #include "System/Sprite.h"
@@ -22,7 +22,7 @@ BossPhase02::BossPhase02(Player* player) {
 // =========================================================
 // ENTER
 // =========================================================
-void BossPhase02::Enter(Boss* boss) {
+void BossPhase02::Enter(CueBoss* boss) {
     if (!boss || !boss->GetWindowSystem()) return;
 
     EffectManager::Instance().StopAll();
@@ -256,7 +256,7 @@ void BossPhase02::CreateClickBlocker(WindowTrackingSystem& windowSystem) {
     }
 }
 
-void BossPhase02::Exit(Boss* boss) {
+void BossPhase02::Exit(CueBoss* boss) {
     m_deathCleanupDone = false;
 
     // 1. Remove the phase windows (FX, dialogue, cage)
@@ -371,7 +371,7 @@ void BossPhase02::AddAttack(std::unique_ptr<IBossAttackPattern> attack) {
     }
 }
 
-void BossPhase02::Update(float dt, Boss* boss) {
+void BossPhase02::Update(float dt, CueBoss* boss) {
     m_glitchTimer += dt;
     
     RaiseClickBlocker(boss);
@@ -417,7 +417,7 @@ void BossPhase02::Update(float dt, Boss* boss) {
     UpdateAttacks(dt, boss);
 }
 
-void BossPhase02::RaiseClickBlocker(Boss* boss) {
+void BossPhase02::RaiseClickBlocker(CueBoss* boss) {
     if (!boss || !boss->GetWindowSystem()) return;
 
     if (auto* blockerWin = boss->GetWindowSystem()->GetTrackedWindow("click_blocker")) {
@@ -427,7 +427,7 @@ void BossPhase02::RaiseClickBlocker(Boss* boss) {
     }
 }
 
-void BossPhase02::StopForDeadPlayer(Boss* boss) {
+void BossPhase02::StopForDeadPlayer(CueBoss* boss) {
     AudioManager::Instance().StopMusic();
 
     // Hide the boss main window so the transition is clean.
@@ -436,7 +436,7 @@ void BossPhase02::StopForDeadPlayer(Boss* boss) {
     }
 }
 
-bool BossPhase02::UpdateBossDeath(float dt, Boss* boss) {
+bool BossPhase02::UpdateBossDeath(float dt, CueBoss* boss) {
     if (m_bossHP > 0) return false;
 
     if (!m_isDying) {
@@ -501,7 +501,7 @@ bool BossPhase02::UpdateBossDeath(float dt, Boss* boss) {
     return false;
 }
 
-void BossPhase02::UpdateOpeningDialogue(float dt, Boss* boss) {
+void BossPhase02::UpdateOpeningDialogue(float dt, CueBoss* boss) {
     if (!m_isDialogueActive || !m_dialogueBox) return;
 
     m_dialogueBox->Update(dt);
@@ -529,7 +529,7 @@ void BossPhase02::UpdateCageShake(float dt) {
     }
 }
 
-void BossPhase02::UpdateOverdrive(float dt, Boss* boss) {
+void BossPhase02::UpdateOverdrive(float dt, CueBoss* boss) {
     if (m_aiTarget && m_aiTarget->IsPowerUncapped() && m_isPlayerCaged) {
         m_overdriveAlpha += m_overdriveFadeSpeed * dt;
         if (m_overdriveAlpha > 1.0f) m_overdriveAlpha = 1.0f;
@@ -567,7 +567,7 @@ void BossPhase02::ClampPlayerToCage() {
     }
 }
 
-void BossPhase02::UpdateBossPosition(Boss* boss) {
+void BossPhase02::UpdateBossPosition(CueBoss* boss) {
     if (!boss) return;
 
     float centerX = 0.0f;
@@ -653,7 +653,7 @@ void BossPhase02::UpdateWingNodes(float dt) {
     }
 }
 
-void BossPhase02::UpdateAttacks(float dt, Boss* boss) {
+void BossPhase02::UpdateAttacks(float dt, CueBoss* boss) {
     for (auto it = m_activeAttacks.begin(); it != m_activeAttacks.end(); ) {
         (*it)->Update(dt, boss);
 
@@ -667,7 +667,7 @@ void BossPhase02::UpdateAttacks(float dt, Boss* boss) {
     }
 }
 
-void BossPhase02::Render(ID3D11DeviceContext* context, Camera* currentCamera, Boss* boss) {
+void BossPhase02::Render(ID3D11DeviceContext* context, Camera* currentCamera, CueBoss* boss) {
     if (!currentCamera || !m_wingSprite || !boss) return;
 
     bool isFXCam = (currentCamera == m_fxCamera.get());
@@ -837,7 +837,7 @@ void BossPhase02::DamageCage(int dmg) {
     }
 }
 
-void BossPhase02::TriggerCageFirstHitDialogue(Boss* boss)
+void BossPhase02::TriggerCageFirstHitDialogue(CueBoss* boss)
 {
     // Intentionally empty: this phase has no first-hit dialogue.
 }

@@ -29,19 +29,19 @@ public:
     // Used by the combo AI to override the parameters.
     void SetParams(const RadialParams& newParams) { m_params = newParams; }
 
-    void Start(Boss* boss, ProjectilePool* pool) override;
-    void Update(float dt, Boss* boss) override;
-    void Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) override;
-    void Stop(Boss* boss) override;
+    void Start(CueBoss* boss, ProjectilePool* pool) override;
+    void Update(float dt, CueBoss* boss) override;
+    void Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) override;
+    void Stop(CueBoss* boss) override;
 
     bool IsFinished() const override;
 
 private:
-    void FireBurst(Boss* boss, float angleOffset);
+    void FireBurst(CueBoss* boss, float angleOffset);
 
     RadialParams                          m_params;
     ProjectilePool* m_pool = nullptr; // borrowed from the phase, set in Start
-    Boss* m_boss = nullptr;
+    CueBoss* m_boss = nullptr;
 
     bool  m_active = false;
     int   m_burstsFired = 0;

@@ -10,7 +10,7 @@
 #include "Game/Collision/CollisionManager.h"
 #include "Enemy.h"
 #include "ProjectilePool.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "System/AudioManager.h"
 
 #include "EffectManager.h"

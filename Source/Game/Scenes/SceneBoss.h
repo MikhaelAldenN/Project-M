@@ -17,7 +17,7 @@
 #include "System/Sprite.h"
 #include "UberShader.h"
 #include "BeyondWindow.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "HUDRenderer.h"
 #include "DebugUI.h"
 
@@ -124,7 +124,7 @@ private:
     std::unique_ptr<ItemManager>          m_itemManager;
     std::unique_ptr<Stage>                m_stage;
     std::unique_ptr<CollisionManager>     m_collisionManager;
-    std::unique_ptr<Boss>             m_navi;
+    std::unique_ptr<CueBoss>             m_navi;
 
     // =========================================================
     // HUD

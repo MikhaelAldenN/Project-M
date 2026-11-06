@@ -1,6 +1,6 @@
 #pragma execution_character_set("utf-8")
 #include "AttackRain.h"
-#include "Boss.h"
+#include "CueBoss.h"
 #include "System/Graphics.h"
 #include "System/AudioManager.h"
 #include "CameraController.h"
@@ -22,7 +22,7 @@ AttackRain::AttackRain(const RainParams& params, RainMode mode, bool isPositiveS
     m_vfxHandles.assign(params.triggerCount * maxDrops, -1);
 }
 
-void AttackRain::Start(Boss* boss, ProjectilePool* pool) {
+void AttackRain::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackRadial needs the phase's bullet pool");
     m_pool = pool;
     m_boss = boss;
@@ -42,7 +42,7 @@ void AttackRain::Start(Boss* boss, ProjectilePool* pool) {
     }
 }
 
-void AttackRain::Update(float dt, Boss* boss) {
+void AttackRain::Update(float dt, CueBoss* boss) {
     if (!m_active) return;
 
     bool allFinished = true;
@@ -174,7 +174,7 @@ void AttackRain::Update(float dt, Boss* boss) {
     }
 }
 
-void AttackRain::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss) {
+void AttackRain::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* boss) {
     if (!m_active || !boss || !boss->GetWindowSystem()) return;
 
     auto shapeRenderer = Graphics::Instance().GetShapeRenderer();
@@ -308,7 +308,7 @@ void AttackRain::Render(ID3D11DeviceContext* context, Camera* camera, Boss* boss
     }
 }
 
-void AttackRain::Stop(Boss* boss) {
+void AttackRain::Stop(CueBoss* boss) {
     ClearVFX();
     m_active = false;
 }

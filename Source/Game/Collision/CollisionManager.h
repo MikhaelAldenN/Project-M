@@ -14,11 +14,11 @@
 #include "ItemManager.h"
 #include "StateMachine.h"
 #include "PlayerStates.h"
-#include "NaviAlly.h"
+#include "CueAlly.h"
 
 class ItemManager;
-class NaviAlly;
-class Boss;
+class CueAlly;
+class CueBoss;
 
 // Damage dealt by collision pairs whose bullets do not carry their own damage value.
 // Boss projectiles and player bullets against enemies or the boss use Projectile::damage instead.
@@ -47,10 +47,10 @@ public:
     // `outEnemyBullet` and `outNearestEnemy` stay null for a boss attack, which handles its own parry.
     // `outEnemyBullet` points into the enemy's pool: use it at once, before that slot can be despawned or reused.
     bool GetParryableProjectile(const DirectX::XMFLOAT3& playerPos, float threshold, Projectile** outEnemyBullet, Enemy** outNearestEnemy, DirectX::XMFLOAT3* outPosition);
-    void SetNavi(NaviAlly* navi) { m_navi = navi; }
-    NaviAlly* GetNavi() const { return m_navi; }
-    void SetBoss(Boss* Boss) { m_Boss = Boss; }
-    Boss* GetBoss() const { return m_Boss; }
+    void SetNavi(CueAlly* navi) { m_navi = navi; }
+    CueAlly* GetNavi() const { return m_navi; }
+    void SetBoss(CueBoss* boss) { m_Boss = boss; }
+    CueBoss* GetBoss() const { return m_Boss; }
 
     // Mutable on purpose: a debug panel can tune the values at runtime.
     [[nodiscard]] CollisionDamageConfig& GetDamageConfig() { return m_damageConfig; }
@@ -74,8 +74,8 @@ private:
 
     EnemyManager* m_enemyManager = nullptr;
     ItemManager* m_itemManager = nullptr;
-    NaviAlly* m_navi = nullptr;
-    Boss* m_Boss = nullptr;
+    CueAlly* m_navi = nullptr;
+    CueBoss* m_Boss = nullptr;
 
     CollisionDamageConfig m_damageConfig{};
 };
