@@ -34,7 +34,6 @@ class Player : public Character
 public:
     enum class WeaponType {
         Crossbow = 0,
-        Sword,
         Count // Automatically tracks the number of weapons.
     };
 
@@ -139,8 +138,6 @@ public:
     float GetBaseSpeed()    const { return m_baseSpeed; }
     float GetDashSpeed()    const { return m_dashSpeed; }
     float GetDashDuration() const { return m_dashDuration; }
-    [[nodiscard]] float GetSlashLungeDistance() const { return m_slashLungeDistance; }
-    [[nodiscard]] float GetSlashLungeDuration() const { return m_slashLungeDuration; }
     DirectX::XMFLOAT2 GetLastValidInput() const { return m_lastValidInput; }
 
     // Called by PlayerDash on enter. Spends one dash charge, which also grants the dash
@@ -171,8 +168,7 @@ public:
     void TriggerInvincibility(float duration) { m_invincibilityTimer = duration; }
     [[nodiscard]] bool IsInvincible() const { return m_invincibilityTimer > 0.0f; }
 
-    // --- Parry and aim-lock setters ---
-    void SetLastValidInput(DirectX::XMFLOAT2 dir) { m_lastValidInput = dir; }
+    // --- Aim lock (scripted moments in SceneGame and SceneBoss) ---
     void SetAimLocked(bool locked) { m_aimLocked = locked; }
     void ForceAimTarget(const DirectX::XMFLOAT3& target) { m_aimTarget = target; }
 
@@ -205,7 +201,6 @@ private:
     void HandleAimInput(Camera* camera);
     void UpdateHorizontalMovement(float dt);
     void UpdateActionState(float elapsedTime);
-    void AutoSheatheSword();
     void UpdateFootRotation(float dt, float& outSmoothedYaw);
     void UpdateAimConstraint(float dt, float& inOutSmoothedYaw, bool& outShouldAim, float& outRelativeAngle);
     void UpdateAimConstraint(float& inOutSmoothedYaw, bool& outShouldAim, float& outRelativeAngle);
@@ -248,10 +243,6 @@ private:
     int   m_maxDashCharges{ PlayerConst::DashCharges };
     float m_dashRecoveryTime{ PlayerConst::DashRecoveryTime };
     float m_dashPenaltyScale{ PlayerConst::DashPenaltyScale }; // USULAN DESAIN: tuned from the Player panel
-
-    // --- Slash params ---
-    float m_slashLungeDistance{ PlayerConst::SlashLungeDistance };
-    float m_slashLungeDuration{ PlayerConst::SlashLungeDuration };
 
     // --- Dash state ---
     int   m_dashCharges{ PlayerConst::DashCharges }; // full dashes left

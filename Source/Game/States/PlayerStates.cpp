@@ -7,10 +7,6 @@
 #include <memory>
 #include <cmath>
 
-#include "Game/Collision/CollisionManager.h"
-#include "Enemy.h"
-#include "ProjectilePool.h"
-#include "CueBoss.h"
 #include "System/AudioManager.h"
 
 #include "EffectManager.h"
@@ -21,13 +17,11 @@ namespace {
     namespace Binding
     {
         constexpr int keyShoot{ VK_LBUTTON };
-        constexpr int keyMelee{ VK_RBUTTON }; // slash / parry
         constexpr int keyDash{ VK_SPACE };
         constexpr int keyChargedShot{ VK_SHIFT };
         constexpr int keyUlt{ 'E' };
 
         // Gamepad: shoot is the right stick and charged shot is the right trigger (both analog).
-        constexpr GamePadButton padMelee{ GamePad::BTN_X };
         constexpr GamePadButton padDash{ GamePad::BTN_A };
         constexpr GamePadButton padUlt{ GamePad::BTN_Y };
     }
@@ -40,16 +34,6 @@ namespace {
         const bool isGamepadDash{ (input.GetGamePad().GetButtonDown() & Binding::padDash) != 0 };
 
         return isKeyboardDash || isGamepadDash;
-    }
-
-    [[nodiscard]] bool IsMeleeInputTriggered() noexcept
-    {
-        auto& input{ Input::Instance() };
-
-        const bool isMouseMelee{ input.GetKeyboard().IsTriggered(Binding::keyMelee) };
-        const bool isGamepadMelee{ (input.GetGamePad().GetButtonDown() & Binding::padMelee) != 0 };
-
-        return isMouseMelee || isGamepadMelee;
     }
 
     [[nodiscard]] bool IsShootInputPressed(const Player& player) noexcept
@@ -68,135 +52,15 @@ namespace {
         return isMouseShoot || isStickShoot;
     }
 
-    // --- COMBAT ACTION ROUTINE ---
-
-    [[nodiscard]] bool TryExecuteCombatAction(Player* player, bool allowShoot = true)
+    // Enters PlayerShoot and fires the first bullet while the shoot input is held.
+    [[nodiscard]] bool TryStartShoot(Player* player)
     {
-        // Anticipate Nullptr Bug
         if (!player || !player->IsInputEnabled()) return false;
+        if (!IsShootInputPressed(*player)) return false;
 
-        // Centralized Input Check
-        const bool isMeleeTriggered{ IsMeleeInputTriggered() };
-        const bool isShootPressed{ IsShootInputPressed(*player) };
-        if (!isMeleeTriggered && !isShootPressed) return false;
-
-        CollisionManager* const colMgr{ player->GetCollisionManager() };
-        // Slash and parry answer only to the melee button; shooting never triggers them.
-        if (colMgr && isMeleeTriggered)
-        {
-            const DirectX::XMFLOAT3 pPos{ player->GetMovement()->GetPosition() };
-            const DirectX::XMFLOAT3 aimPos{ player->GetAimTarget() };
-
-            const float aimDx{ aimPos.x - pPos.x };
-            const float aimDz{ aimPos.z - pPos.z };
-            const float aimDistSq{ (aimDx * aimDx) + (aimDz * aimDz) };
-
-            DirectX::XMFLOAT3 aimDir{ 0.0f, 0.0f, 1.0f }; // Fallback forward direction
-
-            // Anticipate Math Error: Prevent Divide-by-Zero
-            if (aimDistSq > 0.0001f)
-            {
-                const float aimDist{ std::sqrt(aimDistSq) };
-                aimDir = { aimDx / aimDist, 0.0f, aimDz / aimDist };
-            }
-
-            // --- Slash Priority ---
-            if (Enemy * slashTarget{ colMgr->GetTargetInSlashCone(pPos, aimDir, 0.8f, 0.85f) })
-            {
-                player->SetLastValidInput({ aimDir.x, aimDir.z });
-                player->GetMovement()->SetRotationY(DirectX::XMConvertToDegrees(std::atan2(aimDir.x, aimDir.z)));
-                player->SetAimLocked(true);
-
-                player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerSlash>(true));
-
-                // =========================================================
-                // EXECUTION SCALING
-                // Standard enemies take normal damage. Kamikazes take fatal
-                // damage (9999) so they cannot survive the counter-attack
-                // and revenge-kill the player.
-                // =========================================================
-                constexpr int MELEE_DAMAGE{ 30 };
-                const bool isKamikaze{ slashTarget->GetAttackType() == AttackType::Tracking };
-                const int finalDamage{ isKamikaze ? 9999 : MELEE_DAMAGE };
-
-                slashTarget->TakeDamage(DamageInfo{ finalDamage, slashTarget->GetPosition() });
-
-                return true;
-            }
-
-            // --- Parry Priority ---
-            Projectile* parryBullet{ nullptr };
-            Enemy* parryTarget{ nullptr };
-            DirectX::XMFLOAT3 bPos{};
-
-            if (colMgr->GetParryableProjectile(pPos, 2.0f, &parryBullet, &parryTarget, &bPos))
-            {
-                const float dx{ bPos.x - pPos.x };
-                const float dz{ bPos.z - pPos.z };
-                const float dist{ std::sqrt((dx * dx) + (dz * dz)) };
-
-                if (dist > 0.001f)
-                {
-                    const float dirX{ dx / dist };
-                    const float dirZ{ dz / dist };
-
-                    player->SetLastValidInput({ dirX, dirZ });
-                    player->GetMovement()->SetRotationY(DirectX::XMConvertToDegrees(std::atan2(dx, dz)));
-
-                    // Aim THROUGH the bullet so we don't snap backward if we overshoot
-                    const DirectX::XMFLOAT3 aimThrough{ pPos.x + (dirX * 50.0f), bPos.y, pPos.z + (dirZ * 50.0f) };
-                    player->ForceAimTarget(aimThrough);
-                    player->SetAimLocked(true);
-                }
-
-                if (parryBullet && parryTarget) {
-                    // An enemy bullet flies back at the nearest enemy, faster than it came.
-                    parryBullet->target = ProjectileTarget::enemy;
-                    parryBullet->targetId = parryTarget->GetId();
-                    const DirectX::XMFLOAT3 tPos{ parryTarget->GetPosition() };
-                    float speed{ DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMLoadFloat3(&parryBullet->velocity))) * 2.5f };
-                    if (speed < 10.0f) speed = 30.0f;
-
-                    const float dirX{ tPos.x - bPos.x };
-                    const float dirZ{ tPos.z - bPos.z };
-                    const float distDir{ std::sqrt((dirX * dirX) + (dirZ * dirZ)) };
-
-                    DirectX::XMVECTOR vDir{ DirectX::XMVectorSet(0, 0, 1, 0) };
-                    if (distDir > 0.001f) {
-                        vDir = DirectX::XMVectorSet(dirX / distDir, 0.0f, dirZ / distDir, 0.0f);
-                    }
-
-                    DirectX::XMFLOAT3 newVel{};
-                    DirectX::XMStoreFloat3(&newVel, DirectX::XMVectorScale(vDir, speed));
-                    parryBullet->position = bPos;
-                    parryBullet->velocity = newVel;
-                }
-                else if (colMgr->GetBoss()) {
-                    // The boss attack has already shattered the parried projectile into return fragments.
-                    AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Bijuudama_Shoot.wav", 0.2f);
-                }
-
-                player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerParry>());
-                return true;
-            }
-        }
-
-        // Nothing to hit or parry: the melee button still answers with a slash.
-        if (isMeleeTriggered)
-        {
-            player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerSlash>(false));
-            return true;
-        }
-
-        // --- Default: Shoot ---
-        if (allowShoot && isShootPressed && !player->GetAnimator()->IsUpperPlaying())
-        {
-            player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerShoot>());
-            player->FireProjectile();
-            return true;
-        }
-
-        return false;
+        player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerShoot>());
+        player->FireProjectile();
+        return true;
     }
 }
 
@@ -222,8 +86,8 @@ void PlayerIdle::Update(Player* player, float dt)
         return;
     }
 
-    // Combat Priority
-    if (TryExecuteCombatAction(player)) return;
+    // Shoot
+    if (TryStartShoot(player)) return;
 
     // Movement Fallback
     if (player->IsMoving())
@@ -254,8 +118,8 @@ void PlayerMoving::Update(Player* player, float dt)
             return;
         }
 
-        // Combat Priority
-        if (TryExecuteCombatAction(player)) return;
+        // Shoot
+        if (TryStartShoot(player)) return;
     }
 
     // Idle Fallback
@@ -357,89 +221,6 @@ void PlayerDash::Exit(Player* player)
 }
 
 // ============================================================
-// SLASH
-// ============================================================
-
-void PlayerSlash::Enter(Player* player)
-{
-    player->SetActiveWeapon(Player::WeaponType::Sword);
-    player->GetAnimator()->PlayUpper("Parry", false);
-
-    // Why return early: the state velocity stays zero, so Player keeps applying walk input
-    // during a slash without a target.
-    if (!m_hasTarget) return;
-
-    const float yawRad{ DirectX::XMConvertToRadians(player->GetMovement()->GetRotation().y) };
-
-    // Why constant speed with a time limit: distance = speed x duration at any frame rate,
-    // the same rule PlayerDash uses.
-    const float lungeDuration{ (std::max)(player->GetSlashLungeDuration(), 0.01f) };
-    const float lungeSpeed{ player->GetSlashLungeDistance() / lungeDuration };
-
-    player->GetMovement()->SetVelocity({
-        std::sin(yawRad) * lungeSpeed,
-        0.0f,
-        std::cos(yawRad) * lungeSpeed
-        });
-    player->SetStateMoveTimeLimit(lungeDuration);
-
-    // =========================================================
-    // MELEE ARMOR (I-FRAMES)
-    // Grant brief invulnerability during the forward lunge.
-    // If the Kamikaze explodes on contact, the player is immune.
-    // =========================================================
-    constexpr float SLASH_IFRAME_DURATION{ 0.3f };
-    player->TriggerInvincibility(SLASH_IFRAME_DURATION);
-}
-
-void PlayerSlash::Update(Player* player, float dt)
-{
-    m_timer -= dt;
-
-    if (m_timer <= 0.0f)
-    {
-        if (player->IsMoving())
-            player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerMoving>());
-        else
-            player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerIdle>());
-    }
-}
-
-void PlayerSlash::Exit(Player* player)
-{
-    player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f });
-    player->ClearStateMoveTimeLimit();
-}
-
-// ============================================================
-// PARRY
-// ============================================================
-
-void PlayerParry::Enter(Player* player)
-{
-    player->GetMovement()->SetVelocity({ 0.0f, 0.0f, 0.0f });
-    player->GetAnimator()->PlayUpper("Parry", false);
-    player->SetActiveWeapon(Player::WeaponType::Sword);
-}
-
-void PlayerParry::Update(Player* player, float dt)
-{
-    m_timer -= dt;
-
-    if (m_timer <= 0.0f)
-    {
-        if (player->IsMoving())
-            player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerMoving>());
-        else
-            player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerIdle>());
-    }
-}
-
-void PlayerParry::Exit(Player* player)
-{
-}
-
-// ============================================================
 // SHOOT
 // ============================================================
 
@@ -463,11 +244,6 @@ void PlayerShoot::Update(Player* player, float dt)
     m_minTapCooldown -= dt;
 
     const bool isHolding{ IsShootInputPressed(*player) };
-
-    // Why outside the m_timer block: the melee button must interrupt shooting on the
-    // frame it is pressed, without waiting for the gun cooldown.
-    // allowShoot = false: only slash and parry are checked here.
-    if (TryExecuteCombatAction(player, false)) return;
 
     // The Tap-Fire Reward Logic (Early Exit)
     if (!isHolding && m_minTapCooldown <= 0.0f)

@@ -50,13 +50,6 @@ Player::Player()
         { 0.900f, 0.900f, 0.400f }
     );
 
-    m_weapons[static_cast<size_t>(WeaponType::Sword)] = std::make_unique<Weapon>(device, "Data/Model/Character/WEAPON_mdl_Sword.glb");
-    m_weapons[static_cast<size_t>(WeaponType::Sword)]->SetLocalOffset(
-        { 0.000f, 0.001f, 0.000f },
-        { 0.000f, 180.000f, 0.000f },
-        { 0.350f, 0.350f, 0.350f }
-    );
-
     if (m_model) {
         m_rightHandBoneIndex = m_model->GetNodeIndex("hand.r");
     }
@@ -178,8 +171,6 @@ void Player::Update(float elapsedTime, Camera* camera)
 
     if (m_animator) m_animator->Update(elapsedTime);
 
-    AutoSheatheSword();
-
     float smoothedYaw = 0.0f;
     bool  shouldAim = false;
     float relativeAngle = 0.0f;
@@ -245,18 +236,6 @@ void Player::UpdateActionState(float elapsedTime)
     {
         // Normal Gameplay
         if (m_stateMachine) m_stateMachine->Update(this, elapsedTime);
-    }
-}
-
-void Player::AutoSheatheSword()
-{
-    // If the player is holding the Sword, but the upper-body attack 
-    // animation has officially finished, automatically revert to the Crossbow.
-    // The !m_debugState check ensures the sword doesn't vanish while you are tuning it in the GUI!
-    if (!m_debugState.forceAnimation && m_activeWeaponType == WeaponType::Sword && !m_animator->IsUpperPlaying())
-    {
-        SetActiveWeapon(WeaponType::Crossbow);
-        m_aimLocked = false;
     }
 }
 
@@ -1095,15 +1074,6 @@ void Player::DrawDebugGUI()
         DebugProperty::DragFloat("Recovery time", m_dashRecoveryTime, 0.01f, 0.0f, 5.0f, "%.2f s");
         DebugProperty::SliderFloat("Penalty speed scale", m_dashPenaltyScale, 0.1f, 1.0f, "%.2f");
         DebugProperty::DragFloat("I-frame duration", m_dashIFrameDuration, 0.01f, 0.0f, 1.0f, "%.2f s");
-    }
-    ImGui::PopID();
-
-    ImGui::PushID("Slash");
-    if (ImGui::CollapsingHeader("Slash", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        DebugProperty::DragFloat("Lunge distance", m_slashLungeDistance, 0.05f, 0.0f, 10.0f, "%.2f");
-        // Capped at the slash duration: the state ends the lunge when the slash ends.
-        DebugProperty::DragFloat("Lunge duration", m_slashLungeDuration, 0.01f, 0.01f, PlayerConst::SlashDuration, "%.2f s");
     }
     ImGui::PopID();
 

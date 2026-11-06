@@ -27,14 +27,6 @@ namespace PlayerConst
     inline constexpr int   DashCharges = 2;      // Full dashes available before the penalty starts
     inline constexpr float DashRecoveryTime = 1.0f;   // Time without dashing that restores all charges (s)
     inline constexpr float DashPenaltyScale = 0.5f;   // USULAN DESAIN: speed multiplier of a penalized dash
-    
-    // --- Slash ---
-    inline constexpr float SlashLungeDistance = 2.1f;   // USULAN DESAIN: lunge length toward a target (units)
-    inline constexpr float SlashLungeDuration = 0.07f;  // USULAN DESAIN: time to cover it (s), kept below SlashDuration
-    inline constexpr float SlashDuration = 0.15f;  // State timer (s)
-
-    // --- Parry ---
-    inline constexpr float ParryDuration = 0.2f;   // Active window (s)
 
     // --- Shoot ---
     inline constexpr float ShootDuration = 0.15f;  // State lock duration (s)
