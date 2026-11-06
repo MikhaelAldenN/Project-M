@@ -18,6 +18,13 @@ void UIPause::Initialize()
     m_fontMenu->Initialize("Data/Font/PixelifySans-Bold.ttf", MENU_FONT_SIZE);
 }
 
+bool UIPause::IsToggleTriggered()
+{
+    auto& input{ Input::Instance() };
+    return input.GetKeyboard().IsTriggered(VK_ESCAPE)
+        || (input.GetGamePad().GetButtonDown() & GamePad::BTN_START) != 0;
+}
+
 bool UIPause::HandleInput()
 {
     auto& input{ Input::Instance() };

@@ -1,6 +1,8 @@
 ﻿#include "SceneBoss.h"
+#include "System/AudioManager.h"
 #include "System/Graphics.h"
 #include "System/Input.h"
+#include "UIPause.h"
 #include "WindowManager.h"
 #include "Framework.h"
 #include "SceneTitle.h"
@@ -115,6 +117,8 @@ SceneBoss::SceneBoss()
 
     m_fadeSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Game/Black.png");
     m_whiteSprite = std::make_unique<Sprite>(device, "Data/Sprite/Scene Game/White.png");
+    m_uiPause = std::make_unique<UIPause>();
+    m_uiPause->Initialize();
     m_uberParams.intensity = FX_BASE_INTENSITY;
     m_uberParams.smoothness = FX_BASE_SMOOTHNESS;
 
@@ -246,6 +250,22 @@ void SceneBoss::InitializeSubWindows()
 
 void SceneBoss::Update(float elapsedTime)
 {
+    if (CheckPauseToggleTriggered())
+    {
+        m_isPaused = !m_isPaused;
+        // Every pause opens on the first option.
+        if (m_isPaused)
+        {
+            m_uiPause->ResetSelection();
+        }
+    }
+
+    if (m_isPaused)
+    {
+        UpdatePauseMenu(elapsedTime);
+        return; // the rest of the scene is frozen while paused
+    }
+
     PerformanceLogger::Instance().StartTimer(PerfBucket::Logic);
     TimeManager::Instance().Update(elapsedTime);
 
@@ -280,7 +300,69 @@ void SceneBoss::Update(float elapsedTime)
     PerformanceLogger::Instance().EndFrameCheck(0.0f, activeWins);
 }
 
-void SceneBoss::UpdatePlayerDeathSequence(float elapsedTime)
+bool SceneBoss::CheckPauseToggleTriggered() const
+{
+    // Timed sequences (death, respawn, defeat, scene change, fade to Title) must keep
+    // running; freezing their timers would soft-lock the scene.
+    if (m_isDying || m_respawnTimer > 0.0f || m_isNaviDefeated
+        || m_isPendingSceneChange || m_isExitingToTitle)
+    {
+        return false;
+    }
+
+    // Windowkill hides the main window, so the menu would not be visible there.
+    if (m_navi && IsWindowkill(m_navi->GetCurrentPhase()))
+    {
+        return false;
+    }
+
+    return UIPause::IsToggleTriggered();
+}
+
+void SceneBoss::UpdatePauseMenu(float elapsedTime)
+{
+    if (m_isExitingToTitle)
+    {
+        if (m_isPendingSceneChange)
+        {
+            return;
+        }
+
+        m_exitToTitleTimer += elapsedTime;
+        m_fadeAlpha = std::clamp(m_exitToTitleTimer / RESPAWN_FADE_DURATION, 0.0f, 1.0f);
+
+        if (m_fadeAlpha >= 1.0f)
+        {
+            RequestReturnToTitle();
+        }
+        return;
+    }
+
+    if (!m_uiPause->HandleInput())
+    {
+        return;
+    }
+
+    switch (m_uiPause->GetSelectedOption())
+    {
+    case UIPause::PauseOption::resume:
+        m_isPaused = false;
+        break;
+    case UIPause::PauseOption::title:
+        m_isExitingToTitle = true;
+        m_exitToTitleTimer = 0.0f;
+        AudioManager::Instance().FadeOutMusic(RESPAWN_FADE_DURATION);
+        AudioManager::Instance().FadeOutAmbientSFX(RESPAWN_FADE_DURATION);
+        break;
+    case UIPause::PauseOption::quit:
+        Framework::Instance()->Quit();
+        break;
+    default:
+        break;
+    }
+}
+
+void SceneBoss::UpdatePlayerDeathSequence(float elapsedTime) 
 {
     if (m_player && m_player->GetHP() <= 0 && !m_isDying && m_respawnTimer <= 0.0f)
     {
@@ -584,6 +666,12 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
     RenderShapesAndHitboxes(dc, targetCam);
 
     RenderFadeOverlays(dc, rs);
+
+    // Sub-windows keep showing the frozen arena; only the main window carries the menu.
+    if (m_isPaused && !isTransparentWindow && targetCam == m_mainCamera.get())
+    {
+        RenderPauseMenu(dc, rs);
+    }
 }
 
 bool SceneBoss::IsTransparentWindowCamera(const Camera* camera) const
@@ -749,6 +837,32 @@ void SceneBoss::RenderFadeOverlays(ID3D11DeviceContext* dc, RenderState* rs)
             1.0f, 1.0f, 1.0f, m_whiteAlpha 
         );
     }
+}
+
+void SceneBoss::RenderPauseMenu(ID3D11DeviceContext* dc, RenderState* rs)
+{
+    if (!m_fadeSprite || !m_uiPause) return;
+
+    D3D11_VIEWPORT viewport{};
+    UINT viewportCount{ 1 };
+    dc->RSGetViewports(&viewportCount, &viewport);
+
+    dc->OMSetBlendState(rs->GetBlendState(BlendState::Transparency), nullptr, 0xFFFFFFFF);
+    dc->OMSetDepthStencilState(rs->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
+
+    m_fadeSprite->Render(
+        dc,
+        0.0f, 0.0f, 0.0f,
+        viewport.Width, viewport.Height,
+        0.0f, 0.0f,
+        1920.0f, 1080.0f,
+        0.0f,
+        0.0f, 0.0f, 0.0f, PAUSE_DIM_ALPHA
+    );
+
+    // The menu fades with the screen while returning to Title.
+    const float uiAlpha{ m_isExitingToTitle ? (1.0f - m_fadeAlpha) : 1.0f };
+    m_uiPause->Render(dc, uiAlpha);
 }
 
 void SceneBoss::StartPlayerDeathSequence()

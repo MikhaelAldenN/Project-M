@@ -35,6 +35,9 @@ public:
     void Initialize();
     void Render(ID3D11DeviceContext* dc, float alpha = 1.0f) const;
 
+    // True on the frame Esc or gamepad Start is pressed (not while held).
+    [[nodiscard]] static bool IsToggleTriggered();
+
     // Reads this frame's menu navigation and confirm input. Call once per frame while paused.
     // Returns true when the player confirmed GetSelectedOption().
     [[nodiscard]] bool HandleInput();

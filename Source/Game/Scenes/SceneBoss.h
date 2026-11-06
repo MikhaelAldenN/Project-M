@@ -31,6 +31,7 @@ class RenderState;
 class EnemyManager;
 class ItemManager;
 class Stage;
+class UIPause;
 
 class SceneBoss : public Scene
 {
@@ -64,6 +65,9 @@ private:
     [[nodiscard]] bool UpdateNavi(float scaledDt);
     void UpdateEntitiesAndEffects(float scaledDt, Camera* activeCam);
     void UpdateSubWindows(float elapsedTime);
+    // --- Pause (Update runs only these while m_isPaused) ---
+    [[nodiscard]] bool CheckPauseToggleTriggered() const;
+    void UpdatePauseMenu(float elapsedTime);
     // --- Render Pipeline ---
     void RenderScene(float elapsedTime, Camera* camera, bool isTransparentWindow);
     // Render steps, called in this order by Render.
@@ -76,6 +80,8 @@ private:
     [[nodiscard]] bool BeginMainCameraPostProcess(const Camera* targetCam, bool isTransparentWindow);
     void RenderShapesAndHitboxes(ID3D11DeviceContext* dc, Camera* targetCam);
     void RenderFadeOverlays(ID3D11DeviceContext* dc, RenderState* rs);
+    // Dims the bound target and draws the pause menu; main window only.
+    void RenderPauseMenu(ID3D11DeviceContext* dc, RenderState* rs);
 
     // --- Initialization ---
     void InitializeSubWindows();
@@ -192,6 +198,15 @@ private:
     static constexpr float WHITE_FADE_DURATION{ 2.0f };
 
 private:
+    // =========================================================
+    // PAUSE
+    // =========================================================
+    std::unique_ptr<UIPause> m_uiPause{};
+    bool  m_isPaused{ false };
+    bool  m_isExitingToTitle{ false };
+    float m_exitToTitleTimer{ 0.0f };
+    static constexpr float PAUSE_DIM_ALPHA{ 0.6f };
+
 #if defined(_DEBUG)
     // Keeps the "WINDOWKILL MASTER CONTROL" tab registered while this scene lives.
     // Declared last: destroyed first, before any member the callback reads.

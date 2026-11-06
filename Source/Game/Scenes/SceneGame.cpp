@@ -84,15 +84,7 @@ namespace
     {
         return false;
     }
-
-    auto& input = Input::Instance();
-
-    // BUG PREVENTION: Use IsTriggered / GetButtonDown (not IsPressed).
-    // This guarantees the pause only fires once per physical key press, even if held.
-    const bool isEscTriggered = input.GetKeyboard().IsTriggered(VK_ESCAPE);
-    const bool isStartTriggered = (input.GetGamePad().GetButtonDown() & GamePad::BTN_START) != 0;
-
-    return isEscTriggered || isStartTriggered;
+    return UIPause::IsToggleTriggered();
 }
 
 SceneGame::SceneGame()
