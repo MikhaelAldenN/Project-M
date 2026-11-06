@@ -68,19 +68,14 @@ public:
     // True if the event belonged to the debug host window (always false outside Debug builds).
     [[nodiscard]] bool HandleDebugHostEvent(const SDL_Event& event);
 
-    // Debug keys that work from either window: F5 pause / resume, F6 advance one
-    // frame, F7 back to normal speed. True if the event was one of them
-    // (always false outside Debug builds).
+    // Dev-tool keys that work from either window. Debug: F5 pause / resume, F6 advance
+    // one frame, F7 back to normal speed. Release: F9 shows or hides the dev tools.
+    // True if the event was one of them.
     [[nodiscard]] bool HandleDebugHotkey(const SDL_Event& event);
 
 private:
-
-#if defined(_DEBUG)
-    // Registers Framework's part of the debug window's menu bar.
+    // Registers Framework's part of the dev-tools menu bar (Scene menu, FPS). Every build.
     void RegisterDebugMenuBar();
-
-    // Registers the "Time" panel that drives the simulation clock.
-    void RegisterDebugTimePanel();
 
     // Kind of the current scene; Scene::Kind::none if there is no scene.
     [[nodiscard]] Scene::Kind GetCurrentSceneKind() const;
@@ -91,6 +86,10 @@ private:
     // Destroys the current scene, then creates the requested one. Does nothing
     // if no request is pending. Must run outside any DebugUI callback.
     void ProcessDebugSceneRequest();
+
+#if defined(_DEBUG)
+    // Registers the "Time" panel that drives the simulation clock.
+    void RegisterDebugTimePanel();
 
     // Writes the current window rects to disk. Must run while the windows still exist.
     void SaveWindowLayout();
@@ -116,6 +115,16 @@ private:
     // Null if its GPU resources could not be created.
     std::unique_ptr<GameCanvas> m_gameCanvas;
 
+    // Set by F9 in Release builds: shows the dev tools over the game window. Debug always shows them.
+    bool m_isDevToolsVisible{ false };
+
+    // Set by the Scene menu, consumed at the start of the next Update.
+    // Scene::Kind::none means no request is pending.
+    Scene::Kind m_debugSceneRequest{ Scene::Kind::none };
+
+    // Declared after m_scene, so it is destroyed before the scene it reads from.
+    DebugPanelHandle m_menuBarPanel;
+
 #if defined(_DEBUG)
 
     // Debug-window focus state of the previous frame, to change SDL hints only on a switch.
@@ -138,14 +147,7 @@ private:
     // Declared last: destroyed after ~Framework's body, so after ImGui is finalized.
     std::unique_ptr<DebugHostWindow> m_debugHost;
 
-    // Set by the Scene menu, consumed at the start of the next Update.
-    // Scene::Kind::none means no request is pending.
-    Scene::Kind m_debugSceneRequest{ Scene::Kind::none };
-
-    // Declared last: unregistered before anything its callback could read is destroyed.
-    DebugPanelHandle m_menuBarPanel;
     DebugPanelHandle m_timePanel;
-
 #endif
 
 };

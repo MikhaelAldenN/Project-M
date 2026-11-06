@@ -137,6 +137,10 @@ Framework::Framework()
     ImGuiRenderer::Initialize(imguiHwnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
     s_HookedWnd = imguiHwnd;
     s_OriginalWndProc = (WNDPROC)SetWindowLongPtr(imguiHwnd, GWLP_WNDPROC, (LONG_PTR)ImGuiHookWndProc);
+#if !defined(_DEBUG)
+    // Release: the dev tools draw over the game window, so their menu is registered here.
+    RegisterDebugMenuBar();
+#endif
     // Load Resources
     ResourceManager::Instance().LoadFont("VGA_FONT", "Data/Font/IBM_VGA_32px_0.png", "Data/Font/IBM_VGA_32px.fnt");
 
@@ -349,6 +353,12 @@ Beyond::PixelRect Framework::GetGameImageRect() const
 
 void Framework::Render(float elapsedTime)
 {
+#if !defined(_DEBUG)
+    // Release: the dev tools draw over the game window. Submitted before RenderAll,
+    // which presents ImGui's draw data.
+    if (m_isDevToolsVisible) DebugUI::Instance().Draw(GetDebugLayoutScope());
+#endif
+
     // Why not elapsedTime: render-side animation (post-process time) must stop
     // and scale together with the scene.
     WindowManager::Instance().RenderAll(m_sceneDeltaTime, m_scene.get(), GetActiveCanvas());
@@ -374,8 +384,9 @@ void Framework::Render(float elapsedTime)
 
 void Framework::Update(float elapsedTime)
 {
+    ProcessDebugSceneRequest(); // every build: the Scene menu is in the dev tools
+
 #if defined(_DEBUG)
-    ProcessDebugSceneRequest();
     ProcessWindowLayoutResetRequest();
 #endif
 
@@ -483,9 +494,9 @@ bool Framework::HandleDebugHostEvent([[maybe_unused]] const SDL_Event& event)
 
 bool Framework::HandleDebugHotkey([[maybe_unused]] const SDL_Event& event)
 {
-#if defined(_DEBUG)
     if (event.type != SDL_EVENT_KEY_DOWN) return false;
 
+#if defined(_DEBUG)
     switch (event.key.key)
     {
     case SDLK_F5:
@@ -502,11 +513,17 @@ bool Framework::HandleDebugHotkey([[maybe_unused]] const SDL_Event& event)
     default:
         break;
     }
+#else
+    // Release: F9 shows or hides the dev tools. Debug always shows them.
+    if (event.key.key == SDLK_F9)
+    {
+        if (!event.key.repeat) m_isDevToolsVisible = !m_isDevToolsVisible;
+        return true;
+    }
 #endif
     return false;
 }
 
-#if defined(_DEBUG)
 void Framework::RegisterDebugMenuBar()
 {
     // Capturing `this` is safe: the handle is a member and is destroyed with this object.
@@ -540,6 +557,7 @@ void Framework::RegisterDebugMenuBar()
                 ImGui::EndMenu();
             }
 
+#if defined(_DEBUG)
             if (ImGui::BeginMenu("Window"))
             {
                 // Why only store the request: moving and resizing OS windows belongs
@@ -550,6 +568,7 @@ void Framework::RegisterDebugMenuBar()
                 }
                 ImGui::EndMenu();
             }
+#endif
 
 
             // Why a fixed sample: the text keeps one position while its digits change.
@@ -567,6 +586,7 @@ void Framework::RegisterDebugMenuBar()
         });
 }
 
+#if defined(_DEBUG)
 void Framework::RegisterDebugTimePanel()
 {
     // Capturing `this` is safe: the handle is a member and is destroyed with this object.
@@ -617,6 +637,7 @@ void Framework::RegisterDebugTimePanel()
             ImGui::TextDisabled("F5 pause   F6 step   F7 reset speed");
         });
 }
+#endif
 
 Scene::Kind Framework::GetCurrentSceneKind() const
 {
@@ -669,4 +690,3 @@ void Framework::ProcessDebugSceneRequest()
     case Scene::Kind::none:    break;
     }
 }
-#endif
