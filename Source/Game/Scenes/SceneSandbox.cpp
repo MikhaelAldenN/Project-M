@@ -10,6 +10,8 @@
 #include "Player.h"
 #include "PlayerStates.h"
 #include "Stage.h"
+#include "EffectManager.h"
+#include "TimeManager.h"
 
 using namespace DirectX;
 
@@ -79,6 +81,8 @@ SceneSandbox::SceneSandbox()
 
 SceneSandbox::~SceneSandbox()
 {
+    EffectManager::Instance().StopAll();
+
     m_player.reset();
     m_stage.reset();
     m_collisionManager.reset();
@@ -88,12 +92,18 @@ void SceneSandbox::Update(const float elapsedTime)
 {
     Camera* activeCam{ CameraController::Instance().GetActiveCamera().get() };
 
+    // Why scaled: the perfect-dodge slowdown runs through TimeManager, the same as SceneBoss.
+    TimeManager::Instance().Update(elapsedTime);
+    const float scaledDt{ elapsedTime * TimeManager::Instance().GetHitStopMultiplier() };
+
     if (m_player) {
-        m_player->Update(elapsedTime, activeCam);
+        m_player->Update(scaledDt, activeCam);
         CameraController::Instance().SetTarget(m_player->GetPosition());
     }
 
-    if (m_collisionManager) m_collisionManager->Update(elapsedTime);
+    if (m_collisionManager) m_collisionManager->Update(scaledDt);
+
+    EffectManager::Instance().Update(scaledDt);
 
     CameraController::Instance().Update(elapsedTime);
 }
@@ -159,6 +169,8 @@ void SceneSandbox::RenderScene(const float elapsedTime, Camera* camera)
     }
 
     modelRenderer->Render(rc);
+
+    EffectManager::Instance().Render(camera);
 }
 
 void SceneSandbox::DrawGUI()
