@@ -113,6 +113,10 @@
       </AssemblerOutput>
       <AssemblerOutputFile>Data\Shader\%(Filename).cod</AssemblerOutputFile>
     </FxCompile>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y /Q
+copy /Y "$(ProjectDir)External\SDL3-3.4.0\lib\x64\SDL3.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="External\imgui-docking\imconfig.h" />
