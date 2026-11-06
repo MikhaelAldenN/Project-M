@@ -881,7 +881,10 @@ void SceneBoss::StartPlayerDeathSequence()
         }
     }
 
-    if (m_cue)
+    // The AI is held off only while the player is dying or respawning. Outside that
+    // window the phase owns m_aiEnabled. The respawn branch above turns it on the frame
+    // the timer ends, and this check then sees a timer of zero and leaves it on.
+    if (m_cue && (m_isDying || m_respawnTimer > 0.0f))
     {
         if (ICuePhase * phase{ m_cue->GetCurrentPhase() }) phase->SetAIEnabled(false);
     }

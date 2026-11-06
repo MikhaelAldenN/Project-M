@@ -107,7 +107,8 @@ void BossPhase01::Enter(CueBoss* boss) {
         boss->SetFaceSpriteVisible(true);
     }
 
-    m_aiEnabled = false;
+    // Skipping the opening event means the fight starts at once, so the AI starts on.
+    m_aiEnabled = true;
 
     if (m_aiTarget) {
         m_aiTarget->SetInputEnabled(true);
