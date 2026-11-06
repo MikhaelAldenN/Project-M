@@ -189,40 +189,31 @@ void SceneBoss::InitializeSubWindows()
 {
     if (!m_windowSystem || !m_player) return;
 
-    // =========================================================
-    // Never spawn the "player" window while the boss
-    // is in the Windowkill phase.
-    // =========================================================
-    const bool isWindowkillPhase{ m_cue && IsWindowkill(m_cue->GetCurrentPhase()) };
-
-    if (!isWindowkillPhase)
-    {
-        // --- Player-tracking window ---
-        m_windowSystem->AddTrackedWindow(
-            { "player", "Player", 300, 300, 1 },
-            [this]() -> XMFLOAT3 {
-                if (!m_player) return XMFLOAT3(0.0f, 0.0f, 0.0f);
-                const auto pPos = m_player->GetPosition();
-                return XMFLOAT3(
-                    pPos.x + m_stretchOffset.x,
-                    0.0f,
-                    pPos.z + m_stretchOffset.y
-                );
-            },
-            [this]() -> XMFLOAT2 {
-                return XMFLOAT2(
-                    k_defaultWinSize + m_currentStretch.x,
-                    k_defaultWinSize + m_currentStretch.y
-                );
-            }
-        );
-
-        TrackedWindow* playerWin = m_windowSystem->GetTrackedWindow("player");
-        if (playerWin && playerWin->window)
-        {
-            SDL_Window* sdlWin = playerWin->window->GetSDLWindow();
-            SDL_SetWindowBordered(sdlWin, true);
+    // --- Player-tracking window (kept in every phase, Windowkill included) ---
+    m_windowSystem->AddTrackedWindow(
+        { "player", "Player", 300, 300, 1 },
+        [this]() -> XMFLOAT3 {
+            if (!m_player) return XMFLOAT3(0.0f, 0.0f, 0.0f);
+            const auto pPos = m_player->GetPosition();
+            return XMFLOAT3(
+                pPos.x + m_stretchOffset.x,
+                0.0f,
+                pPos.z + m_stretchOffset.y
+            );
+        },
+        [this]() -> XMFLOAT2 {
+            return XMFLOAT2(
+                k_defaultWinSize + m_currentStretch.x,
+                k_defaultWinSize + m_currentStretch.y
+            );
         }
+    );
+
+    TrackedWindow* playerWin = m_windowSystem->GetTrackedWindow("player");
+    if (playerWin && playerWin->window)
+    {
+        SDL_Window* sdlWin = playerWin->window->GetSDLWindow();
+        SDL_SetWindowBordered(sdlWin, true);
     }
 
     // --- Register main window with the tracking system ---

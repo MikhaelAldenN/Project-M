@@ -67,10 +67,6 @@ void BossPhase02::Enter(CueBoss* boss) {
     // =========================================================
     m_ai = std::make_unique<BossAI_Phase02>(this, m_aiTarget);
 
-    if (windowSystem->GetTrackedWindow("player")) {
-        windowSystem->RemoveTrackedWindow("player");
-    }
-
     CreatePlayerCage(*windowSystem);
 
     m_overdriveAlpha = 0.0f;
