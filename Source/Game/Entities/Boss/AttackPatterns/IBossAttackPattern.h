@@ -39,8 +39,4 @@ public:
     // Non-null while the attack steers the boss; the phase then stops its idle hover.
     // The pointer stays valid until the attack is destroyed.
     [[nodiscard]] virtual const BossMoveTarget* GetBossMoveTarget() const { return nullptr; }
-
-    // The player parried at `parryPosition`. Returns where the parried projectile was,
-    // or nothing when this attack has nothing to parry right now.
-    virtual std::optional<DirectX::XMFLOAT3> TryParry(const DirectX::XMFLOAT3& /*parryPosition*/, CueBoss* /*boss*/) { return std::nullopt; }
 };

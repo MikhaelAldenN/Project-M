@@ -1327,9 +1327,9 @@ namespace
 
     void DrawUltimateRows(UltimateParams& p, const UltimateParams& loaded)
     {
-        DebugProperty::ColorEdit4("Ball color", &p.ballColor.x, !IsSameColor(p.ballColor, loaded.ballColor));
         DebugProperty::SliderFloat("Laser duration", p.laserDuration, 0.5f, 4.0f, "%.2f s", p.laserDuration != loaded.laserDuration);
         DebugProperty::SliderFloat("Shoot speed", p.shootSpeed, 10.0f, 120.0f, "%.1f", p.shootSpeed != loaded.shootSpeed);
+        DebugProperty::SliderFloat("Fire warning", p.fireWarningTime, 0.0f, 2.0f, "%.2f s", p.fireWarningTime != loaded.fireWarningTime);
     }
 
     void DrawMeteorRows(MeteorParams& p, const MeteorParams& loaded)

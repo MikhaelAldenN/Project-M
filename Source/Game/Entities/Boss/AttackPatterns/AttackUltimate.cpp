@@ -8,7 +8,6 @@
 #include "CameraController.h"
 #include "EffectManager.h"
 #include <DirectXMath.h>
-#include <random>
 #include <cmath>
 
 using namespace DirectX;
@@ -127,7 +126,7 @@ void AttackUltimate::Render(ID3D11DeviceContext* context, Camera* camera, CueBos
         (m_params.laserTargetRadius - m_params.laserStartRadius) * t;
 
     XMFLOAT4 ringColor = { 1.0f, 0.0f, 0.0f, 1.0f };
-    if (IsInParryWindow())
+    if (IsInFireWarning())
         ringColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     shapeRenderer->DrawSphere(pPos, ringRadius, ringColor);
@@ -144,74 +143,8 @@ bool AttackUltimate::IsFinished() const {
     return m_state == State::Done;
 }
 
-bool AttackUltimate::IsInParryWindow() const {
-    return fabsf(m_chargeTimer - m_params.laserDuration) <= m_params.parryWindow;
-}
-
-std::optional<XMFLOAT3> AttackUltimate::TryParry(const XMFLOAT3& parryPosition, CueBoss* boss) {
-    if (m_state != State::Charging || !IsInParryWindow()) return std::nullopt;
-    const Projectile* ball{ m_pool ? m_pool->Get(m_ball) : nullptr };
-    if (!ball) return std::nullopt;
-
-    // Read before shattering: ShatterBijuudama despawns the ball and may reuse its slot.
-    const XMFLOAT3 ballPosition{ ball->position };
-    ShatterBijuudama(parryPosition, boss);
-    return ballPosition;
-}
-
-// ============================================================
-// // ShatterBijuudama — Called by TryParry
-// ============================================================
-
-void AttackUltimate::ShatterBijuudama(XMFLOAT3 parryPos, CueBoss* boss) {
-    if (!m_pool || !boss) return;
-
-    m_pool->Despawn(m_ball);
-    m_ball = ProjectileHandle{};
-
-    CameraController::Instance().AddTrauma(0.8f);
-    AudioManager::Instance().PlaySFX("Data/Sound/SE_Player_Parry_Boss.wav", 0.6f);
-
-    std::mt19937 gen(std::random_device{}());
-    std::uniform_int_distribution<>   distCount(m_params.shatterMinFragments, m_params.shatterMaxFragments);
-    std::uniform_real_distribution<float> distSize(m_params.shatterMinRadius, m_params.shatterMaxRadius);
-    std::uniform_real_distribution<float> distDur(m_params.shatterMinDuration, m_params.shatterMaxDuration);
-    std::uniform_real_distribution<float> distAngle(-XM_PIDIV2, XM_PIDIV2);
-
-    int fragments = distCount(gen);
-
-    XMFLOAT3 bossPos = boss->GetPosition();
-    float baseAngle = atan2f(bossPos.x - parryPos.x, bossPos.z - parryPos.z);
-
-    // Fragments curve back into the boss; CollisionManager damages it when they arrive.
-    for (int spawned = 0; spawned < fragments; ++spawned) {
-        Projectile* fragment{ m_pool->Get(m_pool->Spawn()) };
-        if (!fragment) break; // pool is full
-
-        fragment->position = parryPos;
-        fragment->target = ProjectileTarget::boss;
-        fragment->isParabolic = true;
-
-        float r = distSize(gen);
-        fragment->radius = r;
-        fragment->visualScale = r * 3.0f;
-
-        float spreadAngle = baseAngle + distAngle(gen);
-        XMFLOAT3 ctrlPoint = {
-            parryPos.x + sinf(spreadAngle) * m_params.shatterCurveOffset,
-            parryPos.y,
-            parryPos.z + cosf(spreadAngle) * m_params.shatterCurveOffset
-        };
-        fragment->parabolaStart = parryPos;
-        fragment->parabolaControl = ctrlPoint;
-        fragment->parabolaDuration = distDur(gen);
-        AudioManager::Instance().PlaySFX(
-            "Data/Sound/SE_Player_Parry_Boss.wav", 0.015f * m_params.sfxVolume);
-    }
-
-    CancelCharge();
-    m_state = State::Recovering;
-    m_recoveryTimer = 0.0f;
+bool AttackUltimate::IsInFireWarning() const {
+    return fabsf(m_chargeTimer - m_params.laserDuration) <= m_params.fireWarningTime;
 }
 
 // ============================================================

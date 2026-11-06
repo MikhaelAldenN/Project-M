@@ -8,21 +8,19 @@
 //
 // Boss slides to the top of the arena and charges a massive
 // energy ball while a shrinking ring telegraphs the timing.
-// A parry window opens near the end. On fire, the ball
-// launches toward the player and can be shattered by a parry
-// (ShatterBijuudama), splitting into many fragments aimed back
-// at the boss.
+// The ring turns white shortly before the ball launches
+// toward the player.
 //
 // States:
 //   Moving  = Boss sliding to charge position
-//   Charging = Ball growing, ring shrinking (parry window opens at end)
+//   Charging = Ball growing, ring shrinking (turns white just before launch)
 //   Fired   = Ball launched, pattern complete
 // ============================================================
 
 struct UltimateParams {
     // Charge timing
     float laserDuration = 4.0f;   // Total charge + ring shrink time
-    float parryWindow = 0.5f;   // Seconds before end where parry is valid
+    float fireWarningTime = 0.5f;   // USULAN DESAIN: seconds before launch while the ring is white
     float laserStartRadius = 8.0f;   // Outer ring start size
     float laserTargetRadius = 1.5f;   // Inner ring final size
 
@@ -39,16 +37,6 @@ struct UltimateParams {
     float returnMoveSpeed = 2.0f;
     float postFireDelay = 1.0f;
 
-    // Shatter (parry burst)
-    int   shatterMinFragments = 8;
-    int   shatterMaxFragments = 10;
-    float shatterMinRadius = 0.2f;
-    float shatterMaxRadius = 0.8f;
-    float shatterMinDuration = 0.5f;
-    float shatterMaxDuration = 0.7f;
-    float shatterCurveOffset = 15.0f;
-
-    DirectX::XMFLOAT4 ballColor = { 1.0f, 0.0f, 0.0f, 1.0f };
     float sfxVolume = 1.0f;
 };
 
@@ -67,11 +55,9 @@ public:
     bool IsFinished() const override;
 
     [[nodiscard]] const BossMoveTarget* GetBossMoveTarget() const override { return &m_moveTarget; }
-    std::optional<DirectX::XMFLOAT3> TryParry(const DirectX::XMFLOAT3& parryPosition, CueBoss* boss) override;
 
 private:
-    [[nodiscard]] bool IsInParryWindow() const;
-    void ShatterBijuudama(DirectX::XMFLOAT3 parryPos, CueBoss* boss);
+    [[nodiscard]] bool IsInFireWarning() const;
     void LaunchBall(CueBoss* boss);
     void CancelCharge();
     // Takes a free projectile for the ball and parks it below the arena.

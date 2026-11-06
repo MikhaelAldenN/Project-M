@@ -244,21 +244,15 @@ void BossPhase01::Render(ID3D11DeviceContext* context, Camera* currentCamera, Cu
     auto shapeRenderer = Graphics::Instance().GetShapeRenderer();
 
     const XMFLOAT4 normalColor{ AttackParamManager::Instance().GetRadialNormalParams().color };
-    const XMFLOAT4 returnColor{ AttackParamManager::Instance().GetUltimateParams().ballColor };
 
     for (const Projectile& projectile : m_projectiles.Slots()) {
         if (!projectile.isActive) continue;
 
         XMFLOAT4 color{ normalColor };
-        if (projectile.target == ProjectileTarget::boss) {
-            color = returnColor;
-        }
-        else {
-            const XMFLOAT3& vel{ projectile.velocity };
-            float speedSq = vel.x * vel.x + vel.z * vel.z;
-            if (speedSq > 900.0f)
-                color = { 1.0f, 0.0f, 0.0f, 1.0f };
-        }
+        const XMFLOAT3& vel{ projectile.velocity };
+        float speedSq = vel.x * vel.x + vel.z * vel.z;
+        if (speedSq > 900.0f)
+            color = { 1.0f, 0.0f, 0.0f, 1.0f };
 
         m_projectileMesh.Draw(*renderer, ShaderId::Phong, color, projectile.position,
             projectile.visualScale, XMConvertToRadians(projectile.yawDegrees));
@@ -323,13 +317,6 @@ void BossPhase01::TriggerRain(const RainParams& params, RainMode mode, bool isPo
     if (HasRainActive() || !m_ai) return;
     m_rainAttack = std::make_unique<AttackRain>(params, mode, isPositiveSide, sweepDir, m_aiTarget);
     m_rainAttack->Start(m_bossRef, &m_projectiles);
-}
-
-std::optional<XMFLOAT3> BossPhase01::TryParryAttack(const XMFLOAT3& parryPosition, CueBoss* boss) {
-    for (auto& attack : m_activeAttacks) {
-        if (const std::optional<XMFLOAT3> parried{ attack->TryParry(parryPosition, boss) }) return parried;
-    }
-    return std::nullopt;
 }
 
 DamageResult BossPhase01::TakeDamage(const DamageInfo& damage) {

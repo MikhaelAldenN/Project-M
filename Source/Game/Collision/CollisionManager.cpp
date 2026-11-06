@@ -5,7 +5,6 @@
 #include "EffectManager.h"
 #include "TimeManager.h"
 #include <CameraController.h>
-#include <limits>
 
 using namespace DirectX;
 using CollisionGeometry::AABB;
@@ -45,7 +44,6 @@ void CollisionManager::Update(float elapsedTime)
     
     CheckCueProjectilesVsEnemies(elapsedTime);
     CheckBossProjectilesVsPlayer(elapsedTime);
-    CheckBossProjectilesVsBoss(elapsedTime);
     CheckPlayerProjectilesVsBoss();
 }
 
@@ -150,44 +148,6 @@ void CollisionManager::CheckEnemyProjectilesFull(float elapsedTime)
                 bullet.position = finalPos;
                 bullet.velocity = finalVel;
                 continue;
-            }
-
-            if (bullet.target == ProjectileTarget::enemy)
-            {
-                // Null once the target has died, or has been recycled into a new enemy.
-                Enemy* targetEnemy{ m_enemyManager->FindActiveEnemy(bullet.targetId) };
-
-                // If the target died while the bullet was mid-air, destroy the bullet.
-                if (!targetEnemy) {
-                    projectiles.Despawn(i);
-                    continue;
-                }
-
-                DirectX::XMFLOAT3 bPos = bullet.position;
-                DirectX::XMFLOAT3 targetPos = targetEnemy->GetPosition();
-
-                float dx = bPos.x - targetPos.x;
-                float dz = bPos.z - targetPos.z;
-                float distSq = dx * dx + dz * dz;
-
-                // Hit radius scales with the enemy's visual scale.
-                float enemyScale = targetEnemy->GetScale().x;
-                float hitRadius = 1.0f * enemyScale;
-
-                if (targetEnemy->GetType() == EnemyType::Pentagon) hitRadius = 4.0f * enemyScale;
-                else if (targetEnemy->GetType() == EnemyType::Paddle) hitRadius = 0.8f * enemyScale;
-
-                float combinedHitRadius = hitRadius + bullet.radius;
-
-                if (distSq < (combinedHitRadius * combinedHitRadius))
-                {
-                    // The parried bullet damages the enemy.
-                    targetEnemy->TakeDamage(DamageInfo{ m_damageConfig.parriedBulletToEnemy, bPos });
-
-                    // Destroy the bullet
-                    projectiles.Despawn(i);
-                    continue;
-                }
             }
 
             bool hitPlayer = false;
@@ -568,130 +528,6 @@ bool CollisionManager::CheckSphereCollision(const DirectX::XMFLOAT3& posA, const
     return distSq < thresholdSq;
 }
 
-Enemy* CollisionManager::GetTargetInSlashCone(const DirectX::XMFLOAT3& playerPos, const DirectX::XMFLOAT3& aimDir, float baseReach, float minDotProduct) const
-{
-    if (!m_enemyManager) return nullptr;
-
-    Enemy* bestTarget{ nullptr };
-    float closestDistSq{ (std::numeric_limits<float>::max)() };
-
-    for (const auto& enemy : m_enemyManager->GetEnemies())
-    {
-        if (!enemy || !enemy->IsActive()) continue;
-
-        const DirectX::XMFLOAT3 ePos{ enemy->GetPosition() };
-        const float enemyScale{ enemy->GetScale().x };
-        float enemyRadius{ 1.0f * enemyScale };
-
-        if (enemy->GetType() == EnemyType::Pentagon) enemyRadius = 4.0f * enemyScale;
-        else if (enemy->GetType() == EnemyType::Paddle) enemyRadius = 1.2f * enemyScale;
-
-        // =========================================================
-        // DYNAMIC HITBOX & TERNARY OPTIMIZATION
-        // Kamikazes get a 3.5x reach multiplier to combat tunneling.
-        // Using const initialization ensures zero mutation overhead.
-        // =========================================================
-        const bool isKamikaze{ enemy->GetAttackType() == AttackType::Tracking };
-        const float dynamicReach{ isKamikaze ? (baseReach * 3.5f) : baseReach };
-
-        const float exactSlashDistance{ 0.5f + enemyRadius + dynamicReach };
-        const float exactSlashDistSq{ exactSlashDistance * exactSlashDistance };
-
-        const float dx{ ePos.x - playerPos.x };
-        const float dz{ ePos.z - playerPos.z };
-        const float distSq{ (dx * dx) + (dz * dz) };
-
-        // Fast fail distance check before expensive sqrt
-        if (distSq < exactSlashDistSq && distSq > 0.0001f)
-        {
-            const float dist{ std::sqrt(distSq) };
-            const float dirX{ dx / dist };
-            const float dirZ{ dz / dist };
-
-            const float dot{ (dirX * aimDir.x) + (dirZ * aimDir.z) };
-
-            // STRICT FACING CHECK: If the dot product is less than the threshold 
-            // (e.g. Kamikaze is behind the player), this fails entirely. Player dies.
-            if (dot >= minDotProduct)
-            {
-                // =========================================================
-                // TARGET PRIORITIZATION (SHIELDING BUG PREVENTION)
-                // If it's a Kamikaze, we artificially multiply its distance
-                // by 0.1f during the comparison. This guarantees the Kamikaze
-                // wins the `bestTarget` check over standard enemies.
-                // =========================================================
-                const float prioritizationDistSq{ isKamikaze ? (distSq * 0.1f) : distSq };
-
-                if (prioritizationDistSq < closestDistSq)
-                {
-                    closestDistSq = prioritizationDistSq;
-                    bestTarget = enemy.get();
-                }
-            }
-        }
-    }
-
-    return bestTarget;
-}
-
-bool CollisionManager::GetParryableProjectile(const XMFLOAT3& playerPos, float threshold, Projectile** outEnemyBullet, Enemy** outNearestEnemy, XMFLOAT3* outPosition)
-{
-    // 1. Bullets of tracking enemies
-    if (m_enemyManager)
-    {
-        for (auto& enemy : m_enemyManager->GetEnemies())
-        {
-            if (enemy->GetAttackType() != AttackType::Tracking) continue;
-
-            for (Projectile& bullet : enemy->GetProjectiles().Slots())
-            {
-                if (!bullet.isActive) continue;
-
-                XMFLOAT3 bPos = bullet.position;
-
-                if (CheckSphereCollision(playerPos, bPos, threshold))
-                {
-                    if (outEnemyBullet) *outEnemyBullet = &bullet;
-                    if (outPosition) *outPosition = bPos;
-
-                    Enemy* nearest = nullptr;
-                    float closestDistSq = 999999.0f;
-                    for (auto& potential : m_enemyManager->GetEnemies())
-                    {
-                        if (!potential->IsActive()) continue;
-                        XMFLOAT3 targetPos = potential->GetPosition();
-                        float distSq = pow(playerPos.x - targetPos.x, 2) + pow(playerPos.z - targetPos.z, 2);
-                        if (distSq < closestDistSq) {
-                            closestDistSq = distSq;
-                            nearest = potential.get();
-                        }
-                    }
-                    if (outNearestEnemy) *outNearestEnemy = nearest ? nearest : enemy.get();
-
-                    return true;
-                }
-            }
-        }
-    }
-
-    // =========================================================
-    // 2. BOSS ATTACKS (BIJUUDAMA)
-    // =========================================================
-    if (ICuePhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr })
-    {
-        // The attack decides whether it can be parried now, and shatters itself if so.
-        if (const std::optional<XMFLOAT3> ballPosition{ phase->TryParryAttack(playerPos, m_Boss) })
-        {
-            if (outEnemyBullet) *outEnemyBullet = nullptr;
-            if (outNearestEnemy) *outNearestEnemy = nullptr;
-            if (outPosition) *outPosition = *ballPosition;
-            return true;
-        }
-    }
-
-    return false;
-}
-
 void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
 {
     if (!m_player || !m_Boss || m_player->GetHP() <= 0) return;
@@ -741,51 +577,6 @@ void CollisionManager::CheckBossProjectilesVsPlayer(float elapsedTime)
             {
                 pool->Despawn(i);
             }
-        }
-    }
-}
-
-void CollisionManager::CheckBossProjectilesVsBoss(float elapsedTime)
-{
-    if (!m_Boss) return;
-    ICuePhase* phase{ m_Boss->GetCurrentPhase() };
-    // Why bullet hell only: the parry that sends bullets back (GetParryableProjectile) exists only there.
-    if (!phase || phase->GetKind() != BossPhaseKind::bulletHell) return;
-
-    // Boss hitbox radius for projectiles sent back by a parry.
-    constexpr float k_bossHitboxRadius{ 4.0f };
-
-    // Full 3D check: include Y so parabolic shards passing right above the boss's head
-    // do not explode in mid-air.
-    auto reachesBoss = [&](const DirectX::XMFLOAT3& position) {
-        const DirectX::XMFLOAT3 bossPos{ m_Boss->GetPosition() };
-        const float dx{ position.x - bossPos.x };
-        const float dy{ position.y - bossPos.y };
-        const float dz{ position.z - bossPos.z };
-        return ((dx * dx) + (dy * dy) + (dz * dz)) <= (k_bossHitboxRadius * k_bossHitboxRadius);
-        };
-
-    // Routes damage through the phase so the HP bar, sound, and damage flash stay in sync,
-    // with a small shake for every fragment that lands.
-    auto damageBoss = [&](const DirectX::XMFLOAT3& position, int damage) {
-        phase->TakeDamage(DamageInfo{ damage, position });
-        CameraController::Instance().AddTrauma(0.15f);
-        };
-
-    if (ProjectilePool * pool{ phase->GetProjectilePool() })
-    {
-        const std::vector<Projectile>& slots{ pool->Slots() };
-        for (std::size_t i{ 0 }; i < slots.size(); ++i)
-        {
-            const Projectile& projectile{ slots[i] };
-            if (!projectile.isActive || projectile.target != ProjectileTarget::boss) continue;
-            if (!reachesBoss(projectile.position)) continue;
-
-            const DirectX::XMFLOAT3 position{ projectile.position };
-            const int damage{ projectile.damage };
-            // Despawned before the damage, so one fragment cannot hit twice.
-            pool->Despawn(i);
-            damageBoss(position, damage);
         }
     }
 }

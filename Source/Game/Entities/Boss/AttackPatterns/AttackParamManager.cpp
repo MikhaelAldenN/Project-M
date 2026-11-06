@@ -113,9 +113,6 @@ void AttackParamManager::ParseRainParams(const json& j, RainParams& out) {
 void AttackParamManager::ParseUltimateParams(const json& j, UltimateParams& out) {
     if (j.contains("laserDuration")) out.laserDuration = j["laserDuration"];
     if (j.contains("shootSpeed")) out.shootSpeed = j["shootSpeed"];
-    if (j.contains("ballColor") && j["ballColor"].is_array() && j["ballColor"].size() == 4) {
-        out.ballColor = { j["ballColor"][0], j["ballColor"][1], j["ballColor"][2], j["ballColor"][3] };
-    }
 }
 
 void AttackParamManager::ParseWaveParams(const json& j, WaveParams& out) {

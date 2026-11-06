@@ -25,7 +25,6 @@ class CueBoss;
 struct CollisionDamageConfig
 {
     int enemyBulletToPlayer{ 10 };
-    int parriedBulletToEnemy{ 30 };
     int cueBulletToEnemy{ 1 };
     int cueBulletToPlayer{ 10 };
     int playerBulletToCue{ 10 };
@@ -42,11 +41,6 @@ public:
 
     void Update(float elapsedTime);
     [[nodiscard]] float GetEnemyPushRadius(const Enemy* enemy) const;
-    [[nodiscard]] Enemy* GetTargetInSlashCone(const DirectX::XMFLOAT3& playerPos, const DirectX::XMFLOAT3& aimDir, float reach, float minDotProduct) const;
-    // Finds what a parry at `playerPos` hits. `outPosition` receives where the parried projectile was.
-    // `outEnemyBullet` and `outNearestEnemy` stay null for a boss attack, which handles its own parry.
-    // `outEnemyBullet` points into the enemy's pool: use it at once, before that slot can be despawned or reused.
-    bool GetParryableProjectile(const DirectX::XMFLOAT3& playerPos, float threshold, Projectile** outEnemyBullet, Enemy** outNearestEnemy, DirectX::XMFLOAT3* outPosition);
     void SetCue(CueAlly* cue) { m_cue = cue; }
     CueAlly* GetCue() const { return m_cue; }
     void SetBoss(CueBoss* boss) { m_Boss = boss; }
@@ -65,7 +59,6 @@ private:
     void CheckCueProjectilesVsEnemies(float elapsedTime);
     void CheckCueAllyProjectilesVsPlayer(float elapsedTime);
     void CheckBossProjectilesVsPlayer(float elapsedTime);
-    void CheckBossProjectilesVsBoss(float elapsedTime); // parried projectiles sent back at the boss
     // Player bullets against the boss window (point inside an XZ box).
     void CheckPlayerProjectilesVsBoss();
 
