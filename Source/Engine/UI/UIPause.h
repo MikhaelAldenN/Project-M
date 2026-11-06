@@ -16,9 +16,10 @@ public:
 
     enum class PauseOption : std::uint8_t
     {
-        Resume = 0,
-        Exit,
-        Count // Automatic counter for the number of options
+        resume = 0,
+        title,
+        quit,
+        count
     };
 
     UIPause() = default;
@@ -34,10 +35,14 @@ public:
     void Initialize();
     void Render(ID3D11DeviceContext* dc, float alpha = 1.0f) const;
 
+    // Reads this frame's menu navigation and confirm input. Call once per frame while paused.
+    // Returns true when the player confirmed GetSelectedOption().
+    [[nodiscard]] bool HandleInput();
+
     void MoveSelection(int direction) noexcept;
 
     [[nodiscard]] PauseOption GetSelectedOption() const noexcept { return m_selectedOption; }
-    void ResetSelection() noexcept { m_selectedOption = PauseOption::Resume; }
+    void ResetSelection() noexcept { m_selectedOption = PauseOption::resume; }
 
 private:
     // Core Components initialized to null via brace initialization
@@ -49,18 +54,26 @@ private:
     // every single frame during the Render loop.
     const std::string m_pauseText{ "PAUSE" };
 
-    const std::array<std::string, static_cast<std::size_t>(PauseOption::Count)> m_menuText{
+    // Player-facing labels; they move to the text ID table in phase 2.5.
+    const std::array<std::string, static_cast<std::size_t>(PauseOption::count)> m_menuText{
         "Resume",
-        "Exit"
+        "Title",
+        "Quit"
     };
 
-    const std::array<float, static_cast<std::size_t>(PauseOption::Count)> m_menuXOffsets{
-        0.0f,   // "Resume" stays perfectly at MENU_POS_X
-        22.0f   // "Exit" is shorter, so we align it to center.
+    // Hand-tuned so shorter labels sit centered under "Resume" (FontTTF cannot measure text yet).
+    const std::array<float, static_cast<std::size_t>(PauseOption::count)> m_menuXOffsets{
+        0.0f,
+        11.0f,
+        22.0f
     };
 
-    // Track current state
-    PauseOption m_selectedOption{ PauseOption::Resume };
+    // Returns -1 / +1 once per stick push past the threshold, 0 otherwise.
+    [[nodiscard]] int ReadAnalogStep(float axisY) noexcept;
+
+    PauseOption m_selectedOption{ PauseOption::resume };
+    // True once the stick has returned to the dead zone, so one push moves one step.
+    bool m_isAnalogLatchReset{ true };
 
     // ========================================================================
     // CONSTEXPR CONFIGURATION 

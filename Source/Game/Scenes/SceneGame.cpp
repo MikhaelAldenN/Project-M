@@ -79,7 +79,8 @@ namespace
 {
     // BUG PREVENTION: Do not allow pausing during death, respawn, or boot transitions.
     // This prevents soft-locks where timers freeze during critical system states.
-    if (m_isDying || m_isNaviDefeatSequenceActive || m_bootTimer > 0.0f)
+    // The fade to Title is excluded too: unpausing there would resume play with music fading out.
+    if (m_isDying || m_isNaviDefeatSequenceActive || m_bootTimer > 0.0f || m_isExitingToTitle)
     {
         return false;
     }
@@ -202,100 +203,68 @@ SceneGame::~SceneGame()
     m_itemManager.reset();
 }
 
+void SceneGame::UpdatePauseMenu(const float elapsedTime)
+{
+    if (m_isExitingToTitle)
+    {
+        m_exitToTitleTimer += elapsedTime;
+
+        // Scale perfectly uniform with fade-in configuration
+        const float t{ std::clamp(m_exitToTitleTimer / RESPAWN_FADE_DURATION, 0.0f, 1.0f) };
+
+        // Smooth out the screen using your existing uber shader parameters
+        m_fadeAlpha = t;
+        m_uberParams.smoothness = FX_BASE_SMOOTHNESS + (FX_BLACK_SMOOTHNESS - FX_BASE_SMOOTHNESS) * t;
+        m_uberParams.intensity = FX_BASE_INTENSITY + (FX_BLACK_INTENSITY - FX_BASE_INTENSITY) * t;
+
+        if (t >= 1.0f)
+        {
+            Framework::Instance()->ChangeScene(std::make_unique<SceneTitle>());
+        }
+        return;
+    }
+
+    if (!m_uiPause->HandleInput())
+    {
+        return;
+    }
+
+    switch (m_uiPause->GetSelectedOption())
+    {
+    case UIPause::PauseOption::resume:
+        m_isPaused = false;
+        break;
+    case UIPause::PauseOption::title:
+        // Fade out instead of switching instantly; UpdatePauseMenu finishes the change.
+        m_isExitingToTitle = true;
+        m_exitToTitleTimer = 0.0f;
+        AudioManager::Instance().FadeOutMusic(RESPAWN_FADE_DURATION);
+        AudioManager::Instance().FadeOutAmbientSFX(RESPAWN_FADE_DURATION);
+        break;
+    case UIPause::PauseOption::quit:
+        Framework::Instance()->Quit();
+        break;
+    default:
+        break;
+    }
+}
+
 void SceneGame::Update(const float elapsedTime)
 {
     if (CheckPauseToggleTriggered())
     {
         m_isPaused = !m_isPaused;
+        // Every pause opens on the first option.
+        if (m_isPaused)
+        {
+            m_uiPause->ResetSelection();
+        }
     }
 
     if (m_isPaused)
     {
-        auto& input = Input::Instance();
-        auto& keyboard = input.GetKeyboard();
-        auto& gamepad = input.GetGamePad();
-
-        if (m_isExitingToTitle)
-        {
-            m_exitToTitleTimer += elapsedTime;
-
-            // Scale perfectly uniform with fade-in configuration
-            const float t{ std::clamp(m_exitToTitleTimer / RESPAWN_FADE_DURATION, 0.0f, 1.0f) };
-
-            // Smooth out the screen using your existing uber shader parameters
-            m_fadeAlpha = t;
-            m_uberParams.smoothness = FX_BASE_SMOOTHNESS + (FX_BLACK_SMOOTHNESS - FX_BASE_SMOOTHNESS) * t;
-            m_uberParams.intensity = FX_BASE_INTENSITY + (FX_BLACK_INTENSITY - FX_BASE_INTENSITY) * t;
-
-            if (t >= 1.0f)
-            {
-                Framework::Instance()->ChangeScene(std::make_unique<SceneTitle>());
-            }
-            return; // Halt logic update securely
-        }
-
-        bool moveUp{ false };
-        bool moveDown{ false };
-
-        // KEYBOARD & D-PAD TRIGGERS
-        if (keyboard.IsTriggered('W') || keyboard.IsTriggered(VK_UP) ||
-            (gamepad.GetButtonDown() & GamePad::BTN_UP) != 0)
-        {
-            moveUp = true;
-        }
-        else if (keyboard.IsTriggered('S') || keyboard.IsTriggered(VK_DOWN) ||
-            (gamepad.GetButtonDown() & GamePad::BTN_DOWN) != 0)
-        {
-            moveDown = true;
-        }
-
-        // ANALOG STICK TRIGGERS (With Latch Protection)
-        static bool s_analogLatchReset{ true };
-        const float ly{ gamepad.GetAxisLY() };
-        constexpr float analogThreshold{ 0.6f };
-        constexpr float deadzoneThreshold{ 0.2f };
-
-        if (ly > analogThreshold)
-        {
-            if (s_analogLatchReset) { moveUp = true; s_analogLatchReset = false; }
-        }
-        else if (ly < -analogThreshold)
-        {
-            if (s_analogLatchReset) { moveDown = true; s_analogLatchReset = false; }
-        }
-        else if (std::abs(ly) < deadzoneThreshold)
-        {
-            s_analogLatchReset = true;
-        }
-
-        // APPLY MOVEMENT
-        if (moveUp)   m_uiPause->MoveSelection(-1);
-        if (moveDown) m_uiPause->MoveSelection(1);
-
-        // CONFIRM SELECTION
-        if (keyboard.IsTriggered(VK_RETURN) || keyboard.IsTriggered(VK_SPACE) ||
-            (gamepad.GetButtonDown() & GamePad::BTN_A) != 0)
-        {
-            const auto selected = m_uiPause->GetSelectedOption();
-
-            if (selected == UIPause::PauseOption::Resume)
-            {
-                m_isPaused = false;
-                m_uiPause->ResetSelection();
-            }
-            else if (selected == UIPause::PauseOption::Exit)
-            {
-                // Turn on the fade-out sequence instead of switching instantly
-                m_isExitingToTitle = true;
-                m_exitToTitleTimer = 0.0f;
-
-                // Cleanly trigger audio fade out right away
-                AudioManager::Instance().FadeOutMusic(RESPAWN_FADE_DURATION);
-                AudioManager::Instance().FadeOutAmbientSFX(RESPAWN_FADE_DURATION);
-            }
-        }
-
-        return; // Halt the rest of SceneGame::Update while paused
+        UpdatePauseMenu(elapsedTime);
+        return; // the rest of the scene is frozen while paused
     }
 
     m_globalTime += elapsedTime;

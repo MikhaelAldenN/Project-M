@@ -119,6 +119,8 @@ private:
     float m_exitToTitleTimer{ 0.0f };
 
     [[nodiscard]] bool CheckPauseToggleTriggered() const noexcept;
+    // Runs the pause menu and the fade to Title; the rest of the scene is frozen meanwhile.
+    void UpdatePauseMenu(float elapsedTime);
 
 	// HEALTH MANAGEMENT
     static constexpr float BOSS_MAX_HP{ 150.0f };
