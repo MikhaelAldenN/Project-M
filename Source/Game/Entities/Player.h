@@ -100,15 +100,14 @@ public:
         m_playerbulletOffsetScale = { 1.0f, 1.0f, 1.0f };
     }
 
-    void SetShootDelay(float newDelay) {
-        m_shootDelay = newDelay;
-    }
-    void RestoreShootDelay() {
-        m_shootDelay = PlayerConst::ShootDuration;
-    }
-    float GetShootDelay() const {
-        return m_shootDelay;
-    }
+    // Seconds between shots while the shoot input is held. Overdrive uses its own interval.
+    void SetShootDelay(float newDelay) { m_shootInterval = newDelay; }
+    void RestoreShootDelay() { m_shootInterval = PlayerConst::ShootInterval; }
+
+    // Fires one bullet when the fire interval has passed since the last shot. States call it
+    // every frame the shoot input is held, so mouse and gamepad share one rate.
+    // Returns true when a bullet was fired.
+    bool TryFire(float dt);
 
     // Right-stick tilt (0..1) above which the stick fires as well as aims.
     [[nodiscard]] float GetStickShootThreshold() const { return m_stickShootThreshold; }
@@ -275,7 +274,9 @@ private:
     ProjectilePool m_projectiles{ static_cast<std::size_t>(PlayerConst::MaxBullets) };
     float m_bulletSpeed = PlayerConst::BulletSpeed;
 
-    float m_shootDelay = PlayerConst::ShootDuration;
+    float m_shootInterval{ PlayerConst::ShootInterval };
+    float m_overdriveShootInterval{ PlayerConst::OverdriveShootInterval };
+    float m_shootCooldown{ 0.0f }; // seconds until the next shot may fire; negative once it is due
     float m_stickShootThreshold{ 0.5f }; // USULAN DESAIN: starting value, tuned from the Player panel
 
     // Player bullet damage

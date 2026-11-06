@@ -40,17 +40,13 @@ private:
     int m_dashGoVfxHandle = -1;
 };
 
+// Held shoot input: fires through Player::TryFire, which owns the fire interval.
 class PlayerShoot : public PlayerState
 {
 public:
-    void Enter(Player* player) override;
+    void Enter(Player* player) override {}
     void Update(Player* player, float dt) override;
-    void Exit(Player* player) override;
-private:
-    void PerformShootInternal(Player* player, bool isHeld = false);
-
-    float m_timer{ 0.0f };
-    float m_minTapCooldown{ 0.0f };
+    void Exit(Player* player) override {}
 };
 
 // TODO: implement damage and death behaviour

@@ -12,6 +12,7 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <imgui.h>
 #include "DebugUI.h"
 #include "InputHelper.h"
@@ -152,6 +153,10 @@ void Player::Update(float elapsedTime, Camera* camera)
     {
         m_invincibilityTimer -= elapsedTime;
     }
+
+    // Why it may go below zero: TryFire reads how far past due the next shot is.
+    // Floored so a long pause does not grow it without limit.
+    m_shootCooldown = (std::max)(m_shootCooldown - elapsedTime, -1.0f);
 
     UpdateUncapRegen(elapsedTime);
 
@@ -861,6 +866,32 @@ void Player::FireProjectile()
     bullet->damage = m_bulletDamage;
 }
 
+bool Player::TryFire(float dt)
+{
+    if (!m_isInputEnabled || m_shootCooldown > 0.0f) return false;
+
+    const float interval{ (std::max)(m_isPowerUncapped ? m_overdriveShootInterval : m_shootInterval,
+        PlayerConst::MinShootInterval) };
+
+    // Why the overshoot is kept only for a shot that fell due this frame: a held input then
+    // fires exactly every `interval` at any frame rate, and a new press after a pause starts
+    // a full interval instead of firing a second shot early.
+    const bool isDueThisFrame{ m_shootCooldown > -dt };
+    m_shootCooldown = (isDueThisFrame ? m_shootCooldown : 0.0f) + interval;
+
+    FireProjectile();
+
+    static const std::array<std::string, 3> s_shootSounds{
+        "Data/Sound/SE_Player_Shoot_01.wav",
+        "Data/Sound/SE_Player_Shoot_02.wav",
+        "Data/Sound/SE_Player_Shoot_03.wav"
+    };
+    // Cosmetic only: the sound variant never affects gameplay.
+    const std::size_t soundIndex{ static_cast<std::size_t>(rand() % 3) };
+    AudioManager::Instance().PlaySFX(s_shootSounds[soundIndex], 0.1f);
+    return true;
+}
+
 void Player::RenderProjectiles(ModelRenderer* renderer)
 {
     if (!m_playerbulletModel) return;
@@ -1049,6 +1080,7 @@ void Player::DrawDebugGUI()
         m_isInputEnabled = true;
         m_aimLocked = false;
         m_dashCharges = m_maxDashCharges;
+        m_shootCooldown = 0.0f;
         if (m_stateMachine) m_stateMachine->Initialize(std::make_unique<PlayerIdle>(), this);
     }
 
@@ -1111,6 +1143,7 @@ void Player::DrawDebugGUI()
         DebugProperty::DragFloat("HP regen per second", m_uncapHealthRegenPerSecond, 0.1f, 0.0f, 100.0f, "%.1f");
         DebugProperty::DragFloat("Regen max HP", m_uncapMaxRegenHP, 1.0f, 1.0f, 9999.0f, "%.0f");
         if (DebugProperty::ColorEdit4("Glow color", &m_uncapColor.x) && isUncapped) m_color = m_uncapColor;
+        DebugProperty::DragFloat("Fire interval", m_overdriveShootInterval, 0.005f, PlayerConst::MinShootInterval, 1.0f, "%.3f s");
     }
     ImGui::PopID();
 
@@ -1119,6 +1152,7 @@ void Player::DrawDebugGUI()
     {
         DebugProperty::DragFloat("Speed", m_bulletSpeed, 0.5f, 1.0f, 150.0f, "%.1f");
         DebugProperty::SliderInt("Damage", m_bulletDamage, 1, 500);
+        DebugProperty::DragFloat("Fire interval", m_shootInterval, 0.005f, PlayerConst::MinShootInterval, 1.0f, "%.3f s");
         DebugProperty::SliderFloat("Stick fire threshold", m_stickShootThreshold, 0.3f, 1.0f, "%.2f");
         DebugProperty::ColorEdit4("Tint color", &m_playerbulletColor.x);
 

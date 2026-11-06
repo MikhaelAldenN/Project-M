@@ -52,14 +52,15 @@ namespace {
         return isMouseShoot || isStickShoot;
     }
 
-    // Enters PlayerShoot and fires the first bullet while the shoot input is held.
-    [[nodiscard]] bool TryStartShoot(Player* player)
+    // Enters PlayerShoot while the shoot input is held. The first shot fires on the
+    // press frame when the fire interval allows it.
+    [[nodiscard]] bool TryStartShoot(Player* player, float dt)
     {
         if (!player || !player->IsInputEnabled()) return false;
         if (!IsShootInputPressed(*player)) return false;
 
         player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerShoot>());
-        player->FireProjectile();
+        player->TryFire(dt);
         return true;
     }
 }
@@ -87,7 +88,7 @@ void PlayerIdle::Update(Player* player, float dt)
     }
 
     // Shoot
-    if (TryStartShoot(player)) return;
+    if (TryStartShoot(player, dt)) return;
 
     // Movement Fallback
     if (player->IsMoving())
@@ -119,7 +120,7 @@ void PlayerMoving::Update(Player* player, float dt)
         }
 
         // Shoot
-        if (TryStartShoot(player)) return;
+        if (TryStartShoot(player, dt)) return;
     }
 
     // Idle Fallback
@@ -224,13 +225,6 @@ void PlayerDash::Exit(Player* player)
 // SHOOT
 // ============================================================
 
-void PlayerShoot::Enter(Player* player)
-{
-    // Fix the visual gap: We initialize assuming the player WILL hold the button.
-    // This ensures the gap between Shot 1 and Shot 2 matches Shot 2 and Shot 3.
-    PerformShootInternal(player, true);
-}
-
 void PlayerShoot::Update(Player* player, float dt)
 {
     // Dash Lockout Prevention
@@ -240,13 +234,9 @@ void PlayerShoot::Update(Player* player, float dt)
         return;
     }
 
-    m_timer -= dt;
-    m_minTapCooldown -= dt;
-
-    const bool isHolding{ IsShootInputPressed(*player) };
-
-    // The Tap-Fire Reward Logic (Early Exit)
-    if (!isHolding && m_minTapCooldown <= 0.0f)
+    // Why no minimum time in this state: the fire interval lives in Player, so leaving
+    // and re-entering cannot fire faster than holding.
+    if (!IsShootInputPressed(*player))
     {
         if (player->IsMoving())
             player->GetStateMachine()->ChangeState(player, std::make_unique<PlayerMoving>());
@@ -255,69 +245,19 @@ void PlayerShoot::Update(Player* player, float dt)
         return;
     }
 
-    // The Continuous Hold Logic (For Bullets Only)
-    if (m_timer <= 0.0f)
-    {
-        if (isHolding)
-        {
-            // Lower-Body Animation Sync
-            if (player->IsMoving()) {
-                player->GetAnimator()->SetPlaybackSpeed(player->IsBackpedaling() ? -1.0f : 1.0f);
-                if (!player->GetAnimator()->IsPlaying("RunPistol")) {
-                    player->GetAnimator()->Play("RunPistol", true, PlayerConst::AnimBlendDefault);
-                }
-            }
-            else {
-                player->GetAnimator()->SetPlaybackSpeed(1.0f);
-                if (!player->GetAnimator()->IsPlaying("Idle")) {
-                    player->GetAnimator()->Play("Idle", true, PlayerConst::AnimBlendDefault);
-                }
-            }
-
-            player->FireProjectile();
-            PerformShootInternal(player, true);
+    // Lower-Body Animation Sync
+    if (player->IsMoving()) {
+        player->GetAnimator()->SetPlaybackSpeed(player->IsBackpedaling() ? -1.0f : 1.0f);
+        if (!player->GetAnimator()->IsPlaying("RunPistol")) {
+            player->GetAnimator()->Play("RunPistol", true, PlayerConst::AnimBlendDefault);
         }
     }
-}
-
-void PlayerShoot::PerformShootInternal(Player* player, bool isHeld)
-{
-    const std::string shootSounds[]{
-        "Data/Sound/SE_Player_Shoot_01.wav",
-        "Data/Sound/SE_Player_Shoot_02.wav",
-        "Data/Sound/SE_Player_Shoot_03.wav"
-    };
-
-    const int randomIndex{ rand() % 3 };
-    AudioManager::Instance().PlaySFX(shootSounds[randomIndex], 0.1f);
-
-    const float baseDelay{ player->GetShootDelay() };
-
-    // --- FIRE RATE LOGIC TREE ---
-    if (player->IsPowerUncapped())
-    {
-        // Absolute Priority: Overdrive bypasses all penalties
-        m_minTapCooldown = 0.05f;
-        m_timer = 0.05f;
-    }
-    else
-    {
-        // Always store the strict minimum delay to prevent spam exploits
-        m_minTapCooldown = baseDelay; 
-
-        if (isHeld)
-        {
-            // Compile-time constant ensures zero runtime cost for the multiplier
-            constexpr float HOLD_PENALTY_MULTIPLIER{ 1.5f };
-            m_timer = baseDelay * HOLD_PENALTY_MULTIPLIER;
-        }
-        else
-        {
-            m_timer = baseDelay;
+    else {
+        player->GetAnimator()->SetPlaybackSpeed(1.0f);
+        if (!player->GetAnimator()->IsPlaying("Idle")) {
+            player->GetAnimator()->Play("Idle", true, PlayerConst::AnimBlendDefault);
         }
     }
-}
 
-void PlayerShoot::Exit(Player* player)
-{
+    player->TryFire(dt);
 }
