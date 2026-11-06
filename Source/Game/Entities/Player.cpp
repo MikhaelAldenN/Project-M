@@ -30,12 +30,10 @@ namespace
     constexpr KinematicMover::Settings k_stageMoveSettings{
         PlayerConst::CollisionRadius, PlayerConst::StepOffset, PlayerConst::SkinWidth, true };
 
-    // Placeholder dash-fail cue until the SFX pass (WORKLIST 4.6): a short click and a small
-    // puff at the feet.
-    constexpr const char* k_dashFailSound{ "Data/Sound/SE_Tap.wav" };
-    constexpr float k_dashFailSoundVolume{ 0.3f };
-    constexpr const char* k_dashFailEffect{ "Data/Effect/VFX_Boss_Phalanx_Smoke.efk" };
-    constexpr float k_dashFailEffectScale{ 0.3f };
+    // Dash-fail cue: the dash sound played faster, which also raises its pitch.
+    constexpr const char* k_dashFailSound{ "Data/Sound/SE_Dash_01.wav" };
+    constexpr float k_dashFailSoundVolume{ 0.1f };   // same as the dash sound
+    constexpr float k_dashFailSoundSpeed{ 1.6f };    // USULAN DESAIN: playback speed and pitch ratio
 }
 
 // ============================================================
@@ -399,8 +397,7 @@ bool Player::TryBeginDash()
 
 void Player::PlayDashFailCue()
 {
-    AudioManager::Instance().PlaySFX(k_dashFailSound, k_dashFailSoundVolume);
-    EffectManager::Instance().Play(k_dashFailEffect, m_movement->GetPosition(), k_dashFailEffectScale);
+    AudioManager::Instance().PlaySFX(k_dashFailSound, k_dashFailSoundVolume, k_dashFailSoundSpeed);
 }
 
 void Player::HandleMovementInput(float dt)

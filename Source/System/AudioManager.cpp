@@ -180,7 +180,7 @@ void AudioManager::FadeOutMusic(float duration) {
     }
 }
 
-void AudioManager::PlaySFX(const std::string& filePath, float volume) {
+void AudioManager::PlaySFX(const std::string& filePath, float volume, float speedRatio) {
     SoundData* data = LoadWav(filePath);
     if (!data) return;
 
@@ -190,6 +190,11 @@ void AudioManager::PlaySFX(const std::string& filePath, float volume) {
         SDL_PutAudioStreamData(stream, data->buffer, data->length);
         
         SDL_SetAudioStreamGain(stream, volume * m_globalSFXVolume);
+
+        // Why only when changed: the default ratio is 1, so most sounds skip the call.
+        if (speedRatio != 1.0f) {
+            SDL_SetAudioStreamFrequencyRatio(stream, speedRatio);
+        }
         
         m_activeSFXStreams.push_back(stream);
     }

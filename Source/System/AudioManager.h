@@ -15,7 +15,8 @@ public:
     void Update(float elapsedTime);
 
     void PlayMusic(const std::string& filePath, float volume = 1.0f, bool loop = true, float loopStartSeconds = 0.0f);
-    void PlaySFX(const std::string& filePath, float volume = 1.0f);
+    // `speedRatio` above 1 plays the sound faster and higher in pitch (both change together).
+    void PlaySFX(const std::string& filePath, float volume = 1.0f, float speedRatio = 1.0f);
     void PlaySFXDelayed(const std::string& filePath, float volume, float delaySeconds);
     void StopMusic();
     void FadeOutMusic(float duration);
