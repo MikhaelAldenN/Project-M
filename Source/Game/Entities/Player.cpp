@@ -165,6 +165,7 @@ void Player::Update(float elapsedTime, Camera* camera)
     }
     m_hitBlinkTimer = (std::max)(m_hitBlinkTimer - elapsedTime, 0.0f);
     m_dodgeWindowTimer = (std::max)(m_dodgeWindowTimer - elapsedTime, 0.0f);
+    m_ultTimer = (std::max)(m_ultTimer - elapsedTime, 0.0f);
 
     // Why it may go below zero: TryFire reads how far past due the next shot is.
     // Floored so a long pause does not grow it without limit.
@@ -257,7 +258,7 @@ void Player::UpdateDashStandbyVfx()
 {
     // Shows the dash charges on the player: bright with every charge, dim with only some,
     // nothing when empty. Overdrive shows its own effect instead.
-    const bool isShown{ HasFullDash() && !m_isPowerUncapped };
+    const bool isShown{ HasFullDash() && !IsOverdriveActive() };
     if (!isShown)
     {
         if (m_dashStandbyVfxHandle != -1) {
@@ -284,9 +285,15 @@ void Player::UpdateDashStandbyVfx()
 
 void Player::UpdateOverdriveVfx()
 {
-    if (!IsPowerUncapped())
+    // Full glow while overdrive runs (scripted or ult). Before the ult fires, the same glow
+    // grows dimly with the meter, so the player sees it filling.
+    const float meterFraction{ (m_ultDodgesToFill > 0)
+        ? (std::min)(static_cast<float>(m_ultMeter) / static_cast<float>(m_ultDodgesToFill), 1.0f)
+        : 0.0f };
+    const float brightness{ IsOverdriveActive() ? 1.0f : meterFraction * m_ultMeterGlow };
+
+    if (brightness <= 0.0f)
     {
-        // Stop the overdrive effect once the power cap is back; the dash cue comes back by itself.
         if (m_overdriveVfxHandle != -1) {
             EffectManager::Instance().Stop(m_overdriveVfxHandle);
             m_overdriveVfxHandle = -1;
@@ -303,6 +310,7 @@ void Player::UpdateOverdriveVfx()
         m_overdriveVfxHandle = EffectManager::Instance().Play("Data/Effect/VFX_Player_Overdrive.efk", vfxPos, 1.0f);
     }
     EffectManager::Instance().SetPosition(m_overdriveVfxHandle, vfxPos);
+    EffectManager::Instance().SetColor(m_overdriveVfxHandle, { brightness, brightness, brightness, brightness });
 }
 
 void Player::UpdateDashRecovery(float dt)
@@ -353,6 +361,17 @@ void Player::TriggerPerfectDodge()
     ++m_perfectDodgeCount;
 
     m_dashCharges = (std::min)(m_dashCharges + 1, m_maxDashCharges);
+
+    // The meter fills only while the ult is off; a full meter fires the ult at once.
+    if (m_ultTimer <= 0.0f)
+    {
+        ++m_ultMeter;
+        if (m_ultMeter >= m_ultDodgesToFill)
+        {
+            m_ultMeter = 0;
+            m_ultTimer = m_ultDuration;
+        }
+    }
 
     // Why real seconds: TimeManager counts the slowdown with unscaled time, so it lasts
     // the same at any frame rate. Only SceneBoss reads TimeManager today.
@@ -852,7 +871,7 @@ bool Player::TryFire(float dt)
 {
     if (!m_isInputEnabled || m_shootCooldown > 0.0f) return false;
 
-    const float interval{ (std::max)(m_isPowerUncapped ? m_overdriveShootInterval : m_shootInterval,
+    const float interval{ (std::max)(IsOverdriveActive() ? m_overdriveShootInterval : m_shootInterval,
         PlayerConst::MinShootInterval) };
 
     // Why the overshoot is kept only for a shot that fell due this frame: a held input then
@@ -978,6 +997,15 @@ void Player::EnterDeathState()
     m_stateMachine->ChangeState(this, std::make_unique<PlayerDead>());
 }
 
+void Player::RefillHP()
+{
+    m_hp = m_maxHp;
+
+    // A new act or a respawn also starts with an empty ult.
+    m_ultMeter = 0;
+    m_ultTimer = 0.0f;
+}
+
 bool Player::IsBlinkHidden() const
 {
     if (m_hitBlinkTimer <= 0.0f) return false;
@@ -1071,6 +1099,8 @@ void Player::DrawDebugGUI()
         m_hitBlinkTimer = 0.0f;
         m_dodgeWindowTimer = 0.0f;
         m_perfectDodgeCount = 0;
+        m_ultMeter = 0;
+        m_ultTimer = 0.0f;
         m_scale = { 1.0f, 1.0f, 1.0f }; // the death sequence hides the player by zeroing scale
         m_isInputEnabled = true;
         m_aimLocked = false;
@@ -1143,6 +1173,14 @@ void Player::DrawDebugGUI()
         }
         if (DebugProperty::ColorEdit4("Glow color", &m_uncapColor.x) && isUncapped) m_color = m_uncapColor;
         DebugProperty::DragFloat("Fire interval", m_overdriveShootInterval, 0.005f, PlayerConst::MinShootInterval, 1.0f, "%.3f s");
+
+        ImGui::Separator();
+        DebugProperty::Text("Ult meter", "%d / %d", m_ultMeter, m_ultDodgesToFill);
+        DebugProperty::Text("Ult left", "%.2f s", m_ultTimer);
+        DebugProperty::SliderInt("Dodges to fill", m_ultDodgesToFill, 1, 10);
+        DebugProperty::DragFloat("Ult duration", m_ultDuration, 0.1f, 0.5f, 20.0f, "%.1f s");
+        DebugProperty::SliderFloat("Meter glow", m_ultMeterGlow, 0.0f, 1.0f, "%.2f");
+        if (ImGui::Button("Fire ult")) m_ultTimer = m_ultDuration;
     }
     ImGui::PopID();
 

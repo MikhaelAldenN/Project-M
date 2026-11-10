@@ -159,9 +159,9 @@ public:
     // enters the death state, so every damage source shares one death path.
     DamageResult TakeDamage(const DamageInfo& damage);
 
-    // Refills HP to the maximum. Called at the start of an act and on respawn; there is no
-    // other healing.
-    void RefillHP() { m_hp = m_maxHp; }
+    // Refills HP to the maximum and empties the ult. Called at the start of an act and on
+    // respawn; there is no other healing.
+    void RefillHP();
     [[nodiscard]] int GetHP() const { return m_hp; }
     [[nodiscard]] int GetMaxHP() const { return m_maxHp; }
 
@@ -187,6 +187,9 @@ public:
     void ReleasePowerCap();
     void RestorePowerCap();
     bool IsPowerUncapped() const { return m_isPowerUncapped; }
+    // True while either overdrive source runs: the scripted one (Windowkill cage) or the ult.
+    // The ult only speeds up firing; walk and dash speed stay with the scripted overdrive.
+    [[nodiscard]] bool IsOverdriveActive() const { return m_isPowerUncapped || m_ultTimer > 0.0f; }
 
 	// --- Glitch Effect ---
     [[nodiscard]] float GetDamageGlitchIntensity() const noexcept;
@@ -321,6 +324,13 @@ private:
     float m_perfectDodgeEffectScale{ PlayerConst::PerfectDodgeEffectScale };
     float m_dashFailSoundSpeed{ PlayerConst::DashFailSoundSpeed };
     int   m_perfectDodgeCount{ 0 }; // shown in the Player panel
+
+    // --- Ult ---
+    int   m_ultMeter{ 0 }; // perfect dodges since the last ult
+    int   m_ultDodgesToFill{ PlayerConst::UltDodgesToFill };
+    float m_ultDuration{ PlayerConst::UltDuration };
+    float m_ultTimer{ 0.0f }; // seconds of ult left; above zero while it runs
+    float m_ultMeterGlow{ PlayerConst::UltMeterGlow };
 
     // Dash Ready VFX handle and Y offset
     int m_dashReadyVfxHandle = -1;
