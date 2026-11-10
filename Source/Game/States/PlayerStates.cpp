@@ -13,8 +13,6 @@
 
 namespace {
     // Player bindings. Keyboard and mouse buttons are virtual-key codes read through Keyboard.
-    // Charged shot and ult are reserved here so no other action takes them; nothing reads them yet.
-    // Player bindings. Keyboard and mouse buttons are virtual-key codes read through Keyboard.
     // Gamepad: move on the left stick, aim and shoot on the right stick (see IsShootInputPressed).
     // Space and A also confirm in the pause menu. That never dashes: the scene does not update
     // the player while paused, and a key still held on the next frame is not triggered again.

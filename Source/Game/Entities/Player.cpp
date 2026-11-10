@@ -34,11 +34,9 @@ namespace
     // Dash-fail cue: the dash sound played faster, which also raises its pitch.
     constexpr const char* k_dashFailSound{ "Data/Sound/SE_Dash_01.wav" };
     constexpr float k_dashFailSoundVolume{ 0.1f };   // same as the dash sound
-    constexpr float k_dashFailSoundSpeed{ 1.6f };    // USULAN DESAIN: playback speed and pitch ratio
 
     // Perfect-dodge cue, reusing the dash-ready effect and the second ready sound.
     constexpr const char* k_perfectDodgeEffect{ "Data/Effect/VFX_Player_Dash_Ready.efk" };
-    constexpr float k_perfectDodgeEffectScale{ 1.0f };   // USULAN DESAIN: twice the ready cue
     constexpr const char* k_perfectDodgeSound{ "Data/Sound/SE_Player_Dash_Ready_02.wav" };
     constexpr float k_perfectDodgeSoundVolume{ 0.3f };
 }
@@ -362,13 +360,14 @@ void Player::TriggerPerfectDodge()
 
     DirectX::XMFLOAT3 pos{ m_movement->GetPosition() };
     pos.y += 1.0f; // middle of the body, like the dash effect
-    EffectManager::Instance().Play(k_perfectDodgeEffect, pos, k_perfectDodgeEffectScale);
+    EffectManager::Instance().Play(k_perfectDodgeEffect, pos, m_perfectDodgeEffectScale);
     AudioManager::Instance().PlaySFX(k_perfectDodgeSound, k_perfectDodgeSoundVolume);
 }
 
 void Player::PlayDashFailCue()
 {
-    AudioManager::Instance().PlaySFX(k_dashFailSound, k_dashFailSoundVolume, k_dashFailSoundSpeed);
+    AudioManager::Instance().PlaySFX(k_dashFailSound, k_dashFailSoundVolume, m_dashFailSoundSpeed);
+
 }
 
 void Player::HandleMovementInput(float dt)
@@ -1054,6 +1053,10 @@ void Player::DrawDebugGUI()
     const DirectX::XMFLOAT3 playerPos{ GetPosition() };
     DebugProperty::Text("Position", "%.2f, %.2f, %.2f", playerPos.x, playerPos.y, playerPos.z);
     DebugProperty::Text("Input", "%s", m_isInputEnabled ? "on" : "off");
+    DebugProperty::Text("Invincible", "%.2f s", (std::max)(m_invincibilityTimer, 0.0f));
+    DebugProperty::Text("Blink", "%.2f s", m_hitBlinkTimer);
+    DebugProperty::Text("Dodge window", "%.2f s", m_dodgeWindowTimer);
+    DebugProperty::Text("Shoot cooldown", "%.3f s", (std::max)(m_shootCooldown, 0.0f));
 
     // ---- Head: actions ----
     DebugProperty::SliderInt("Set HP", m_hp, 0, m_maxHp);
@@ -1066,6 +1069,8 @@ void Player::DrawDebugGUI()
         m_hp = m_maxHp;
         m_invincibilityTimer = 0.0f;
         m_hitBlinkTimer = 0.0f;
+        m_dodgeWindowTimer = 0.0f;
+        m_perfectDodgeCount = 0;
         m_scale = { 1.0f, 1.0f, 1.0f }; // the death sequence hides the player by zeroing scale
         m_isInputEnabled = true;
         m_aimLocked = false;
@@ -1096,10 +1101,12 @@ void Player::DrawDebugGUI()
         DebugProperty::DragFloat("Recovery time", m_dashRecoveryTime, 0.01f, 0.0f, 5.0f, "%.2f s");
         DebugProperty::DragFloat("I-frame duration", m_dashIFrameDuration, 0.01f, 0.0f, 1.0f, "%.2f s");
         DebugProperty::SliderFloat("Charge VFX dim", m_dashVfxDimBrightness, 0.0f, 1.0f, "%.2f");
+        DebugProperty::SliderFloat("Fail sound speed", m_dashFailSoundSpeed, 0.5f, 3.0f, "%.2fx");
         DebugProperty::Text("Perfect dodges", "%d", m_perfectDodgeCount);
-
         DebugProperty::DragFloat("Dodge slow duration", m_perfectDodgeSlowDuration, 0.01f, 0.0f, 1.0f, "%.2f s");
         DebugProperty::SliderFloat("Dodge time scale", m_perfectDodgeTimeScale, 0.0f, 1.0f, "%.2f");
+        DebugProperty::DragFloat("Dodge flash scale", m_perfectDodgeEffectScale, 0.05f, 0.1f, 5.0f, "%.2f");
+
     }
     ImGui::PopID();
 

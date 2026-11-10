@@ -318,6 +318,8 @@ private:
     float m_dodgeWindowTimer{ 0.0f }; // open while a charged dash's invincibility runs; closed by the reward
     float m_perfectDodgeSlowDuration{ PlayerConst::PerfectDodgeSlowDuration };
     float m_perfectDodgeTimeScale{ PlayerConst::PerfectDodgeTimeScale };
+    float m_perfectDodgeEffectScale{ PlayerConst::PerfectDodgeEffectScale };
+    float m_dashFailSoundSpeed{ PlayerConst::DashFailSoundSpeed };
     int   m_perfectDodgeCount{ 0 }; // shown in the Player panel
 
     // Dash Ready VFX handle and Y offset
