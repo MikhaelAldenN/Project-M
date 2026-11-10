@@ -162,6 +162,11 @@ public:
     // Refills HP to the maximum and empties the ult. Called at the start of an act and on
     // respawn; there is no other healing.
     void RefillHP();
+
+    // Called by CollisionManager each time one of the player's bullets lands on a target
+    // (enemy, Cue, boss, Windowkill cage). Fills the ult gauge.
+    void OnBulletHit();
+
     [[nodiscard]] int GetHP() const { return m_hp; }
     [[nodiscard]] int GetMaxHP() const { return m_maxHp; }
 
@@ -207,6 +212,8 @@ private:
     void PlayDashFailCue();
     // Charge back, short slowdown, flash and sound. Called by TakeDamage, once per dash.
     void TriggerPerfectDodge();
+    // Adds to the ult gauge while no overdrive runs, and fires the ult when it is full.
+    void AddUltGauge(int hits);
     [[nodiscard]] bool HasFullDash() const { return m_dashCharges > 0; }
 
     void HandleMovementInput(float dt);
@@ -326,8 +333,9 @@ private:
     int   m_perfectDodgeCount{ 0 }; // shown in the Player panel
 
     // --- Ult ---
-    int   m_ultMeter{ 0 }; // perfect dodges since the last ult
-    int   m_ultDodgesToFill{ PlayerConst::UltDodgesToFill };
+    int   m_ultHits{ 0 }; // gauge: landed hits since the last ult
+    int   m_ultHitsToFill{ PlayerConst::UltHitsToFill };
+    int   m_ultDodgeBonusHits{ PlayerConst::UltDodgeBonusHits };
     float m_ultDuration{ PlayerConst::UltDuration };
     float m_ultTimer{ 0.0f }; // seconds of ult left; above zero while it runs
     float m_ultMeterGlow{ PlayerConst::UltMeterGlow };

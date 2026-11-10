@@ -286,11 +286,11 @@ void Player::UpdateDashStandbyVfx()
 void Player::UpdateOverdriveVfx()
 {
     // Full glow while overdrive runs (scripted or ult). Before the ult fires, the same glow
-    // grows dimly with the meter, so the player sees it filling.
-    const float meterFraction{ (m_ultDodgesToFill > 0)
-        ? (std::min)(static_cast<float>(m_ultMeter) / static_cast<float>(m_ultDodgesToFill), 1.0f)
+    // grows dimly with the gauge, so the player sees it filling.
+    const float gaugeFraction{ (m_ultHitsToFill > 0)
+        ? (std::min)(static_cast<float>(m_ultHits) / static_cast<float>(m_ultHitsToFill), 1.0f)
         : 0.0f };
-    const float brightness{ IsOverdriveActive() ? 1.0f : meterFraction * m_ultMeterGlow };
+    const float brightness{ IsOverdriveActive() ? 1.0f : gaugeFraction * m_ultMeterGlow };
 
     if (brightness <= 0.0f)
     {
@@ -361,17 +361,7 @@ void Player::TriggerPerfectDodge()
     ++m_perfectDodgeCount;
 
     m_dashCharges = (std::min)(m_dashCharges + 1, m_maxDashCharges);
-
-    // The meter fills only while the ult is off; a full meter fires the ult at once.
-    if (m_ultTimer <= 0.0f)
-    {
-        ++m_ultMeter;
-        if (m_ultMeter >= m_ultDodgesToFill)
-        {
-            m_ultMeter = 0;
-            m_ultTimer = m_ultDuration;
-        }
-    }
+    AddUltGauge(m_ultDodgeBonusHits);
 
     // Why real seconds: TimeManager counts the slowdown with unscaled time, so it lasts
     // the same at any frame rate. Only SceneBoss reads TimeManager today.
@@ -381,6 +371,24 @@ void Player::TriggerPerfectDodge()
     pos.y += 1.0f; // middle of the body, like the dash effect
     EffectManager::Instance().Play(k_perfectDodgeEffect, pos, m_perfectDodgeEffectScale);
     AudioManager::Instance().PlaySFX(k_perfectDodgeSound, k_perfectDodgeSoundVolume);
+}
+
+void Player::OnBulletHit()
+{
+    AddUltGauge(1);
+}
+
+void Player::AddUltGauge(int hits)
+{
+    // Why not during overdrive: faster fire would refill the gauge it is spending, and the
+    // scripted Windowkill overdrive would hand out an ult right after the cage.
+    if (hits <= 0 || IsOverdriveActive()) return;
+
+    m_ultHits += hits;
+    if (m_ultHits < m_ultHitsToFill) return;
+
+    m_ultHits = 0;
+    m_ultTimer = m_ultDuration;
 }
 
 void Player::PlayDashFailCue()
@@ -1002,9 +1010,10 @@ void Player::RefillHP()
     m_hp = m_maxHp;
 
     // A new act or a respawn also starts with an empty ult.
-    m_ultMeter = 0;
+    m_ultHits = 0;
     m_ultTimer = 0.0f;
 }
+
 
 bool Player::IsBlinkHidden() const
 {
@@ -1099,7 +1108,7 @@ void Player::DrawDebugGUI()
         m_hitBlinkTimer = 0.0f;
         m_dodgeWindowTimer = 0.0f;
         m_perfectDodgeCount = 0;
-        m_ultMeter = 0;
+        m_ultHits = 0;
         m_ultTimer = 0.0f;
         m_scale = { 1.0f, 1.0f, 1.0f }; // the death sequence hides the player by zeroing scale
         m_isInputEnabled = true;
@@ -1175,11 +1184,12 @@ void Player::DrawDebugGUI()
         DebugProperty::DragFloat("Fire interval", m_overdriveShootInterval, 0.005f, PlayerConst::MinShootInterval, 1.0f, "%.3f s");
 
         ImGui::Separator();
-        DebugProperty::Text("Ult meter", "%d / %d", m_ultMeter, m_ultDodgesToFill);
+        DebugProperty::Text("Ult gauge", "%d / %d hits", m_ultHits, m_ultHitsToFill);
         DebugProperty::Text("Ult left", "%.2f s", m_ultTimer);
-        DebugProperty::SliderInt("Dodges to fill", m_ultDodgesToFill, 1, 10);
+        DebugProperty::SliderInt("Hits to fill", m_ultHitsToFill, 1, 500);
+        DebugProperty::SliderInt("Dodge bonus (hits)", m_ultDodgeBonusHits, 0, 100);
         DebugProperty::DragFloat("Ult duration", m_ultDuration, 0.1f, 0.5f, 20.0f, "%.1f s");
-        DebugProperty::SliderFloat("Meter glow", m_ultMeterGlow, 0.0f, 1.0f, "%.2f");
+        DebugProperty::SliderFloat("Gauge glow", m_ultMeterGlow, 0.0f, 1.0f, "%.2f");
         if (ImGui::Button("Fire ult")) m_ultTimer = m_ultDuration;
     }
     ImGui::PopID();

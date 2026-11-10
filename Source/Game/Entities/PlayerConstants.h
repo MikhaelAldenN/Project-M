@@ -34,10 +34,11 @@ namespace PlayerConst
     inline constexpr float PerfectDodgeTimeScale = 0.3f;     // USULAN DESAIN: game speed during the slowdown
     inline constexpr float PerfectDodgeEffectScale = 1.0f;   // USULAN DESAIN: flash size, twice the dash-ready cue
 
-    // --- Ult (automatic overdrive, filled by perfect dodges) ---
-    inline constexpr int   UltDodgesToFill = 3;    // USULAN DESAIN: perfect dodges that fill the meter
+    // --- Ult (automatic overdrive, filled by landing bullets) ---
+    inline constexpr int   UltHitsToFill = 150;    // USULAN DESAIN: bullets that must land (about 22 s of steady hits)
+    inline constexpr int   UltDodgeBonusHits = 0;  // USULAN DESAIN: hits a perfect dodge adds to the gauge (0 = none)
     inline constexpr float UltDuration = 5.0f;     // USULAN DESAIN: seconds the ult stays on
-    inline constexpr float UltMeterGlow = 0.4f;    // USULAN DESAIN: glow brightness of an almost full meter
+    inline constexpr float UltMeterGlow = 0.4f;    // USULAN DESAIN: glow brightness of an almost full gauge
 
     // --- Health ---
     inline constexpr int   MaxHits = 6;               // USULAN DESAIN: hits that kill the player; every bullet is one hit

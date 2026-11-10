@@ -71,6 +71,7 @@ void CollisionManager::CheckPlayerProjectilesVsBoss()
             const int damage{ slots[i].damage };
             projectiles.Despawn(i);
             phase->TakeDamage(DamageInfo{ damage, bPos });
+            m_player->OnBulletHit();
         }
     }
 }
@@ -337,6 +338,7 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
         if (ICuePhase * phase{ m_Boss ? m_Boss->GetCurrentPhase() : nullptr }) {
             if (phase->TryAbsorbPlayerBullet(currentPos, bullet.damage)) {
                 projectiles.Despawn(i);
+                m_player->OnBulletHit();
                 continue;
             }
         }
@@ -384,6 +386,7 @@ void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
             {
                 enemy->TakeDamage(DamageInfo{ bullet.damage, currentPos });
                 projectiles.Despawn(i);
+                m_player->OnBulletHit();
                 break; // Stop checking this bullet against other enemies
             }
         }
@@ -478,6 +481,7 @@ void CollisionManager::CheckPlayerProjectilesVsCue(const float elapsedTime)
             m_cue->TakeDamage(DamageInfo{ m_damageConfig.playerBulletToCue, currentPos });
             EffectManager::Instance().Play("Data/Effect/Hit.efk", cuePos, 1.0f);
             projectiles.Despawn(i);
+            m_player->OnBulletHit();
         }
     }
 }
