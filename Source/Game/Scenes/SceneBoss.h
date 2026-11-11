@@ -60,6 +60,8 @@ private:
     // Returns true when it requested the return to title; Update must stop.
     [[nodiscard]] bool UpdateWindowkillMainWindow();
     void UpdateArenaCamera(float elapsedTime);
+    // Eases m_cameraFocus toward the player inside the Act 2 arena; origin in Windowkill.
+    void UpdateCameraFocus(float elapsedTime);
     void UpdatePlayerStretch(float scaledDt);
     // Returns true when it requested the return to title; Update must stop.
     [[nodiscard]] bool UpdateCue(float scaledDt);
@@ -119,6 +121,8 @@ private:
 
     DirectX::XMFLOAT3 m_cameraPosition{ 0.0f, 18.0f, 0.0f }; // default top-down position
     DirectX::XMFLOAT3 m_cameraTarget{ 0.0f, 0.0f, 0.0f };   // point the camera looks at
+    DirectX::XMFLOAT2 m_cameraFocus{ 0.0f, 0.0f };          // world XZ the view centres on
+    float m_cameraFollowRate{ 6.0f };                       // USULAN DESAIN: catch-up rate per second
 
     std::unique_ptr<EnemyManager>         m_enemyManager;
     std::unique_ptr<ItemManager>          m_itemManager;

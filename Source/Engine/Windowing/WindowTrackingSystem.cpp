@@ -362,14 +362,14 @@ void WindowTrackingSystem::UpdateOffCenterProjection(Camera* targetCam, int winX
 
 void WindowTrackingSystem::WorldToScreenPos(const DirectX::XMFLOAT3& worldPos, float& outScreenX, float& outScreenY)
 {
-    // World origin sits at the centre of the arena rect.
+    // The view origin sits at the centre of the arena rect.
     // World +Z maps to screen -Y.
     const float centerX{ static_cast<float>(m_arenaRect.x) + static_cast<float>(m_arenaRect.width) * 0.5f };
     const float centerY{ static_cast<float>(m_arenaRect.y) + static_cast<float>(m_arenaRect.height) * 0.5f };
 
     const float desktopPixelsPerUnit{ Beyond::Config::PIXEL_TO_UNIT_RATIO * m_desktopScale };
-    outScreenX = centerX + (worldPos.x * desktopPixelsPerUnit);
-    outScreenY = centerY - (worldPos.z * desktopPixelsPerUnit);
+    outScreenX = centerX + ((worldPos.x - m_viewOrigin.x) * desktopPixelsPerUnit);
+    outScreenY = centerY - ((worldPos.z - m_viewOrigin.y) * desktopPixelsPerUnit);
 }
 
 float WindowTrackingSystem::GetUnifiedCameraHeight()

@@ -96,6 +96,10 @@ public:
     void SetFollowSpeed(float speed) { m_followSpeed = speed; }
     void SetFOV(float fov) { m_fov = fov; }
 
+    // World XZ point shown at the centre of the arena rect. The scene moves it with
+    // the main camera so tracked windows stay on their entity when the view scrolls.
+    void SetViewOrigin(const DirectX::XMFLOAT2& originXZ) { m_viewOrigin = originXZ; }
+
     // Desktop-pixel rect the arena (ARENA_WIDTH_UNITS x ARENA_HEIGHT_UNITS) maps onto.
     // Window positions, projections and the pixel-to-unit ratio all derive from it.
     // An empty rect is ignored and the previous one stays in effect.
@@ -148,4 +152,5 @@ private:
     float m_followSpeed = 100.0f;
     float m_desktopScale = 1.0f;
     float m_fov = 60.0f;
+    DirectX::XMFLOAT2 m_viewOrigin = { 0.0f, 0.0f }; // world XZ at the arena rect centre
 };

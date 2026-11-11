@@ -498,12 +498,41 @@ void SceneBoss::UpdateArenaCamera(float elapsedTime)
 
     DirectX::XMFLOAT3 shake = camCtrl.GetShakeOffset();
 
-    // Camera height from the window system, offset by the shake on every axis.
-    camCtrl.SetFixedSetting(DirectX::XMFLOAT3(shake.x, newUnifiedHeight + shake.y, shake.z));
-    camCtrl.SetTarget({ shake.x, shake.y, shake.z });
+    UpdateCameraFocus(elapsedTime);
+    m_windowSystem->SetViewOrigin(m_cameraFocus);
+
+    // Camera height from the window system, centred on the focus, offset by the shake on every axis.
+    const float camX{ m_cameraFocus.x + shake.x };
+    const float camZ{ m_cameraFocus.y + shake.z };
+    camCtrl.SetFixedSetting(DirectX::XMFLOAT3(camX, newUnifiedHeight + shake.y, camZ));
+    camCtrl.SetTarget({ camX, shake.y, camZ });
 
     // Update the camera with unscaled time (elapsedTime) so it keeps shaking during hit stop.
     camCtrl.Update(elapsedTime);
+}
+
+void SceneBoss::UpdateCameraFocus(float elapsedTime)
+{
+    // Windowkill maps the world onto the monitor around the origin, so the view stays there.
+    const bool isWindowkill{ m_cue && IsWindowkill(m_cue->GetCurrentPhase()) };
+    if (!m_player || isWindowkill)
+    {
+        m_cameraFocus = { 0.0f, 0.0f };
+        return;
+    }
+
+    // The focus stops where the view edge meets the Act 2 arena edge.
+    const float limitX{ (Beyond::Config::ACT2_ARENA_WIDTH_UNITS - Beyond::Config::ARENA_WIDTH_UNITS) * 0.5f };
+    const float limitZ{ (Beyond::Config::ACT2_ARENA_HEIGHT_UNITS - Beyond::Config::ARENA_HEIGHT_UNITS) * 0.5f };
+
+    const DirectX::XMFLOAT3 playerPos{ m_player->GetPosition() };
+    const float goalX{ std::clamp(playerPos.x, -limitX, limitX) };
+    const float goalZ{ std::clamp(playerPos.z, -limitZ, limitZ) };
+
+    // Unscaled time: the view keeps catching up during hit stop, like the shake.
+    const float follow{ MathUtils::ExpDecayFactor(m_cameraFollowRate, elapsedTime) };
+    m_cameraFocus.x += (goalX - m_cameraFocus.x) * follow;
+    m_cameraFocus.y += (goalZ - m_cameraFocus.y) * follow;
 }
 
 void SceneBoss::UpdatePlayerStretch(float scaledDt)
