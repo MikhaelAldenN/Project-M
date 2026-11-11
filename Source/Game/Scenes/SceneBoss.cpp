@@ -676,7 +676,7 @@ void SceneBoss::Render(float elapsedTime, Camera* camera)
 
     if (m_showGrid && m_primitive3D)
     {
-        m_primitive3D->DrawGrid(25, 1.0f);
+        QueueArenaDebugGrid();
         m_primitive3D->Render(dc,
             targetCam->GetView(),
             targetCam->GetProjection(),
@@ -925,7 +925,47 @@ void SceneBoss::StartPlayerDeathSequence()
     }
 }
 
-void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparentWindow)
+void SceneBoss::QueueArenaDebugGrid()
+{
+    constexpr float k_step{ 1.0f };
+    const DirectX::XMFLOAT4 lineColor{ 0.35f, 0.35f, 0.35f, 1.0f };
+    const DirectX::XMFLOAT4 axisColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const DirectX::XMFLOAT4 edgeColor{ 1.0f, 0.25f, 0.25f, 1.0f };
+
+    const float halfW{ Beyond::Config::ACT2_ARENA_WIDTH_UNITS * 0.5f };
+    const float halfH{ Beyond::Config::ACT2_ARENA_HEIGHT_UNITS * 0.5f };
+
+    // Lines sit on whole units from the origin, so x = 0 and z = 0 are grid lines.
+    const int countX{ static_cast<int>(halfW / k_step) };
+    for (int i{ -countX }; i <= countX; ++i)
+    {
+        const float x{ static_cast<float>(i) * k_step };
+        const DirectX::XMFLOAT4& color{ (i == 0) ? axisColor : lineColor };
+        m_primitive3D->AddVertex({ x, 0.0f, -halfH }, color);
+        m_primitive3D->AddVertex({ x, 0.0f, halfH }, color);
+    }
+
+    const int countZ{ static_cast<int>(halfH / k_step) };
+    for (int i{ -countZ }; i <= countZ; ++i)
+    {
+        const float z{ static_cast<float>(i) * k_step };
+        const DirectX::XMFLOAT4& color{ (i == 0) ? axisColor : lineColor };
+        m_primitive3D->AddVertex({ -halfW, 0.0f, z }, color);
+        m_primitive3D->AddVertex({ halfW, 0.0f, z }, color);
+    }
+
+    // Arena edge.
+    const auto addEdge{ [this, &edgeColor](float x0, float z0, float x1, float z1) {
+        m_primitive3D->AddVertex({ x0, 0.0f, z0 }, edgeColor);
+        m_primitive3D->AddVertex({ x1, 0.0f, z1 }, edgeColor);
+    } };
+    addEdge(-halfW, -halfH, halfW, -halfH);
+    addEdge(halfW, -halfH, halfW, halfH);
+    addEdge(halfW, halfH, -halfW, halfH);
+    addEdge(-halfW, halfH, -halfW, -halfH);
+}
+
+void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparentWindow) 
 {
     PerformanceLogger::Instance().StartTimer(PerfBucket::Render3D);
 

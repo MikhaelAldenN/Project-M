@@ -81,6 +81,8 @@ private:
     // Returns true when a capture was started and must be ended after the scene.
     [[nodiscard]] bool BeginMainCameraPostProcess(const Camera* targetCam, bool isTransparentWindow);
     void RenderShapesAndHitboxes(ID3D11DeviceContext* dc, Camera* targetCam);
+    // Queues debug grid lines over the whole Act 2 arena: whole units, axes and edge highlighted.
+    void QueueArenaDebugGrid();
     void RenderFadeOverlays(ID3D11DeviceContext* dc, RenderState* rs);
     // Dims the bound target and draws the pause menu; main window only.
     void RenderPauseMenu(ID3D11DeviceContext* dc, RenderState* rs);

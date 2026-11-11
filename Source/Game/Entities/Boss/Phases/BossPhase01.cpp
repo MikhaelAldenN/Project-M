@@ -109,7 +109,11 @@ void BossPhase01::Enter(CueBoss* boss) {
     }
 
     // Skipping the opening event means the fight starts at once, so the AI starts on.
+    // Debug leaves it off (set at the top of Enter) so a pattern can be set up first;
+    // "AI enabled" in the Boss panel starts the fight.
+#if !defined(_DEBUG)
     m_aiEnabled = true;
+#endif
 
     if (m_aiTarget) {
         m_aiTarget->SetInputEnabled(true);
