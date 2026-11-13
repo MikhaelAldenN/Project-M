@@ -26,13 +26,26 @@ class CueBoss;
 class Player;
 
 // ========================================================
-// BOSS AI - PHASE 01
+// BOSS AI - PHASE 01 (Act 2)
 // ========================================================
+// Runs a fixed rotation per fight phase: phase A above 50% HP, phase B at or below.
 class BossAI_Phase01 {
 public:
+    // Attacks the Act 2 rotation can launch.
     enum class AttackSequence {
-        Radial, RadialContinuos, Fan, FanContinuos,
-        Phalanx, Rain, Ultimate, Wave, Meteor, Direct
+        Radial,       // also stands in for Mekar until that attack exists
+        Fan,          // filler, aimed at the player when launched
+        Phalanx,      // starts its own HorizontalSweep Rain (BossPhase01::AddPhalanx)
+        RainTargeted,
+        Meteor,
+        Ultimate      // old ultimate, stands in for the new one; starts its own DualPillar Rain
+    };
+
+    // One entry of a rotation. withRain adds a VerticalSweep Rain after the attack;
+    // the phase ignores it while another Rain is running.
+    struct RotationStep {
+        AttackSequence attack{ AttackSequence::Radial };
+        bool withRain{ false };
     };
 
     BossAI_Phase01(BossPhase01* phase, Player* target);
@@ -43,26 +56,16 @@ public:
     void SetTarget(Player* target) { m_target = target; }
 
 private:
-    AttackSequence GetNextTacticianAttack();
+    // Starts `attack` on the phase and returns the cooldown before the next step.
+    // `boss` is non-null (checked by the phase before Update).
+    float LaunchAttack(AttackSequence attack, CueBoss* boss);
 
     BossPhase01* m_phase = nullptr;
     Player* m_target = nullptr;
     bool         m_enabled = false;
 
-    // ========================================================
-    // Tactician Mode tracker (HP > 50%)
-    // ========================================================
-    int  m_mainAttackIndex = 0;     // 0: Wave, 1: Phalanx, 2: Meteor, 3: Rain (Targeted)
-    bool m_isNextMainAttack = true; // starts with the Radial filler, so the next one is a main attack
-
-    // ========================================================
-    // Chaos Mode tracker (HP <= 50%)
-    // ========================================================
-    bool m_isEnraged = false;       // set once Chaos Mode starts
-    int  m_enragedMainIndex = 1;    // 0: Phalanx, 1: Wave, 2: Meteor, 3: Ultimate
-
-    // The first attack is the Radial filler.
-    AttackSequence m_currentAttack = AttackSequence::Radial;
+    bool  m_isPhaseB = false;   // set once HP is at or below 50%
+    int   m_stepIndex = 0;      // next step in the active rotation
     float m_cooldownTimer = 2.0f;
 };
 
