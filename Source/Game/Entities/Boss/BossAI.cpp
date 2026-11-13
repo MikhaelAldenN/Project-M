@@ -24,11 +24,11 @@ namespace
     } };
 
     // Phase B: the same order with an area-denial Rain on every attack, fillers included,
-    // then the ultimate. RainTargeted, Phalanx and Ultimate already run a Rain, so they
-    // get no second one.
+    // then the ultimate. RainTargeted gets a horizontal sweep; Phalanx and Ultimate
+    // already run their own Rain, so they get no second one.
     constexpr std::array<Step, 10> k_phaseBRotation{ {
         { Attack::Radial, true },        { Attack::Fan, true },
-        { Attack::RainTargeted, false }, { Attack::Fan, true },
+        { Attack::RainTargeted, true, RainMode::HorizontalSweep }, { Attack::Fan, true },
         { Attack::Meteor, true },        { Attack::Fan, true },
         { Attack::Phalanx, false },      { Attack::Fan, true },
         { Attack::Ultimate, false },     { Attack::Fan, true },
@@ -60,9 +60,11 @@ void BossAI_Phase01::Update(float dt, CueBoss* boss) {
 
     m_cooldownTimer = LaunchAttack(step.attack, boss);
     if (step.withRain) {
-        // The zone covers the half of the arena the player stands in.
-        m_phase->TriggerRain(AttackParamManager::Instance().GetRainParams(), RainMode::VerticalSweep,
-            m_target->GetPosition().x > 0.0f);
+        // A vertical sweep covers the left or right half of the arena the player stands in;
+        // a horizontal sweep covers the band above or below the arena centre on the player's side.
+        const DirectX::XMFLOAT3 playerPos{ m_target->GetPosition() };
+        const bool isPositiveSide{ (step.comboRain == RainMode::HorizontalSweep) ? playerPos.z > 0.0f : playerPos.x > 0.0f };
+        m_phase->TriggerRain(AttackParamManager::Instance().GetRainParams(), step.comboRain, isPositiveSide);
     }
 }
 
@@ -89,7 +91,9 @@ float BossAI_Phase01::LaunchAttack(AttackSequence attack, CueBoss* boss) {
         return 1.0f;
 
     case AttackSequence::RainTargeted:
-        m_phase->TriggerRain(params.GetRainTargetedParams(), RainMode::Targeted, true);
+        // Why AddAttack and not TriggerRain: the phase's single Rain slot stays free for
+        // a combo Rain alongside this one.
+        m_phase->AddAttack(std::make_unique<AttackRain>(params.GetRainTargetedParams(), RainMode::Targeted, true, 1.0f, m_target));
         return 1.0f;
 
     case AttackSequence::Meteor:

@@ -46,6 +46,7 @@ public:
     struct RotationStep {
         AttackSequence attack{ AttackSequence::Radial };
         bool withRain{ false };
+        RainMode comboRain{ RainMode::VerticalSweep };
     };
 
     BossAI_Phase01(BossPhase01* phase, Player* target);
