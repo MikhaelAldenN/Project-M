@@ -7,11 +7,12 @@
 #include "EffectManager.h"
 #include <SDL3/SDL.h>
 #include "Engine/Base/MathUtils.h"
+#include "Player.h"
 
 using namespace DirectX;
 
-AttackBlasters::AttackBlasters(const BlasterParams& params, bool isTargeted, float targetX)
-    : m_params(params), m_isTargeted(isTargeted), m_targetX(targetX) {}
+AttackBlasters::AttackBlasters(const BlasterParams& params, const Player* target)
+    : m_params(params), m_target(target) {}
 
 void AttackBlasters::Start(CueBoss* boss, ProjectilePool* /*pool*/) 
 {
@@ -34,10 +35,15 @@ void AttackBlasters::Update(float dt, CueBoss* boss) {
             m_spawnTimer = (m_params.spawnDelay > 0.0f) ? m_spawnTimer - m_params.spawnDelay : 1.0f;
 
             auto blaster = std::make_shared<OrbitalBlaster>();
-            float startX = m_isTargeted ? m_targetX : -m_params.spawnSpreadX * 0.5f;
-            float stepX = (m_params.spawnCount > 1 && !m_isTargeted) ? (m_params.spawnSpreadX / (m_params.spawnCount - 1)) : 0.0f;
-
-            blaster->baseX = m_isTargeted ? m_targetX : startX + (stepX * m_spawnedCount);
+            if (m_target) {
+                // Why read per cannon: each one locks onto where the player is when it appears.
+                blaster->baseX = m_target->GetPosition().x;
+            }
+            else {
+                const float stepX{ (m_params.spawnCount > 1)
+                    ? (m_params.spawnSpreadX / static_cast<float>(m_params.spawnCount - 1)) : 0.0f };
+                blaster->baseX = -m_params.spawnSpreadX * 0.5f + stepX * static_cast<float>(m_spawnedCount);
+            }
             blaster->pos = { blaster->baseX, 1.0f, 25.0f }; // Starts high
             blaster->targetPos = { blaster->baseX, 1.0f, 10.0f }; // Drops down
 

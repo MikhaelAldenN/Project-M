@@ -190,8 +190,7 @@ void BossAI_Phase02::Update(float dt, CueBoss* boss) {
             break;
 
         case AttackSequence::Blaster:
-            // Blasters aimed at the player's current X
-            m_phase->AddAttack(std::make_unique<AttackBlasters>(AttackParamManager::Instance().GetBlasterParams(), true, m_target->GetPosition().x));
+            m_phase->AddAttack(std::make_unique<AttackBlasters>(AttackParamManager::Instance().GetBlasterParams(), m_target));
             m_cooldownTimer = 2.0f;
             m_currentAttack = AttackSequence::Spear;
             break;

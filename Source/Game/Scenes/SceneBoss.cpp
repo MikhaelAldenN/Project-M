@@ -1530,15 +1530,14 @@ void SceneBoss::DrawAttacksPanel()
     case WindowkillSet::blasters:
     {
         BlasterParams& params{ manager.GetBlasterParams() };
-        if (ImGui::Button("Fire random"))
+        if (ImGui::Button("Fire spread"))
         {
-            windowkill->AddAttack(std::make_unique<AttackBlasters>(params, false));
+            windowkill->AddAttack(std::make_unique<AttackBlasters>(params, nullptr));
         }
         ImGui::SameLine();
         if (ImGui::Button("Fire targeted"))
         {
-            const float playerX{ m_player ? m_player->GetPosition().x : 0.0f };
-            windowkill->AddAttack(std::make_unique<AttackBlasters>(params, true, playerX));
+            windowkill->AddAttack(std::make_unique<AttackBlasters>(params, m_player.get()));
         }
         ImGui::SameLine();
         if (ImGui::Button("Revert")) params = loaded.blaster;
