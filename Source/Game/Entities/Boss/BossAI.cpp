@@ -23,16 +23,16 @@ namespace
         { Attack::Phalanx, false },      { Attack::Fan, false },
     } };
 
-    // Phase B: the same order with an area-denial Rain on every attack, fillers included,
-    // then the ultimate. RainTargeted gets a horizontal sweep; Phalanx and Ultimate
-    // already run their own Rain, so they get no second one.
-    constexpr std::array<Step, 10> k_phaseBRotation{ {
-        { Attack::Radial, true },        { Attack::Fan, true },
-        { Attack::RainTargeted, true, RainMode::HorizontalSweep }, { Attack::Fan, true },
-        { Attack::Meteor, true },        { Attack::Fan, true },
-        { Attack::Phalanx, false },      { Attack::Fan, true },
-        { Attack::Converge, false },     { Attack::Fan, true },
-        } };
+    // Phase B: the main attacks only, no fillers, each with an area-denial Rain, then the
+    // ultimate. RainTargeted gets a horizontal sweep; Phalanx runs its own Rain and the
+    // converging ultimate needs the whole arena, so neither gets a combo Rain.
+    constexpr std::array<Step, 5> k_phaseBRotation{ {
+        { Attack::Radial, true },
+        { Attack::RainTargeted, true, RainMode::HorizontalSweep },
+        { Attack::Meteor, true },
+        { Attack::Phalanx, false },
+        { Attack::Converge, false },
+    } };
 }
 
 BossAI_Phase01::BossAI_Phase01(BossPhase01* phase, Player* target)
