@@ -654,6 +654,12 @@ bool SceneBoss::UpdateCue(float scaledDt)
     const bool isWindowkillPhase{ IsWindowkill(updatedPhase) };
     UpdatePlayerWindow(isWindowkillPhase);
 
+    if (isWindowkillPhase != m_wasWindowkillPhase) {
+        // The grid is the Act 2 floor; Windowkill plays on the desktop and has no floor.
+        m_showGrid = !isWindowkillPhase;
+        m_wasWindowkillPhase = isWindowkillPhase;
+    }
+
     if (isWindowkillPhase && !m_playerWindowTransparent) {
         // Windowkill started: the player window becomes transparent.
         m_playerWindowTransparent = true;

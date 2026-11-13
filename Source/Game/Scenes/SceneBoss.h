@@ -152,7 +152,10 @@ private:
     // =========================================================
     // GUI / DEBUG STATE
     // =========================================================
-    bool      m_showGrid = false;
+    // Floor grid: also the Act 2 floor placeholder. Reset on every act change
+    // (on in Act 2, off in Windowkill); View > Show grid overrides it until the next change.
+    bool      m_showGrid = true;
+    bool      m_wasWindowkillPhase = false; // act seen last frame, to detect act changes
     int       m_selectedWindowkillSet{ 0 }; // row selected in the Attacks panel list
     int       m_selectedBulletHellSet{ 0 };
     int       m_spawnCount = 0;
