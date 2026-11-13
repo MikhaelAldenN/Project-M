@@ -41,7 +41,7 @@ namespace PlayerConst
     inline constexpr float UltMeterGlow = 0.4f;    // USULAN DESAIN: glow brightness of an almost full gauge
 
     // --- Health ---
-    inline constexpr int   MaxHits = 6;               // USULAN DESAIN: hits that kill the player; every bullet is one hit
+    inline constexpr int   MaxHits = 10;               // USULAN DESAIN: hits that kill the player; every bullet is one hit
     inline constexpr float HitIFrameDuration = 1.0f;  // Invincibility after a hit (s)
     inline constexpr float HitBlinkInterval = 0.1f;   // USULAN DESAIN: model hidden, then shown, every this many seconds during it
 

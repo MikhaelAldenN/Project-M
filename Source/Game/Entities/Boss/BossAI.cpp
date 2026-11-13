@@ -59,7 +59,7 @@ void BossAI_Phase01::Update(float dt, CueBoss* boss) {
 
     m_cooldownTimer = LaunchAttack(step.attack, boss);
     if (step.withRain) {
-        // The sweep starts on the player's side of the arena.
+        // The zone covers the half of the arena the player stands in.
         m_phase->TriggerRain(AttackParamManager::Instance().GetRainParams(), RainMode::VerticalSweep,
             m_target->GetPosition().x > 0.0f);
     }

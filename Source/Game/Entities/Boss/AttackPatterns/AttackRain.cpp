@@ -11,6 +11,7 @@
 #include <windows.h>
 #include "WindowTrackingSystem.h"
 #include "Player.h"
+#include "Engine/Common/Constants.h"
 
 using namespace DirectX;
 
@@ -81,7 +82,9 @@ void AttackRain::Update(float dt, CueBoss* boss) {
                     zone.center2 = { 16.0f, 0.0f,  0.0f };
                 }
                 else if (m_mode == RainMode::VerticalSweep) {
-                    zone.center1 = { m_isPositiveSide ? 12.5f : -12.5f, 0.0f, 0.0f };
+                    // Covers the half of the Act 2 arena on the chosen side.
+                    const float quarterArena{ Beyond::Config::ACT2_ARENA_WIDTH_UNITS * 0.25f };
+                    zone.center1 = { m_isPositiveSide ? quarterArena : -quarterArena, 0.0f, 0.0f };
                 }
                 else if (m_mode == RainMode::HorizontalSweep) {
                     zone.center1 = { 0.0f, 0.0f, m_isPositiveSide ? 7.5f : -7.5f };
@@ -319,7 +322,7 @@ bool AttackRain::IsFinished() const {
 
 float AttackRain::GetActualWidth() const {
     if (m_mode == RainMode::DualPillar)    return 18.0f;
-    if (m_mode == RainMode::VerticalSweep) return 25.0f;
+    if (m_mode == RainMode::VerticalSweep) return Beyond::Config::ACT2_ARENA_WIDTH_UNITS * 0.5f;
     if (m_mode == RainMode::Targeted)      return m_params.width;
     return 80.0f;
 }
