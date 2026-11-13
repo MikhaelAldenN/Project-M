@@ -112,7 +112,6 @@ private:
 
     // ---- Opening dialogue ----
     bool m_isOpeningEvent = true;
-    bool m_hasSpawnedWindow = false;
     std::unique_ptr<UIDialogueBox> m_dialogueBox;
 
     // ---- Visual ----

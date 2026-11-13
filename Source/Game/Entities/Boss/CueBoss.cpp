@@ -89,6 +89,16 @@ void CueBoss::SpawnHeadWindow() {
     }
 }
 
+void CueBoss::RemoveHeadWindow() {
+    if (m_windowSystem && m_windowSystem->GetTrackedWindow("cue_head"))
+        m_windowSystem->RemoveTrackedWindow("cue_head");
+
+    // The pooled window can be handed to another owner, so this boss stops pointing at it.
+    m_cueWindow = nullptr;
+    m_cueCamera.reset();
+    m_hHeadWindow = nullptr;
+}
+
 // ============================================================
 // Phase Management
 // ============================================================
@@ -131,12 +141,14 @@ void CueBoss::Update(float dt) {
 void CueBoss::Render(ID3D11DeviceContext* context, Camera* currentCamera) {
     if (!currentCamera) return;
 
-    // Only render face content when using the boss's own camera
-    if (currentCamera == m_cueCamera.get()) {
-        if (m_cueWindow)
-            RenderFaceGrid(context, currentCamera);
+    // With the head window (Windowkill) the face is drawn only through that window's camera.
+    // Without it (Act 2) the face is drawn in every view, on the floor at the boss position.
+    const bool hasHeadWindow{ m_cueWindow != nullptr };
+    const bool isFaceView{ !hasHeadWindow || currentCamera == m_cueCamera.get() };
+    if (isFaceView) {
+        RenderFaceGrid(context, currentCamera);
 
-        if (m_isFaceSpriteVisible && m_faceSprite && m_cueWindow) {
+        if (m_isFaceSpriteVisible && m_faceSprite) {
             float unitW = m_windowSize.x / m_pixelToUnit;
             float unitH = m_windowSize.y / m_pixelToUnit;
             m_faceSprite->Render(

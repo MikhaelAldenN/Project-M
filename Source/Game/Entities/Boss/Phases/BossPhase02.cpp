@@ -52,6 +52,10 @@ void BossPhase02::Enter(CueBoss* boss) {
     boss->GetFaceParams().gridResolution = 16;
     boss->InitializeFaceGrid(Graphics::Instance().GetDevice());
 
+    // Cue's body in Windowkill is its head window; Act 2 draws the face in the arena instead.
+    if (!windowSystem->GetTrackedWindow("cue_head"))
+        boss->SpawnHeadWindow();
+
     // Windowkill params have a single owner: AttackParamManager (also read by BossAI_Phase02).
     const BlasterParams& blasterParams{ AttackParamManager::Instance().GetBlasterParams() };
     EffectManager::Instance().PreloadEffect(blasterParams.chargeEffectPath);
@@ -467,8 +471,8 @@ bool BossPhase02::UpdateBossDeath(float dt, CueBoss* boss) {
             }
             AudioManager::Instance().StopMusic();
 
-            if (boss && boss->GetWindowSystem() && boss->GetWindowSystem()->GetTrackedWindow("cue_head")) {
-                boss->GetWindowSystem()->RemoveTrackedWindow("cue_head");
+            if (boss) {
+                boss->RemoveHeadWindow();
             }
 
             if (boss && boss->GetMainWindow() && boss->GetMainWindow()->GetSDLWindow()) {

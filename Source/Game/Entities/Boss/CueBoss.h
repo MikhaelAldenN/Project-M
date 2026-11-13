@@ -45,7 +45,9 @@ public:
 
     // ----- Lifecycle -----
     void Initialize(WindowTrackingSystem* windowSystem);
-    void SpawnHeadWindow(); // Call when the opening dialogue reaches line 2
+    void SpawnHeadWindow(); // Called when Windowkill starts (BossPhase02::Enter)
+    // Hides the head window and drops this boss's pointers to it; safe when there is none.
+    void RemoveHeadWindow();
     void Update(float dt);
     void Render(ID3D11DeviceContext* context, Camera* currentCamera);
 

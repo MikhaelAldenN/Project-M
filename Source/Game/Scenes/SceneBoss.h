@@ -91,6 +91,10 @@ private:
 
     // --- Initialization ---
     void InitializeSubWindows();
+    // Opens the OS window that follows the player (Windowkill only).
+    void AddPlayerWindow();
+    // Keeps the player window open in Windowkill and closed in every other phase.
+    void UpdatePlayerWindow(bool isWindowkillPhase);
 
     // --- Debug & System Helpers ---
     void DrawBossPanel();

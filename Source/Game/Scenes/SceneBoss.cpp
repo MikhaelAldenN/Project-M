@@ -36,6 +36,9 @@ namespace
     {
         return phase && phase->GetKind() == BossPhaseKind::windowkill;
     }
+
+    // Tracked-window name of the OS window that follows the player in Windowkill.
+    constexpr const char* k_playerWindowName{ "player" };
 }
 
 // =========================================================
@@ -189,32 +192,7 @@ void SceneBoss::InitializeSubWindows()
 {
     if (!m_windowSystem || !m_player) return;
 
-    // --- Player-tracking window (kept in every phase, Windowkill included) ---
-    m_windowSystem->AddTrackedWindow(
-        { "player", "Player", 300, 300, 1 },
-        [this]() -> XMFLOAT3 {
-            if (!m_player) return XMFLOAT3(0.0f, 0.0f, 0.0f);
-            const auto pPos = m_player->GetPosition();
-            return XMFLOAT3(
-                pPos.x + m_stretchOffset.x,
-                0.0f,
-                pPos.z + m_stretchOffset.y
-            );
-        },
-        [this]() -> XMFLOAT2 {
-            return XMFLOAT2(
-                k_defaultWinSize + m_currentStretch.x,
-                k_defaultWinSize + m_currentStretch.y
-            );
-        }
-    );
-
-    TrackedWindow* playerWin = m_windowSystem->GetTrackedWindow("player");
-    if (playerWin && playerWin->window)
-    {
-        SDL_Window* sdlWin = playerWin->window->GetSDLWindow();
-        SDL_SetWindowBordered(sdlWin, true);
-    }
+    // The player window is not created here: Act 2 has no OS windows (see UpdatePlayerWindow).
 
     // --- Register main window with the tracking system ---
     Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
@@ -232,6 +210,51 @@ void SceneBoss::InitializeSubWindows()
     }
 
     WindowManager::Instance().EnforceWindowPriorities();
+}
+
+void SceneBoss::AddPlayerWindow()
+{
+    m_windowSystem->AddTrackedWindow(
+        { k_playerWindowName, "Player", 300, 300, 1 },
+        [this]() -> XMFLOAT3 {
+            if (!m_player) return XMFLOAT3(0.0f, 0.0f, 0.0f);
+            const auto pPos = m_player->GetPosition();
+            return XMFLOAT3(
+                pPos.x + m_stretchOffset.x,
+                0.0f,
+                pPos.z + m_stretchOffset.y
+            );
+        },
+        [this]() -> XMFLOAT2 {
+            return XMFLOAT2(
+                k_defaultWinSize + m_currentStretch.x,
+                k_defaultWinSize + m_currentStretch.y
+            );
+        }
+    );
+
+    TrackedWindow* playerWin = m_windowSystem->GetTrackedWindow(k_playerWindowName);
+    if (playerWin && playerWin->window)
+    {
+        SDL_SetWindowBordered(playerWin->window->GetSDLWindow(), true);
+    }
+
+    WindowManager::Instance().MarkPriorityDirty();
+}
+
+void SceneBoss::UpdatePlayerWindow(bool isWindowkillPhase)
+{
+    if (!m_windowSystem || !m_player) return;
+
+    const bool hasPlayerWindow{ m_windowSystem->GetTrackedWindow(k_playerWindowName) != nullptr };
+    if (isWindowkillPhase && !hasPlayerWindow)
+    {
+        AddPlayerWindow();
+    }
+    else if (!isWindowkillPhase && hasPlayerWindow)
+    {
+        m_windowSystem->RemoveTrackedWindow(k_playerWindowName);
+    }
 }
 
 // =========================================================
@@ -629,6 +652,7 @@ bool SceneBoss::UpdateCue(float scaledDt)
     }
 
     const bool isWindowkillPhase{ IsWindowkill(updatedPhase) };
+    UpdatePlayerWindow(isWindowkillPhase);
 
     if (isWindowkillPhase && !m_playerWindowTransparent) {
         // Windowkill started: the player window becomes transparent.

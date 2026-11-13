@@ -37,7 +37,6 @@ void BossPhase01::Enter(CueBoss* boss) {
 
     // ----- Reset opening event -----
     m_isOpeningEvent = true;
-    m_hasSpawnedWindow = false;
 
     m_rainAttack.reset();
 
@@ -47,8 +46,9 @@ void BossPhase01::Enter(CueBoss* boss) {
         SDL_SetWindowAlwaysOnTop(mainWindow->GetSDLWindow(), false);
     }
 
-    if (boss && boss->GetMainWindow()) {
-        boss->GetMainWindow()->SetPriority(0);
+    // Act 2 has no OS windows; a head window left from Windowkill is put back in the pool.
+    if (boss) {
+        boss->RemoveHeadWindow();
         WindowManager::Instance().MarkPriorityDirty();
     }
 
@@ -99,11 +99,9 @@ void BossPhase01::Enter(CueBoss* boss) {
 
 #if DEBUG_SKIP_INTRO
     m_isOpeningEvent = false;
-    m_hasSpawnedWindow = true;
 
     if (boss) {
         boss->SetWindowTitle("mat_grass.png");
-        boss->SpawnHeadWindow();
         boss->SetGridGrowthLimit(8.0f);
         boss->SetFaceSpriteVisible(true);
     }
@@ -163,10 +161,6 @@ void BossPhase01::Update(float dt, CueBoss* boss) {
                 boss->SetFaceSpriteVisible(false);
             }
             else if (idx == 1) {
-                if (!m_hasSpawnedWindow) {
-                    boss->SpawnHeadWindow();
-                    m_hasSpawnedWindow = true;
-                }
                 float limit = boss->GetGridGrowthLimit();
                 if (limit < 8.0f)
                     boss->SetGridGrowthLimit(min(limit + dt * 3.5f, 8.0f));
