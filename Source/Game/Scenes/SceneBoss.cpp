@@ -1467,10 +1467,10 @@ namespace
 
     void DrawConvergeRows(ConvergeParams& p, const ConvergeParams& loaded)
     {
-        DebugProperty::SliderInt("Waves", p.waves, 1, 12, p.waves != loaded.waves);
-        DebugProperty::SliderInt("Bullets per wave", p.bulletsPerWave, 4, 32, p.bulletsPerWave != loaded.bulletsPerWave);
-        DebugProperty::SliderFloat("Wave delay", p.waveDelay, 0.1f, 2.0f, "%.2f s", p.waveDelay != loaded.waveDelay);
-        DebugProperty::SliderFloat("Travel time", p.travelTime, 0.5f, 4.0f, "%.2f s", p.travelTime != loaded.travelTime);
+        DebugProperty::SliderFloat("Gather duration", p.gatherDuration, 1.0f, 10.0f, "%.1f s", p.gatherDuration != loaded.gatherDuration);
+        DebugProperty::SliderInt("Bullet count", p.bulletCount, 10, 150, p.bulletCount != loaded.bulletCount);
+        DebugProperty::DragFloatRange("Speed range", p.speedMin, p.speedMax, 0.5f, 4.0f, 40.0f, "%.1f units/s",
+            p.speedMin != loaded.speedMin || p.speedMax != loaded.speedMax);
         DebugProperty::SliderFloat("Bullet radius", p.bulletRadius, 0.1f, 1.5f, "%.2f units", p.bulletRadius != loaded.bulletRadius);
         DebugProperty::SliderFloat("Absorb radius", p.absorbRadius, 0.5f, 5.0f, "%.2f units", p.absorbRadius != loaded.absorbRadius);
         DebugProperty::SliderFloat("Charge duration", p.chargeDuration, 0.2f, 3.0f, "%.2f s", p.chargeDuration != loaded.chargeDuration);

@@ -13,18 +13,20 @@ class Camera;
 // ============================================================
 // AttackConverge - Act 2 ultimate.
 //
-// Waves of bullets enter from outside the arena and the view, from every
-// direction, and converge on Cue; they hurt the player on the way. Bullets
-// that reach Cue are absorbed. Cue then charges, with the blast area drawn on
-// the floor, and releases a shockwave that hurts the player inside it. The
-// blast grows with the absorbed bullets. The boss is held in place throughout.
+// For gatherDuration, bullets enter one by one from outside the arena and the
+// view and converge on Cue; they hurt the player on the way. Direction, speed
+// and the gap to the next bullet all vary along fixed low-discrepancy sequences,
+// so arrivals look irregular but repeat exactly. Bullets that reach Cue are
+// absorbed. Cue then charges, with the blast area drawn on the floor, and
+// releases a shockwave that hurts the player inside it. The blast grows with the
+// absorbed bullets. The boss is held in place throughout.
 // ============================================================
 
 struct ConvergeParams {
-    int   waves = 5;                    // USULAN DESAIN
-    int   bulletsPerWave = 12;          // USULAN DESAIN
-    float waveDelay = 0.6f;             // seconds between two waves entering
-    float travelTime = 1.6f;            // USULAN DESAIN: seconds from entering to reaching Cue, same for every bullet
+    float gatherDuration = 5.0f;        // USULAN DESAIN: seconds during which bullets keep entering
+    int   bulletCount = 60;             // USULAN DESAIN: bullets entering over gatherDuration
+    float speedMin = 12.0f;             // USULAN DESAIN: units per second
+    float speedMax = 22.0f;             // USULAN DESAIN: kept below 30 so the phase does not draw them red
     float bulletRadius = 0.35f;
     float visualScale = 2.0f;
     float absorbRadius = 1.5f;          // a bullet this close to Cue is absorbed
@@ -64,11 +66,15 @@ private:
     struct IncomingBullet {
         ProjectileHandle handle{};
         float flightTime{ 0.0f };
+        float expectedFlight{ 0.0f }; // seconds it needs to reach Cue
     };
 
     void UpdateGather(float dt, const DirectX::XMFLOAT3& bossPos);
     void UpdateBlast();
-    void LaunchWave(int waveIndex, const DirectX::XMFLOAT3& bossPos);
+
+    // Launches bullet `index` of the stream from outside the arena and the view.
+    void LaunchBullet(int index, const DirectX::XMFLOAT3& bossPos);
+
     // Absorbs bullets that reached Cue and forgets bullets that are gone.
     void UpdateIncoming(float dt, const DirectX::XMFLOAT3& bossPos);
     [[nodiscard]] float BlastRadius() const;
@@ -84,7 +90,8 @@ private:
     std::vector<IncomingBullet> m_incoming;
     Stage m_stage{ Stage::done };
     float m_stageTimer{ 0.0f };        // seconds since the current stage began
-    int   m_wavesLaunched{ 0 };
-    float m_waveTimer{ 0.0f };
+    int   m_bulletsLaunched{ 0 };
+    float m_nextBulletTimer{ 0.0f }; // seconds until the next bullet enters
+
     int   m_absorbedCount{ 0 };
 };

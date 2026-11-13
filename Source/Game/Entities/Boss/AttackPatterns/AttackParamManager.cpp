@@ -239,10 +239,10 @@ void AttackParamManager::ParseWallParams(const json& j, WallParams& out) {
 }
 
 void AttackParamManager::ParseConvergeParams(const json& j, ConvergeParams& out) {
-    if (j.contains("waves")) out.waves = j["waves"];
-    if (j.contains("bulletsPerWave")) out.bulletsPerWave = j["bulletsPerWave"];
-    if (j.contains("waveDelay")) out.waveDelay = j["waveDelay"];
-    if (j.contains("travelTime")) out.travelTime = j["travelTime"];
+    if (j.contains("gatherDuration")) out.gatherDuration = j["gatherDuration"];
+    if (j.contains("bulletCount")) out.bulletCount = j["bulletCount"];
+    if (j.contains("speedMin")) out.speedMin = j["speedMin"];
+    if (j.contains("speedMax")) out.speedMax = j["speedMax"];
     if (j.contains("bulletRadius")) out.bulletRadius = j["bulletRadius"];
     if (j.contains("visualScale")) out.visualScale = j["visualScale"];
     if (j.contains("absorbRadius")) out.absorbRadius = j["absorbRadius"];
