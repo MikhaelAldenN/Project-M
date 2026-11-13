@@ -100,10 +100,6 @@ public:
         m_playerbulletOffsetScale = { 1.0f, 1.0f, 1.0f };
     }
 
-    // Seconds between shots while the shoot input is held. Overdrive uses its own interval.
-    void SetShootDelay(float newDelay) { m_shootInterval = newDelay; }
-    void RestoreShootDelay() { m_shootInterval = PlayerConst::ShootInterval; }
-
     // Fires one bullet when the fire interval has passed since the last shot. States call it
     // every frame the shoot input is held, so mouse and gamepad share one rate.
     // Returns true when a bullet was fired.
@@ -139,11 +135,8 @@ public:
     float GetDashDuration() const { return m_dashDuration; }
     DirectX::XMFLOAT2 GetLastValidInput() const { return m_lastValidInput; }
 
-    // Called by the player states on a dash press, before entering PlayerDash. Spends one
-    // dash charge, which also grants the dash invincibility, and restarts the recovery
     // timer. With no charge left the dash fails: the fail cue plays, the timer restarts,
-    // and the call returns false so the caller keeps walking. Overdrive still dashes
-    // without a charge, but without invincibility.
+    // and the call returns false so the caller keeps walking.
     [[nodiscard]] bool TryBeginDash();
 
     // Caps how long the state-driven velocity may still move the player, so a timed move
@@ -164,7 +157,7 @@ public:
     void RefillHP();
 
     // Called by CollisionManager each time one of the player's bullets lands on a target
-    // (enemy, Cue, boss, Windowkill cage). Fills the ult gauge.
+    // (enemy, Cue, boss). Fills the ult gauge.
     void OnBulletHit();
 
     [[nodiscard]] int GetHP() const { return m_hp; }
@@ -189,12 +182,7 @@ public:
 	// --- Cape Simulator (optional, only used if player model has a cape) ---
     CapeSimulator* GetCapeSimulator() const { return m_capeSimulator.get(); }
 
-    void ReleasePowerCap();
-    void RestorePowerCap();
-    bool IsPowerUncapped() const { return m_isPowerUncapped; }
-    // True while either overdrive source runs: the scripted one (Windowkill cage) or the ult.
-    // The ult only speeds up firing; walk and dash speed stay with the scripted overdrive.
-    [[nodiscard]] bool IsOverdriveActive() const { return m_isPowerUncapped || m_ultTimer > 0.0f; }
+    [[nodiscard]] bool IsOverdriveActive() const { return m_ultTimer > 0.0f; }
 
 	// --- Glitch Effect ---
     [[nodiscard]] float GetDamageGlitchIntensity() const noexcept;
@@ -308,16 +296,6 @@ private:
 
 	// --- Debug Animation ---
     DebugAnimState m_debugState{};
-
-    bool m_isPowerUncapped = false;
-
-    float m_uncapMoveSpeed = 30.0f;
-    float m_uncapDashSpeed = 80.0f;
-    DirectX::XMFLOAT4 m_uncapColor = { 1.5f, 1.5f, 1.5f, 1.0f };
-
-    float m_normalMoveSpeed = PlayerConst::MoveSpeed;
-    float m_normalDashSpeed = PlayerConst::DashSpeed;
-    DirectX::XMFLOAT4 m_normalColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     bool m_enableIFrames{ true };
     float m_iFrameDuration{ PlayerConst::HitIFrameDuration };

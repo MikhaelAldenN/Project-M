@@ -1196,7 +1196,6 @@ void SceneBoss::DrawBossPanel()
         if (wasWindowkill)
         {
             m_playerWindowTransparent = false;
-            if (m_player) m_player->RestoreShootDelay();
         }
         AddLog("Boss restarted at Bullet hell.");
         return; // the phase pointers above are dangling now
@@ -1862,7 +1861,6 @@ void SceneBoss::AddLog(const std::string& message)
             }
 
             m_player->GetProjectiles().Clear();
-            m_player->RestoreShootDelay();
             m_player->SetAimLocked(false);
         }
 

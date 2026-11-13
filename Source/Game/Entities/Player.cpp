@@ -285,8 +285,8 @@ void Player::UpdateDashStandbyVfx()
 
 void Player::UpdateOverdriveVfx()
 {
-    // Full glow while overdrive runs (scripted or ult). Before the ult fires, the same glow
-    // grows dimly with the gauge, so the player sees it filling.
+    // Full glow while the ult runs. Before it fires, the same glow grows dimly with the
+    // gauge, so the player sees it filling.
     const float gaugeFraction{ (m_ultHitsToFill > 0)
         ? (std::min)(static_cast<float>(m_ultHits) / static_cast<float>(m_ultHitsToFill), 1.0f)
         : 0.0f };
@@ -348,9 +348,6 @@ bool Player::TryBeginDash()
         return true;
     }
 
-    // USULAN DESAIN: overdrive still dashes without a charge; invincibility needs a charge.
-    if (m_isPowerUncapped) return true;
-
     PlayDashFailCue();
     return false;
 }
@@ -380,8 +377,7 @@ void Player::OnBulletHit()
 
 void Player::AddUltGauge(int hits)
 {
-    // Why not during overdrive: faster fire would refill the gauge it is spending, and the
-    // scripted Windowkill overdrive would hand out an ult right after the cage.
+    // Why not during the ult: its faster fire would refill the gauge it is spending.
     if (hits <= 0 || IsOverdriveActive()) return;
 
     m_ultHits += hits;
@@ -1051,34 +1047,6 @@ void Player::SetPosition(const DirectX::XMFLOAT3& pos)
     StandOnGround();
 }
 
-void Player::ReleasePowerCap()
-{
-    if (m_isPowerUncapped) return;
-    m_isPowerUncapped = true;
-
-    // Keep the current values so RestorePowerCap can put them back.
-    m_normalMoveSpeed = m_moveSpeed;
-    m_normalDashSpeed = m_dashSpeed;
-    m_normalColor = m_color;
-
-    // Overdrive values
-    m_moveSpeed = m_uncapMoveSpeed;
-    m_dashSpeed = m_uncapDashSpeed;
-    m_color = m_uncapColor;
-}
-
-void Player::RestorePowerCap()
-{
-    if (!m_isPowerUncapped) return;
-    m_isPowerUncapped = false;
-
-    // Back to the values saved by ReleasePowerCap
-    m_moveSpeed = m_normalMoveSpeed;
-    m_dashSpeed = m_normalDashSpeed;
-    m_color = m_normalColor;
-}
-
-
 void Player::DrawDebugGUI()
 {
     // ---- Head: state ----
@@ -1160,30 +1128,10 @@ void Player::DrawDebugGUI()
     }
     ImGui::PopID();
 
-    ImGui::PushID("Overdrive");
-    if (ImGui::CollapsingHeader("Overdrive"))
+    ImGui::PushID("Ult");
+    if (ImGui::CollapsingHeader("Ult"))
     {
-        bool isUncapped{ IsPowerUncapped() };
-        if (DebugProperty::Checkbox("Uncapped", isUncapped))
-        {
-            if (isUncapped) ReleasePowerCap();
-            else RestorePowerCap(); 
-        }
-
-        // Why the extra condition: these are the uncapped values; they only replace the
-        // live speed and color while Overdrive is active.
-        if (DebugProperty::DragFloat("Walk speed", m_uncapMoveSpeed, 0.1f, 10.0f, 100.0f, "%.1f") && isUncapped)
-        {
-            m_moveSpeed = m_uncapMoveSpeed;
-        }
-        if (DebugProperty::DragFloat("Dash speed", m_uncapDashSpeed, 0.5f, 10.0f, 200.0f, "%.1f") && isUncapped)
-        {
-            m_dashSpeed = m_uncapDashSpeed;
-        }
-        if (DebugProperty::ColorEdit4("Glow color", &m_uncapColor.x) && isUncapped) m_color = m_uncapColor;
         DebugProperty::DragFloat("Fire interval", m_overdriveShootInterval, 0.005f, PlayerConst::MinShootInterval, 1.0f, "%.3f s");
-
-        ImGui::Separator();
         DebugProperty::Text("Ult gauge", "%d / %d hits", m_ultHits, m_ultHitsToFill);
         DebugProperty::Text("Ult left", "%.2f s", m_ultTimer);
         DebugProperty::SliderInt("Hits to fill", m_ultHitsToFill, 1, 500);

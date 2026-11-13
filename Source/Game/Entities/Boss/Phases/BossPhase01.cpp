@@ -83,8 +83,6 @@ void BossPhase01::Enter(CueBoss* boss) {
         m_aiTarget->SetPosition({ 0.0f, 0.0f, -10.0f });
         m_aiTarget->RefillHP();
         m_aiTarget->m_scale = { 1.0f, 1.0f, 1.0f };
-        m_aiTarget->RestorePowerCap();
-        m_aiTarget->RestoreShootDelay();
         m_aiTarget->SetAimLocked(false);
         m_aiTarget->SetInputEnabled(false);
 

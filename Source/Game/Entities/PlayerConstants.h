@@ -47,8 +47,8 @@ namespace PlayerConst
 
     // --- Shoot ---
     inline constexpr float ShootInterval = 0.15f;           // USULAN DESAIN: seconds between shots while held
-    inline constexpr float OverdriveShootInterval = 0.05f;  // Seconds between shots during overdrive
-    inline constexpr float MinShootInterval = 1.0f / 60.0f; // Floor: an interval of 0 (Windowkill cage) fires 60 shots/s at any frame rate
+    inline constexpr float OverdriveShootInterval = 0.05f;  // Seconds between shots during the ult
+    inline constexpr float MinShootInterval = 1.0f / 60.0f; // Floor for tuned intervals: at most 60 shots/s at any frame rate
 
     // --- Aiming ---
     inline constexpr float AimMinDistSq = 0.0f;   // Minimum sq-distance to aim target before clamping
