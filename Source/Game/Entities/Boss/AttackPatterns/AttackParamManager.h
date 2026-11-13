@@ -12,6 +12,7 @@
 #include "AttackMeteor.h"
 #include "AttackDirect.h"
 #include "AttackConverge.h"
+#include "AttackBloom.h"
 
 // --- Phase 2 Attacks ---
 #include "AttackBouncing.h"
@@ -37,6 +38,7 @@ struct AttackParamSet {
     MeteorParams   meteor{};
     DirectParams   direct{};
     ConvergeParams converge{};
+    BloomParams    bloom{};
 
     // Phase 02 (Windowkill)
     BouncingBulletParams bouncing{};
@@ -79,6 +81,7 @@ public:
     MeteorParams& GetMeteorParams() { return m_params.meteor; }
     DirectParams& GetDirectParams() { return m_params.direct; }
     ConvergeParams& GetConvergeParams() { return m_params.converge; }
+    BloomParams& GetBloomParams() { return m_params.bloom; }
 
     // ========================================================
     // GETTER: PHASE 02 (WINDOWKILL)
@@ -102,6 +105,7 @@ private:
 	void ParseMeteorParams(const json& j, MeteorParams& outParams);
     void ParseDirectParams(const json& j, DirectParams& outParams);
     void ParseConvergeParams(const json& j, ConvergeParams& outParams);
+    void ParseBloomParams(const json& j, BloomParams& outParams);
 
     void ParseBouncingParams(const json& j, BouncingBulletParams& outParams);
     void ParseBoomerangParams(const json& j, BoomerangParams& outParams);

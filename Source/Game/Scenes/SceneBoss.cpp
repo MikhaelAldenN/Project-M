@@ -1379,12 +1379,12 @@ namespace
     // Order of the Attacks panel list while the Bullet hell phase is active.
     enum class BulletHellSet
     {
-        direct, radial, radialContinuous, fan, fanContinuous, phalanx,
+        direct, radial, radialContinuous, bloom, fan, fanContinuous, phalanx,
         wave, ultimate, converge, meteor, rainSweep, rainTargeted, count
     };
 
-    constexpr std::array<const char*, 12> k_bulletHellSetNames{
-        "Direct", "Radial", "Radial continuous", "Fan", "Fan continuous", "Phalanx",
+    constexpr std::array<const char*, 13> k_bulletHellSetNames{
+        "Direct", "Radial", "Radial continuous", "Mekar", "Fan", "Fan continuous", "Phalanx",
         "Wave", "Ultimate", "Converge", "Meteor", "Rain sweep", "Rain targeted" };
 
     static_assert(k_bulletHellSetNames.size() == static_cast<std::size_t>(BulletHellSet::count),
@@ -1469,6 +1469,19 @@ namespace
         DebugProperty::SliderFloat("Laser duration", p.laserDuration, 0.5f, 4.0f, "%.2f s", p.laserDuration != loaded.laserDuration);
         DebugProperty::SliderFloat("Shoot speed", p.shootSpeed, 10.0f, 120.0f, "%.1f", p.shootSpeed != loaded.shootSpeed);
         DebugProperty::SliderFloat("Fire warning", p.fireWarningTime, 0.0f, 2.0f, "%.2f s", p.fireWarningTime != loaded.fireWarningTime);
+    }
+
+    void DrawBloomRows(BloomParams& p, const BloomParams& loaded)
+    {
+        DebugProperty::SliderInt("Rings", p.ringCount, 1, 8, p.ringCount != loaded.ringCount);
+        DebugProperty::SliderInt("Bullets per ring", p.bulletsPerRing, 4, 48, p.bulletsPerRing != loaded.bulletsPerRing);
+        DebugProperty::SliderFloat("Ring delay", p.ringDelay, 0.0f, 2.0f, "%.2f s", p.ringDelay != loaded.ringDelay);
+        DebugProperty::SliderFloat("Out speed", p.outSpeed, 1.0f, 30.0f, "%.1f units/s", p.outSpeed != loaded.outSpeed);
+        DebugProperty::SliderFloat("Stop radius", p.stopRadius, 2.0f, 20.0f, "%.1f units", p.stopRadius != loaded.stopRadius);
+        DebugProperty::SliderFloat("Hold duration", p.holdDuration, 0.0f, 2.0f, "%.2f s", p.holdDuration != loaded.holdDuration);
+        DebugProperty::SliderFloat("Launch speed", p.launchSpeed, 1.0f, 30.0f, "%.1f units/s", p.launchSpeed != loaded.launchSpeed);
+        DebugProperty::SliderFloat("Bullet radius", p.bulletRadius, 0.1f, 1.5f, "%.2f units", p.bulletRadius != loaded.bulletRadius);
+        DebugProperty::SliderInt("Damage", p.damage, 1, 150, p.damage != loaded.damage);
     }
 
     void DrawConvergeRows(ConvergeParams& p, const ConvergeParams& loaded)
@@ -1682,6 +1695,13 @@ void SceneBoss::DrawBulletHellAttacks(BossPhase01& phase)
         RadialParams& params{ manager.GetRadialContinuousParams() };
         if (ImGui::Button("Fire")) phase.AddAttack(std::make_unique<AttackRadial>(params));
         DrawRevertAndRows(params, loaded.radialContinuous, DrawRadialRows);
+        break;
+    }
+    case BulletHellSet::bloom:
+    {
+        BloomParams& params{ manager.GetBloomParams() };
+        if (ImGui::Button("Fire")) phase.AddAttack(std::make_unique<AttackBloom>(params));
+        DrawRevertAndRows(params, loaded.bloom, DrawBloomRows);
         break;
     }
     case BulletHellSet::fan:

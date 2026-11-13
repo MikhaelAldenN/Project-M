@@ -15,9 +15,9 @@ namespace
     using Attack = BossAI_Phase01::AttackSequence;
     using Step = BossAI_Phase01::RotationStep;
 
-    // USULAN DESAIN: Act 2 rotation. The first slot belongs to Mekar; Radial stands in.
+    // USULAN DESAIN: Act 2 rotation. The first slot is Mekar (Radial is its fallback).
     constexpr std::array<Step, 8> k_phaseARotation{ {
-        { Attack::Radial, false },       { Attack::Fan, false },
+        { Attack::Bloom, false },        { Attack::Fan, false },
         { Attack::RainTargeted, false }, { Attack::Fan, false },
         { Attack::Meteor, false },       { Attack::Fan, false },
         { Attack::Phalanx, false },      { Attack::Fan, false },
@@ -27,7 +27,7 @@ namespace
     // ultimate. RainTargeted gets a horizontal sweep; Phalanx runs its own Rain and the
     // converging ultimate needs the whole arena, so neither gets a combo Rain.
     constexpr std::array<Step, 5> k_phaseBRotation{ {
-        { Attack::Radial, true },
+        { Attack::Bloom, true },
         { Attack::RainTargeted, true, RainMode::HorizontalSweep },
         { Attack::Meteor, true },
         { Attack::Phalanx, false },
@@ -74,6 +74,10 @@ float BossAI_Phase01::LaunchAttack(AttackSequence attack, CueBoss* boss) {
     switch (attack) {
     case AttackSequence::Radial:
         m_phase->AddAttack(std::make_unique<AttackRadial>(params.GetRadialNormalParams()));
+        return 1.0f;
+
+    case AttackSequence::Bloom:
+        m_phase->AddAttack(std::make_unique<AttackBloom>(params.GetBloomParams()));
         return 1.0f;
 
     case AttackSequence::Fan:

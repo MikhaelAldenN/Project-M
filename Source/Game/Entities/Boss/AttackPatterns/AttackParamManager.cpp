@@ -32,6 +32,7 @@ bool AttackParamManager::Load(const std::string& filepath) {
             if (p1.contains("Meteor"))           ParseMeteorParams(p1["Meteor"], fresh.meteor);
             if (p1.contains("Direct"))           ParseDirectParams(p1["Direct"], fresh.direct);
             if (p1.contains("Converge"))         ParseConvergeParams(p1["Converge"], fresh.converge);
+            if (p1.contains("Bloom"))            ParseBloomParams(p1["Bloom"], fresh.bloom);
         }
 
         if (j.contains("Phase02")) {
@@ -252,4 +253,17 @@ void AttackParamManager::ParseConvergeParams(const json& j, ConvergeParams& out)
     if (j.contains("blastRadiusBase")) out.blastRadiusBase = j["blastRadiusBase"];
     if (j.contains("blastRadiusPerBullet")) out.blastRadiusPerBullet = j["blastRadiusPerBullet"];
     if (j.contains("blastRadiusMax")) out.blastRadiusMax = j["blastRadiusMax"];
+}
+
+void AttackParamManager::ParseBloomParams(const json& j, BloomParams& out) {
+    if (j.contains("ringCount")) out.ringCount = j["ringCount"];
+    if (j.contains("bulletsPerRing")) out.bulletsPerRing = j["bulletsPerRing"];
+    if (j.contains("ringDelay")) out.ringDelay = j["ringDelay"];
+    if (j.contains("outSpeed")) out.outSpeed = j["outSpeed"];
+    if (j.contains("stopRadius")) out.stopRadius = j["stopRadius"];
+    if (j.contains("holdDuration")) out.holdDuration = j["holdDuration"];
+    if (j.contains("launchSpeed")) out.launchSpeed = j["launchSpeed"];
+    if (j.contains("bulletRadius")) out.bulletRadius = j["bulletRadius"];
+    if (j.contains("visualScale")) out.visualScale = j["visualScale"];
+    if (j.contains("damage")) out.damage = j["damage"];
 }
