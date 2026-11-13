@@ -561,13 +561,16 @@ void SceneBoss::UpdateCameraFocus(float elapsedTime)
 
 void SceneBoss::ClampPlayerToArena()
 {
-    // Windowkill plays on the monitor area, which this arena does not describe.
+    if (!m_player) return;
+
+    // Windowkill keeps the view at the origin, so its play area is the visible area itself.
     const bool isWindowkill{ m_cue && IsWindowkill(m_cue->GetCurrentPhase()) };
-    if (!m_player || isWindowkill) return;
+    const float areaWidth{ isWindowkill ? Beyond::Config::ARENA_WIDTH_UNITS : Beyond::Config::ACT2_ARENA_WIDTH_UNITS };
+    const float areaHeight{ isWindowkill ? Beyond::Config::ARENA_HEIGHT_UNITS : Beyond::Config::ACT2_ARENA_HEIGHT_UNITS };
 
     // The limit is for the body, not only its centre.
-    const float limitX{ Beyond::Config::ACT2_ARENA_WIDTH_UNITS * 0.5f - PlayerConst::CollisionRadius };
-    const float limitZ{ Beyond::Config::ACT2_ARENA_HEIGHT_UNITS * 0.5f - PlayerConst::CollisionRadius };
+    const float limitX{ areaWidth * 0.5f - PlayerConst::CollisionRadius };
+    const float limitZ{ areaHeight * 0.5f - PlayerConst::CollisionRadius };
 
     const DirectX::XMFLOAT3 pos{ m_player->GetPosition() };
     const float clampedX{ std::clamp(pos.x, -limitX, limitX) };

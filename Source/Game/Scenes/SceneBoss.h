@@ -62,7 +62,8 @@ private:
     void UpdateArenaCamera(float elapsedTime);
     // Eases m_cameraFocus toward the player inside the Act 2 arena; origin in Windowkill.
     void UpdateCameraFocus(float elapsedTime);
-    // Keeps the player's body inside the Act 2 arena; does nothing in Windowkill.
+    // Keeps the player's body inside the play area: the Act 2 arena, or in Windowkill
+    // the visible area mapped onto the monitor.
     void ClampPlayerToArena();
     void UpdatePlayerStretch(float scaledDt);
     // Returns true when it requested the return to title; Update must stop.
