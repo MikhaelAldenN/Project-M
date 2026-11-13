@@ -18,6 +18,7 @@ struct MeteorParams {
     float radius = 0.8f;
     float visualScale = 3.0f;
 
+    // Offsets from the attack origin (see AttackMeteor's constructor).
     float startX = 24.0f;
     float startZ = 15.0f;
     float targetX = -24.0f;
@@ -33,7 +34,9 @@ struct MeteorParams {
 
 class AttackMeteor :public IBossAttackPattern {
 public:
-    explicit AttackMeteor(const MeteorParams& params);
+    // `origin` is the world point the anchors are measured from, fixed for the whole
+    // attack (the AI passes the player's position at launch).
+    AttackMeteor(const MeteorParams& params, const DirectX::XMFLOAT3& origin);
     ~AttackMeteor() override = default;
 
     void Start(CueBoss* boss, ProjectilePool* pool) override;
@@ -47,6 +50,7 @@ private:
     void FireMeteor();
 
     MeteorParams                          m_params;
+    DirectX::XMFLOAT3                     m_origin{};
     ProjectilePool* m_pool = nullptr; // borrowed from the phase, set in Start
     CueBoss* m_boss = nullptr;
 

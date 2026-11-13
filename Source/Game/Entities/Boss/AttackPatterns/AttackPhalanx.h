@@ -7,7 +7,7 @@
 // ============================================================
 // AttackPhalanx - Phase 1 attack pattern.
 //
-// Boss slides to one side of the arena, summons N orbiting
+// Boss slides beside the player (left or right), summons N orbiting
 // homing bullets in a spread fan facing the player, holds
 // briefly, then launches them one by one.
 //
@@ -16,7 +16,7 @@
 //   2 = Holding (all bullets orbit, waiting before fire)
 //   3 = Firing (launch one bullet at a time)
 //   4 = Post-fire pause
-//   5 = Returning to center
+//   5 = Returning to where the boss started
 // ============================================================
 
 struct PhalanxParams {
@@ -58,6 +58,7 @@ private:
     Player* m_target = nullptr;
     ProjectilePool* m_pool = nullptr; // borrowed from the phase, set in Start
     CueBoss* m_boss = nullptr;
+    DirectX::XMFLOAT3 m_returnPosition{}; // where the boss stood when the attack started
 
     int   m_state = 0;
     float m_timer = 0.0f;

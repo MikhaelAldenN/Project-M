@@ -1700,7 +1700,11 @@ void SceneBoss::DrawBulletHellAttacks(BossPhase01& phase)
     case BulletHellSet::meteor:
     {
         MeteorParams& params{ manager.GetMeteorParams() };
-        if (ImGui::Button("Fire")) phase.AddAttack(std::make_unique<AttackMeteor>(params));
+        if (ImGui::Button("Fire"))
+        {
+            const DirectX::XMFLOAT3 origin{ m_player ? m_player->GetPosition() : DirectX::XMFLOAT3{} };
+            phase.AddAttack(std::make_unique<AttackMeteor>(params, origin));
+        }
         DrawRevertAndRows(params, loaded.meteor, DrawMeteorRows);
         break;
     }

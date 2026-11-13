@@ -8,8 +8,8 @@
 
 using namespace DirectX;
 
-AttackMeteor::AttackMeteor(const MeteorParams& params)
-    : m_params(params) {}
+AttackMeteor::AttackMeteor(const MeteorParams& params, const DirectX::XMFLOAT3& origin)
+    : m_params(params), m_origin(origin) {}
 
 void AttackMeteor::Start(CueBoss* boss, ProjectilePool* pool) {
     assert(pool && "AttackMeteor needs the phase's bullet pool");
@@ -99,9 +99,9 @@ void AttackMeteor::FireMeteor() {
         float randomOffsetX = ((rand() % 100) / 50.0f - 1.0f) * 8.0f;
 
         DirectX::XMFLOAT3 spawnPos = {
-            m_params.startX + (perpX * currentOffset) + randomOffsetX,
+            m_origin.x + m_params.startX + (perpX * currentOffset) + randomOffsetX,
             1.0f,
-            m_params.startZ + (perpZ * currentOffset)
+            m_origin.z + m_params.startZ + (perpZ * currentOffset)
         };
         DirectX::XMFLOAT3 direction = { dirX, 0.0f, dirZ };
 

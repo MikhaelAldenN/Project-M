@@ -93,7 +93,7 @@ float BossAI_Phase01::LaunchAttack(AttackSequence attack, CueBoss* boss) {
         return 1.0f;
 
     case AttackSequence::Meteor:
-        m_phase->AddAttack(std::make_unique<AttackMeteor>(params.GetMeteorParams()));
+        m_phase->AddAttack(std::make_unique<AttackMeteor>(params.GetMeteorParams(), m_target->GetPosition()));
         return 1.0f;
 
     case AttackSequence::Ultimate:

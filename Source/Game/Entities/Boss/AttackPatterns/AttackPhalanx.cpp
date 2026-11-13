@@ -7,11 +7,19 @@
 #include "EffectManager.h"
 #include "Player.h"
 #include <DirectXMath.h>
+#include <algorithm>
 #include <random>
 #include <cmath>
 #include "Engine/Base/MathUtils.h"
+#include "Engine/Common/Constants.h"
 
 using namespace DirectX;
+
+namespace
+{
+    constexpr float k_slideOffsetX{ 15.0f }; // USULAN DESAIN: boss stands this far left or right of the player
+    constexpr float k_arenaMargin{ 2.0f };   // keeps the boss and its orbit inside the Act 2 arena
+}
 
 AttackPhalanx::AttackPhalanx(const PhalanxParams& params, Player* target)
     : m_params(params), m_target(target) {}
@@ -27,11 +35,21 @@ void AttackPhalanx::Start(CueBoss* boss, ProjectilePool* pool) {
     m_flareTriggered = false;
     m_bullets.clear();
 
-    // Pick a random side to slide to
+    // Slide beside the player, on a random side, at the player's row.
     std::mt19937 gen(std::random_device{}());
-    m_moveTarget.position.x = (std::uniform_int_distribution<>(0, 1)(gen) == 0) ? -15.0f : 15.0f;
-    m_moveTarget.position.z = 0.0f;
+    float side{ (std::uniform_int_distribution<>(0, 1)(gen) == 0) ? -1.0f : 1.0f };
+
+    const XMFLOAT3 playerPos{ m_target ? m_target->GetPosition() : XMFLOAT3{} };
+    const float limitX{ Beyond::Config::ACT2_ARENA_WIDTH_UNITS * 0.5f - k_arenaMargin };
+    const float limitZ{ Beyond::Config::ACT2_ARENA_HEIGHT_UNITS * 0.5f - k_arenaMargin };
+    // Why the flip: near an arena edge that side would put the boss outside the arena.
+    if (std::fabs(playerPos.x + side * k_slideOffsetX) > limitX) side = -side;
+
+    m_moveTarget.position.x = std::clamp(playerPos.x + side * k_slideOffsetX, -limitX, limitX);
+    m_moveTarget.position.z = std::clamp(playerPos.z, -limitZ, limitZ);
     m_moveTarget.lerpSpeed = m_params.attackMoveSpeed;
+
+    m_returnPosition = boss ? boss->GetPosition() : XMFLOAT3{};
 }
 
 void AttackPhalanx::Update(float dt, CueBoss* boss) {
@@ -152,7 +170,7 @@ void AttackPhalanx::Update(float dt, CueBoss* boss) {
     else if (m_state == 4) {
         if (m_timer >= m_params.postFireDelay) {
             m_state = 5;
-            m_moveTarget.position = { 0.0f, 0.0f, 0.0f };
+            m_moveTarget.position = m_returnPosition;
             m_moveTarget.lerpSpeed = m_params.returnMoveSpeed;
         }
     }
