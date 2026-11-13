@@ -1337,11 +1337,8 @@ namespace
         DebugProperty::DragFloat("Spawn delay", p.spawnDelay, 0.05f, 0.05f, 2.0f, "%.2f s", p.spawnDelay != loaded.spawnDelay);
         DebugProperty::DragFloat("Hover duration", p.hoverDuration, 0.05f, 0.1f, 3.0f, "%.2f s", p.hoverDuration != loaded.hoverDuration);
         DebugProperty::DragFloat("Max speed", p.maxSpeed, 1.0f, 10.0f, 300.0f, "%.1f", p.maxSpeed != loaded.maxSpeed);
-        DebugProperty::DragFloat("Arc radius", p.arcRadius, 0.5f, 5.0f, 100.0f, "%.1f units", p.arcRadius != loaded.arcRadius);
-        DebugProperty::DragFloat2("Arc center", p.arcCenterX, p.arcCenterZ, 0.5f, -50.0f, 50.0f, "%.1f units",
-            p.arcCenterX != loaded.arcCenterX || p.arcCenterZ != loaded.arcCenterZ);
-        DebugProperty::DragFloatRange("Arc angle range", p.arcMinAngle, p.arcMaxAngle, 1.0f, 0.0f, 360.0f, "%.0f deg",
-            p.arcMinAngle != loaded.arcMinAngle || p.arcMaxAngle != loaded.arcMaxAngle);
+        DebugProperty::DragFloat("Ring radius", p.ringRadius, 0.5f, 2.0f, 20.0f, "%.1f units", p.ringRadius != loaded.ringRadius);
+        DebugProperty::DragFloat("Angle step", p.angleStep, 0.5f, 0.0f, 360.0f, "%.1f deg", p.angleStep != loaded.angleStep);
         DebugProperty::SliderInt("Damage", p.damage, 1, 500, p.damage != loaded.damage);
     }
 }

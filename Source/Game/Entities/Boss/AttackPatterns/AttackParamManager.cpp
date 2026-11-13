@@ -209,11 +209,8 @@ void AttackParamManager::ParseSpearParams(const json& j, UndyneSpearParams& out)
     if (j.contains("spawnDelay")) out.spawnDelay = j["spawnDelay"];
     if (j.contains("hoverDuration")) out.hoverDuration = j["hoverDuration"];
     if (j.contains("maxSpeed")) out.maxSpeed = j["maxSpeed"];
-    if (j.contains("arcRadius")) out.arcRadius = j["arcRadius"];
-    if (j.contains("arcCenterX")) out.arcCenterX = j["arcCenterX"];
-    if (j.contains("arcCenterZ")) out.arcCenterZ = j["arcCenterZ"];
-    if (j.contains("arcMinAngle")) out.arcMinAngle = j["arcMinAngle"];
-    if (j.contains("arcMaxAngle")) out.arcMaxAngle = j["arcMaxAngle"];
+    if (j.contains("ringRadius")) out.ringRadius = j["ringRadius"];
+    if (j.contains("angleStep")) out.angleStep = j["angleStep"];
     if (j.contains("damage")) out.damage = j["damage"];
     if (j.contains("startSpeed")) out.startSpeed = j["startSpeed"];
     if (j.contains("acceleration")) out.acceleration = j["acceleration"];

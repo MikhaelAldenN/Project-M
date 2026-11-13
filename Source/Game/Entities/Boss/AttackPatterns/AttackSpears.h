@@ -15,11 +15,8 @@ struct UndyneSpearParams {
     float maxSpeed = 60.0f;
     float acceleration = 10.0f;
     int   damage = 10;
-    float arcRadius = 20.0f;
-    float arcCenterX = 0.0f;
-    float arcCenterZ = -15.0f;
-    float arcMinAngle = 20.0f;
-    float arcMaxAngle = 160.0f;
+    float ringRadius = 8.0f;   // USULAN DESAIN: distance from the player at which a spear appears
+    float angleStep = 137.5f;  // degrees between consecutive spears; 137.5 (golden angle) never clumps
 };
 
 class AttackSpears : public IBossAttackPattern {
