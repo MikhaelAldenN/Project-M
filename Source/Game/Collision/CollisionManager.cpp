@@ -319,8 +319,8 @@ void CollisionManager::CheckPlayerVsItems()
 
 void CollisionManager::CheckPlayerProjectilesVsEnemies(const float elapsedTime)
 {
-    // Only the player is required: its bullets must still reach the boss phase (the
-    // Windowkill cage) when there are no enemies.
+    // Only the player is required: its bullets must still reach the boss phase when
+    // there are no enemies.
     if (!m_player) return;
 
     ProjectilePool& projectiles{ m_player->GetProjectiles() };
