@@ -168,8 +168,7 @@ BossAI_Phase02::BossAI_Phase02(BossPhase02* phase, Player* target)
     : m_phase(phase), m_target(target) {}
 
 void BossAI_Phase02::Update(float dt, CueBoss* boss) {
-    // No attacks while the player is still caged.
-    if (!m_enabled || !m_target || !m_phase || m_phase->IsPlayerCaged()) return;
+    if (!m_enabled || !m_target || !m_phase) return;
 
     if (m_phase->HasActiveAttacks()) return;
 

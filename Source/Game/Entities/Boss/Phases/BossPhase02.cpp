@@ -17,6 +17,12 @@
 
 using namespace DirectX;
 
+namespace
+{
+    // Player-facing text; moves to the text ID table in phase 2.5.
+    constexpr const char* k_openingLine{ u8"なーんてね" };
+}
+
 BossPhase02::BossPhase02(Player* player) {
     m_aiTarget = player;
 }
@@ -71,12 +77,12 @@ void BossPhase02::Enter(CueBoss* boss) {
     // =========================================================
     m_ai = std::make_unique<BossAI_Phase02>(this, m_aiTarget);
 
-    CreatePlayerCage(*windowSystem);
-
-    m_overdriveAlpha = 0.0f;
+    // Why: the Act 2 arena is larger than the monitor, so the player can arrive off-screen.
+    if (m_aiTarget) {
+        m_aiTarget->SetPosition(0.0f, 0.0f, -8.0f);
+    }
 
     StartOpeningDialogue(*windowSystem);
-
     CreateClickBlocker(*windowSystem);
 }
 
@@ -125,48 +131,11 @@ void BossPhase02::CreateFxWindow(WindowTrackingSystem& windowSystem) {
 void BossPhase02::InitializeWings(ID3D11Device* device) {
     // Wing textures are loaded only for this phase.
     m_wingSprite = std::make_unique<Sprite>(device, "Data/Sprite/Placeholder/[PLACEHOLDER]ErrorAtlas.png");
-    m_overdriveSprite = std::make_unique<Sprite>(device, "Data/Sprite/txt_nagaoshi.png");
 
     m_glitchTimer = 0.0f;
     m_wingState = WingState::Expanding;
     m_wingStateTimer = 0.0f;
     GenerateButterflyWings();
-}
-
-void BossPhase02::CreatePlayerCage(WindowTrackingSystem& windowSystem) {
-    if (!m_aiTarget) return;
-
-    m_isPlayerCaged = true;
-    m_aiTarget->SetPosition(0, 0, -8.0f);
-    m_cageMaxHP = 600;
-    m_cageHP = m_cageMaxHP;
-    m_cagePos = m_aiTarget->GetPosition(); // the cage stays where the player stands now
-    m_cageWindowPos = m_cagePos;
-    m_cageShakeTimer = 0.0f;
-    m_aiTarget->SetShootDelay(0.0f);
-
-    // Cage size in world units: the 300-pixel window divided by the pixel-to-unit ratio.
-    m_cageSizeWorld = 300.0f / windowSystem.GetPixelToUnitRatio();
-
-    TrackedWindowConfig cageCfg;
-    cageCfg.name = m_cageWindowName;
-    cageCfg.title = "TRAPPED.exe";
-    cageCfg.width = 300;
-    cageCfg.height = 300;
-    cageCfg.role = WindowRole::TRACKED_ENTITY;
-    cageCfg.priority = 100;
-    cageCfg.isTransparent = false;
-
-    windowSystem.AddTrackedWindow(cageCfg,
-        [this]() { return m_cageWindowPos; }, // fixed position; it only jitters when hit
-        []() { return DirectX::XMFLOAT2(300.0f, 300.0f); }
-    );
-
-    if (auto* cageWindow = windowSystem.GetTrackedWindow(m_cageWindowName)) {
-        if (cageWindow->window) {
-            cageWindow->window->SetBackgroundAlpha(1.0f);
-        }
-    }
 }
 
 void BossPhase02::StartOpeningDialogue(WindowTrackingSystem& windowSystem) {
@@ -186,7 +155,7 @@ void BossPhase02::StartOpeningDialogue(WindowTrackingSystem& windowSystem) {
         diagCfg.width = (int)m_dialogueWindowW;
         diagCfg.height = (int)m_dialogueWindowH;
         diagCfg.role = WindowRole::TRACKED_ENTITY;
-        diagCfg.isTransparent = false;                // opaque, like the cage window
+        diagCfg.isTransparent = false;
         diagCfg.priority = 5;
 
         windowSystem.AddTrackedWindow(diagCfg,
@@ -210,18 +179,14 @@ void BossPhase02::StartOpeningDialogue(WindowTrackingSystem& windowSystem) {
     m_dialogueBox->SetShowBackground(false);  // text only; the window itself provides the background
 
     m_dialogueBox->SetAutoAdvance(false);
-    m_dialogueBox->StartDialogue({
-        u8"ウィンドウを撃て"
-        });
+    m_dialogueBox->StartDialogue({ k_openingLine });
 
     m_isDialogueActive = true;
+    m_openingDialogueTimer = 0.0f;
     m_aiEnabled = false;
     if (m_aiTarget) {
         m_aiTarget->SetInputEnabled(true); // the player can move from the start
     }
-
-    m_cageFirstHitTriggered = false;
-    m_overdriveDialogueTriggered = false;
 }
 
 void BossPhase02::CreateClickBlocker(WindowTrackingSystem& windowSystem) {
@@ -260,11 +225,10 @@ void BossPhase02::CreateClickBlocker(WindowTrackingSystem& windowSystem) {
 void BossPhase02::Exit(CueBoss* boss) {
     m_deathCleanupDone = false;
 
-    // 1. Remove the phase windows (FX, dialogue, cage)
+    // 1. Remove the phase windows (FX, dialogue)
     if (boss && boss->GetWindowSystem()) {
         boss->GetWindowSystem()->RemoveTrackedWindow("cue_fx");
         boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
-        boss->GetWindowSystem()->RemoveTrackedWindow(m_cageWindowName);
     }
 
     // 2. Stop all attack patterns
@@ -289,7 +253,6 @@ void BossPhase02::Exit(CueBoss* boss) {
     m_wingSprite.reset();
     m_leftWingData.clear();
     m_rightWingData.clear();
-    m_overdriveSprite.reset();
 
     // 5. Show the main window again and restore its window order
     Beyond::Window* mainWindow = WindowManager::Instance().GetWindowByIndex(0);
@@ -304,7 +267,6 @@ void BossPhase02::Exit(CueBoss* boss) {
     if (boss && boss->GetWindowSystem()) {
         boss->GetWindowSystem()->RemoveTrackedWindow("cue_fx");
         boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
-        boss->GetWindowSystem()->RemoveTrackedWindow(m_cageWindowName);
         boss->GetWindowSystem()->RemoveTrackedWindow("click_blocker");
     }
 }
@@ -394,12 +356,6 @@ void BossPhase02::Update(float dt, CueBoss* boss) {
     if (m_bossHP <= 0) {
         m_aiEnabled = false;
     }
-
-    UpdateCageShake(dt);
-
-    UpdateOverdrive(dt, boss);
-
-    ClampPlayerToCage();
 
     UpdateBossPosition(boss);
 
@@ -506,66 +462,18 @@ void BossPhase02::UpdateOpeningDialogue(float dt, CueBoss* boss) {
     if (!m_isDialogueActive || !m_dialogueBox) return;
 
     m_dialogueBox->Update(dt);
-    if (!m_isPlayerCaged || m_overdriveAlpha > 0.0f) {
-        m_isDialogueActive = false;
-        if (boss && boss->GetWindowSystem()) {
-            boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
-        }
-        m_dialogueWindow = nullptr;
-        m_dialogueCamera.reset();
-        m_dialogueBox.reset();
-        m_aiEnabled = (m_aiTarget != nullptr);
+    m_openingDialogueTimer += dt;
+    if (m_openingDialogueTimer < m_openingDialogueDuration) return;
+
+    // The line has had its time on screen: close its window and hand over to the AI.
+    m_isDialogueActive = false;
+    if (boss && boss->GetWindowSystem()) {
+        boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
     }
-}
-
-void BossPhase02::UpdateCageShake(float dt) {
-    m_cageWindowPos = m_cagePos;
-    if (m_isPlayerCaged && m_cageShakeTimer > 0.0f) {
-        m_cageShakeTimer -= dt;
-        float t = (m_cageShakeDuration > 0.0f) ? (m_cageShakeTimer / m_cageShakeDuration) : 0.0f;
-        float strength = max(0.0f, t) * m_cageShakeIntensity;
-        float offsetX = (((rand() % 200) / 100.0f) - 1.0f) * strength;
-        float offsetZ = (((rand() % 200) / 100.0f) - 1.0f) * strength;
-        m_cageWindowPos = { m_cagePos.x + offsetX, m_cagePos.y, m_cagePos.z + offsetZ };
-    }
-}
-
-void BossPhase02::UpdateOverdrive(float dt, CueBoss* boss) {
-    if (m_aiTarget && m_aiTarget->IsPowerUncapped() && m_isPlayerCaged) {
-        m_overdriveAlpha += m_overdriveFadeSpeed * dt;
-        if (m_overdriveAlpha > 1.0f) m_overdriveAlpha = 1.0f;
-
-        if (!m_overdriveDialogueTriggered) {
-            m_overdriveDialogueTriggered = true;
-            if (m_isDialogueActive && boss && boss->GetWindowSystem()) {
-                boss->GetWindowSystem()->RemoveTrackedWindow(m_dialogueWindowName);
-                m_dialogueWindow = nullptr;
-                m_dialogueCamera.reset();
-                m_isDialogueActive = false;
-            }
-        }
-    }
-    else {
-        m_overdriveAlpha = 0.0f;
-    }
-}
-
-void BossPhase02::ClampPlayerToCage() {
-    if (!m_isPlayerCaged || !m_aiTarget) return;
-
-    DirectX::XMFLOAT3 pPos = m_aiTarget->GetPosition();
-    float halfSize = (m_cageSizeWorld * 0.5f) - 0.5f;
-    bool isClamped = false;
-
-    if (pPos.x > m_cagePos.x + halfSize) { pPos.x = m_cagePos.x + halfSize; isClamped = true; }
-    if (pPos.x < m_cagePos.x - halfSize) { pPos.x = m_cagePos.x - halfSize; isClamped = true; }
-    if (pPos.z > m_cagePos.z + halfSize) { pPos.z = m_cagePos.z + halfSize; isClamped = true; }
-    if (pPos.z < m_cagePos.z - halfSize) { pPos.z = m_cagePos.z - halfSize; isClamped = true; }
-
-    if (isClamped) {
-        m_aiTarget->GetMovement()->SetPosition(pPos);
-        m_aiTarget->SetPosition(pPos);
-    }
+    m_dialogueWindow = nullptr;
+    m_dialogueCamera.reset();
+    m_dialogueBox.reset();
+    m_aiEnabled = (m_aiTarget != nullptr);
 }
 
 void BossPhase02::UpdateBossPosition(CueBoss* boss) {
@@ -739,110 +647,12 @@ void BossPhase02::Render(ID3D11DeviceContext* context, Camera* currentCamera, Cu
         }
     }
 
-    // 3. RENDER OVERDRIVE FLOOR DECAL
-    if (m_aiTarget && m_aiTarget->IsPowerUncapped() && m_isPlayerCaged && m_overdriveAlpha > 0.0f && m_overdriveSprite) {
-        std::vector<Sprite::Sprite3DBatchData> overdriveBatch;
-
-        float baseWidth = 592.0f;
-        float baseHeight = 193.0f;
-        float finalWidth = baseWidth * m_overdriveSpriteScale;
-        float finalHeight = baseHeight * m_overdriveSpriteScale;
-
-        DirectX::XMFLOAT3 pos = { 0.0f, 0.0f, -7.5f };
-        float scale = 0.4f;
-
-        overdriveBatch.push_back({
-            pos.x, pos.y, pos.z,
-            finalWidth * scale, finalHeight * scale,
-            0.0f, 0.0f, 0.0f, 0.0f,
-            DirectX::XMConvertToRadians(90.0f), 0.0f, 0.0f,
-            1.0f, 1.0f, 1.0f, m_overdriveAlpha * 0.5f
-            });
-
-        m_overdriveSprite->Render3DBatch(context, currentCamera, overdriveBatch);
-    }
-
     // =========================================================
     // RENDER ATTACK PATTERNS
     // =========================================================
     for (auto& attack : m_activeAttacks) {
         attack->Render(context, currentCamera, boss);
     }
-}
-
-bool BossPhase02::TryAbsorbPlayerBullet(const DirectX::XMFLOAT3& bulletPosition, int damage) {
-    if (!m_isPlayerCaged) return false;
-
-    const float halfSize{ m_cageSizeWorld * 0.5f };
-    const bool isInsideCage{
-        bulletPosition.x <= m_cagePos.x + halfSize && bulletPosition.x >= m_cagePos.x - halfSize &&
-        bulletPosition.z <= m_cagePos.z + halfSize && bulletPosition.z >= m_cagePos.z - halfSize };
-    if (isInsideCage) return false;
-
-    DamageCage(damage);
-    return true;
-}
-
-void BossPhase02::DamageCage(int dmg) {
-    if (!m_isPlayerCaged) return;
-
-    bool isFirstHit = !m_cageFirstHitTriggered;
-    if (isFirstHit) {
-        m_cageFirstHitTriggered = true;
-        TriggerCageFirstHitDialogue(m_bossRef);
-    }
-
-    m_cageHP -= dmg;
-    if (m_cageHP < 0) m_cageHP = 0;
-
-    m_cageShakeTimer = m_cageShakeDuration;
-
-    AudioManager::Instance().PlaySFX("Data/Sound/SE_Hit.wav", 0.2f);
-
-    if (m_bossRef && m_bossRef->GetWindowSystem()) {
-        if (auto* cageWindow = m_bossRef->GetWindowSystem()->GetTrackedWindow(m_cageWindowName)) {
-            if (cageWindow->window) {
-                float hpRatio = (m_cageMaxHP > 0) ? ((float)m_cageHP / (float)m_cageMaxHP) : 0.0f;
-                cageWindow->window->SetBackgroundAlpha(max(0.15f, hpRatio));
-            }
-        }
-    }
-
-    // =========================================================
-    // RELEASE THE PLAYER POWER CAP AT HALF CAGE HP
-    // =========================================================
-    if (m_cageHP <= 300 && m_aiTarget) {
-        if (!m_aiTarget->IsPowerUncapped()) {
-            m_aiTarget->ReleasePowerCap();
-            m_aiTarget->SetShootDelay(0.5f);
-
-            CameraController::Instance().AddTrauma(0.5f);
-            AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Laser_Charge.wav", 0.3f);
-        }
-    }
-
-    // =========================================================
-    // CAGE BROKEN (HP <= 0)
-    // =========================================================
-    if (m_cageHP <= 0) {
-        m_isPlayerCaged = false;
-        m_aiEnabled = true;
-
-        CameraController::Instance().AddTrauma(0.6f);
-        AudioManager::Instance().PlaySFX("Data/Sound/SE_GlassShatter.wav", 0.4f);
-
-        if (m_bossRef && m_bossRef->GetWindowSystem()) {
-            auto extracted = m_bossRef->GetWindowSystem()->ExtractForPool(m_cageWindowName);
-            if (extracted && extracted->window) {
-                WindowManager::Instance().DestroyWindow(extracted->window);
-            }
-        }
-    }
-}
-
-void BossPhase02::TriggerCageFirstHitDialogue(CueBoss* boss)
-{
-    // Intentionally empty: this phase has no first-hit dialogue.
 }
 
 DamageResult BossPhase02::TakeDamage(const DamageInfo& damage) {

@@ -80,32 +80,20 @@ public:
     int  GetMaxHP() const override { return m_bossMaxHP; }
     bool IsDead() const override { return m_bossHP <= 0; }
 
-    void SetOverdriveSpriteScale(float scale) { m_overdriveSpriteScale = scale; }
-    float GetOverdriveSpriteScale() const { return m_overdriveSpriteScale; }
-
     bool IsReadyToChangeScene() const override { return m_isDying && m_deathTimer >= 7.0f; }
-
     void AddAttack(std::unique_ptr<IBossAttackPattern> attack) override;
     bool HasActiveAttacks() const override { return !m_activeAttacks.empty(); }
     Player* GetAITarget() const override { return m_aiTarget; }
-
-    bool IsPlayerCaged() const { return m_isPlayerCaged; }
-    [[nodiscard]] bool IsVulnerable() const override { return !m_isPlayerCaged && !IsDead(); }
-    // While the player is caged, a bullet that leaves the cage square hits the cage.
-    bool TryAbsorbPlayerBullet(const DirectX::XMFLOAT3& bulletPosition, int damage) override;
 
     BossAI_Phase02* GetAI() const { return m_ai.get(); }
 
 private:
     void GenerateButterflyWings();
-    void TriggerCageFirstHitDialogue(CueBoss* boss);
-    void DamageCage(int dmg);
 
     // Enter steps, called in this order by Enter.
     void UpdateOverlaySizeFromDisplay();
     void CreateFxWindow(WindowTrackingSystem& windowSystem);
     void InitializeWings(ID3D11Device* device);
-    void CreatePlayerCage(WindowTrackingSystem& windowSystem);
     void StartOpeningDialogue(WindowTrackingSystem& windowSystem);
     void CreateClickBlocker(WindowTrackingSystem& windowSystem);
 
@@ -115,10 +103,8 @@ private:
     // Runs the boss death sequence while HP is zero or below. Returns true on
     // every frame after the 7 s sequence has ended; Update must stop then.
     [[nodiscard]] bool UpdateBossDeath(float dt, CueBoss* boss);
+    // Closes the opening dialogue after m_openingDialogueDuration and enables the AI.
     void UpdateOpeningDialogue(float dt, CueBoss* boss);
-    void UpdateCageShake(float dt);
-    void UpdateOverdrive(float dt, CueBoss* boss);
-    void ClampPlayerToCage();
     void UpdateBossPosition(CueBoss* boss);
     void UpdateWingState(float dt);
     void UpdateWingNodes(float dt);
@@ -167,25 +153,9 @@ private:
     float m_hitFlashTimer = 0.0f;
 
     CueBoss* m_bossRef = nullptr;
-    bool m_isPlayerCaged = false;
-    int m_cageMaxHP = 1000;
-    int m_cageHP = 1000;
-    DirectX::XMFLOAT3 m_cagePos = { 0.0f, 0.0f, 0.0f };
-    DirectX::XMFLOAT3 m_cageWindowPos = { 0.0f, 0.0f, 0.0f };
-    float m_cageShakeTimer = 0.0f;
-    float m_cageShakeDuration = 0.18f;
-    float m_cageShakeIntensity = 0.22f;
-    float m_cageSizeWorld = 7.5f;
-    std::string m_cageWindowName = "player_cage_window";
 
     // HUD renderer, drawn into the FX window
     std::unique_ptr<HUDRenderer> m_hudRenderer;
-
-    // Overdrive sprite
-    std::unique_ptr<Sprite> m_overdriveSprite;
-    float m_overdriveSpriteScale = 0.02f;
-    float m_overdriveAlpha = 0.0f;
-    float m_overdriveFadeSpeed = 2.0f;
 
     std::unique_ptr<UIDialogueBox> m_dialogueBox;
     Beyond::Window* m_dialogueWindow = nullptr;
@@ -195,9 +165,8 @@ private:
     const float            m_dialogueWindowH = 160.0f;
     const std::string      m_dialogueWindowName = "cue_dialogue";
     bool                   m_isDialogueActive = false;
-
-    bool m_overdriveDialogueTriggered = false;
-    bool m_cageFirstHitTriggered = false;
+    float                  m_openingDialogueTimer = 0.0f;    // seconds since the opening line started
+    float                  m_openingDialogueDuration = 2.5f; // seconds the opening line stays before the first attack
 
     bool  m_isDying = false;
     float m_deathTimer = 0.0f;

@@ -1063,14 +1063,7 @@ void SceneBoss::RenderScene(float elapsedTime, Camera* camera, bool isTransparen
 
         if (shouldRenderHere) {
             const XMFLOAT3 pPos = m_player->GetPosition();
-
-            // The sphere check is bypassed while the player is caged (below).
-            bool isInView = camera->CheckSphere(pPos.x, pPos.y, pPos.z, 1.5f);
-
-            auto* wkPhase = dynamic_cast<BossPhase02*>(m_cue->GetCurrentPhase());
-            if (wkPhase && wkPhase->IsPlayerCaged()) {
-                isInView = true; // always drawn while caged
-            }
+            const bool isInView{ camera->CheckSphere(pPos.x, pPos.y, pPos.z, 1.5f) };
 
             if (isInView && !m_player->IsBlinkHidden()) {
                 m_player->Render(modelRenderer);
@@ -1147,7 +1140,7 @@ void SceneBoss::DrawBossPanel()
         return;
     }
     const bool isBulletHell{ phase->GetKind() == BossPhaseKind::bulletHell };
-    // Why a cast: the cage hint, wing replay and Wings category exist only in Windowkill.
+    // Why a cast: wing replay and the Wings category exist only in Windowkill.
     auto* windowkill{ dynamic_cast<BossPhase02*>(phase) };
 
     // ---- Head: state ----
@@ -1171,11 +1164,6 @@ void SceneBoss::DrawBossPanel()
     const float hpFraction{ (maxHP > 0) ? static_cast<float>(hp) / static_cast<float>(maxHP) : 0.0f };
     const std::string hpText{ "HP " + std::to_string(hp) + " / " + std::to_string(maxHP) };
     ImGui::ProgressBar(hpFraction, ImVec2{ -1.0f, 0.0f }, hpText.c_str());
-
-    if (windowkill && windowkill->IsPlayerCaged())
-    {
-        ImGui::TextDisabled("AI gated until the cage breaks");
-    }
 
     // ---- Head: actions ----
     // Why 0 is allowed: it runs the real "HP depleted" path (next phase / death sequence).
