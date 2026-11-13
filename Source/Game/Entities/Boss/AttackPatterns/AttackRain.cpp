@@ -124,15 +124,9 @@ void AttackRain::Update(float dt, CueBoss* boss) {
             }
         }
         else if (zone.state == 3) { // Dissipating
+            // Why no hit check: the zone is visibly fading, so it no longer hurts.
             anyActiveOrDissipating = true;
             zone.stateTimer += dt;
-
-            if (m_mode == RainMode::DualPillar) {
-                if (isInsideZone(zone.center1) || isInsideZone(zone.center2)) isHit = true;
-            }
-            else {
-                if (isInsideZone(zone.center1)) isHit = true;
-            }
 
             if (zone.stateTimer >= 1.0f) {
                 zone.state = 4;
