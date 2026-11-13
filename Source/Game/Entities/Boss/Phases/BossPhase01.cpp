@@ -29,6 +29,12 @@ namespace
     constexpr float k_hoverSwayZ{ 3.0f };
     constexpr float k_attackSwayScale{ 0.2f };
     constexpr float k_swayBlendRate{ 3.0f }; // per second
+
+    // USULAN DESAIN: the idle boss stays within this box around the player, so boss and
+    // sway stay inside the 48 x 27 view centred on the player.
+    constexpr float k_chaseBoxHalfX{ 15.0f };
+    constexpr float k_chaseBoxHalfZ{ 8.0f };
+    constexpr float k_arenaMargin{ 2.0f };   // keeps the hover anchor inside the Act 2 arena
 }
 
 BossPhase01::BossPhase01(Player* target)
@@ -359,6 +365,18 @@ void BossPhase01::UpdateIdleHover(float dt, CueBoss* boss) {
 
     // An attack just let go: the boss stays where that attack left it.
     if (wasAttackMovingBoss) m_hoverAnchor = m_basePosition;
+
+    // The boss follows only when the player leaves the box around it, so it stays on screen
+    // without sticking to the player.
+    if (m_aiTarget) {
+        const XMFLOAT3 playerPos{ m_aiTarget->GetPosition() };
+        m_hoverAnchor.x = std::clamp(m_hoverAnchor.x, playerPos.x - k_chaseBoxHalfX, playerPos.x + k_chaseBoxHalfX);
+        m_hoverAnchor.z = std::clamp(m_hoverAnchor.z, playerPos.z - k_chaseBoxHalfZ, playerPos.z + k_chaseBoxHalfZ);
+    }
+    const float limitX{ Beyond::Config::ACT2_ARENA_WIDTH_UNITS * 0.5f - k_arenaMargin };
+    const float limitZ{ Beyond::Config::ACT2_ARENA_HEIGHT_UNITS * 0.5f - k_arenaMargin };
+    m_hoverAnchor.x = std::clamp(m_hoverAnchor.x, -limitX, limitX);
+    m_hoverAnchor.z = std::clamp(m_hoverAnchor.z, -limitZ, limitZ);
 
     m_targetPosition.x = m_hoverAnchor.x;
     m_targetPosition.z = m_hoverAnchor.z;
