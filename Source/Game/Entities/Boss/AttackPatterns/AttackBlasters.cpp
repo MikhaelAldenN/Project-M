@@ -8,10 +8,12 @@
 #include <SDL3/SDL.h>
 #include "Engine/Base/MathUtils.h"
 #include "Player.h"
+#include "PlayerConstants.h"
+#include <cmath>
 
 using namespace DirectX;
 
-AttackBlasters::AttackBlasters(const BlasterParams& params, const Player* target)
+AttackBlasters::AttackBlasters(const BlasterParams& params, Player* target)
     : m_params(params), m_target(target) {}
 
 void AttackBlasters::Start(CueBoss* boss, ProjectilePool* /*pool*/) 
@@ -121,6 +123,7 @@ void AttackBlasters::Update(float dt, CueBoss* boss) {
         else if (b->state == 3) { // FIRE
             b->pos.x = b->baseX; // Lock X against shake drift
             b->beamScaleX += (m_params.beamVisualWidth - b->beamScaleX) * MathUtils::ExpDecayFactor(m_params.beamGrowSpeed, dt);
+            DamageTargetInBeam(*b);
             CameraController::Instance().AddTrauma(0.1f);
             EffectManager::Instance().SetPosition(b->fireEffectHandle, vfxPos);
 
@@ -200,4 +203,21 @@ void AttackBlasters::Stop(CueBoss* boss) {
 
 bool AttackBlasters::IsFinished() const {
     return !m_isSpawning && m_blasters.empty();
+}
+
+void AttackBlasters::DamageTargetInBeam(const OrbitalBlaster& blaster) {
+    if (!m_target || m_target->GetHP() <= 0) return;
+
+    // The beam is the ground rect drawn in Render: centred on the cannon's x, running
+    // from the cannon towards -Z for beamCurrentLength.
+    const DirectX::XMFLOAT3 playerPos{ m_target->GetPosition() };
+    const float halfWidth{ blaster.beamScaleX * 0.5f + PlayerConst::CollisionRadius };
+    const bool isInsideX{ std::fabs(playerPos.x - blaster.pos.x) <= halfWidth };
+    const bool isInsideZ{ playerPos.z <= blaster.pos.z + PlayerConst::CollisionRadius
+        && playerPos.z >= blaster.pos.z - blaster.beamCurrentLength - PlayerConst::CollisionRadius };
+    if (!isInsideX || !isInsideZ) return;
+
+    // Why every frame: Player::TakeDamage ignores hits during i-frames and uses them
+    // to detect a perfect dodge, the same as a bullet.
+    m_target->TakeDamage(DamageInfo{ m_params.beamDamage, playerPos });
 }

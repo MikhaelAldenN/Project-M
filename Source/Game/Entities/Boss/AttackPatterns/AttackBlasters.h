@@ -38,7 +38,8 @@ public:
     // With a target, each cannon drops at the target's x at the moment it spawns.
     // Without one, the cannons spread evenly over spawnSpreadX around x = 0.
     // `target` is borrowed: the scene owns the player and outlives the attack.
-    AttackBlasters(const BlasterParams& params, const Player* target);
+    // A firing beam damages the target; with no target the beams are harmless.
+    AttackBlasters(const BlasterParams& params, Player* target);
     ~AttackBlasters() override = default;
 
     void Start(CueBoss* boss, ProjectilePool* pool) override;
@@ -66,8 +67,12 @@ private:
         int fireEffectHandle = -1;
     };
 
+    // Hits the target while it overlaps the blaster's firing beam (visible width plus
+    // the player's collision radius).
+    void DamageTargetInBeam(const OrbitalBlaster& blaster);
+
     BlasterParams m_params;
-    const Player* m_target{ nullptr };
+    Player* m_target{ nullptr };
 
     std::vector<std::shared_ptr<OrbitalBlaster>> m_blasters;
     bool  m_isSpawning = false;
