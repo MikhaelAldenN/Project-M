@@ -73,9 +73,8 @@ public:
 
     enum class AttackSequence {
         Bouncing,
-        Boomerang,
-        Blaster,
-        Spear
+        Spear,
+        Blaster
     };
 
     BossAI_Phase02(BossPhase02* phase, Player* target);
