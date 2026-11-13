@@ -8,9 +8,18 @@
 
 class Player;
 
+// Screen side the wall starts on; it always sweeps to the opposite side.
+enum class WallStartSide : std::uint8_t {
+    farFromPlayer, // the side farther from the player when the attack starts
+    left,          // starts at the left edge, sweeps right
+    right,         // starts at the right edge, sweeps left
+    count,
+};
+
 // Configuration for the Act 3 wall: one thin window, as tall as the screen, sweeping
 // from one side to the other with a gapless column of bullets inside it.
 struct WallParams {
+    WallStartSide startSide = WallStartSide::farFromPlayer; // USULAN DESAIN: default for the AI rotation
     int   bulletCount = 16;        // USULAN DESAIN: bullets in the column (27 / 16 = 1.69 units apart)
     float bulletRadius = 0.6f;     // hitbox; above 0.35 the gaps are narrower than the player's body
     float visualScale = 3.6f;

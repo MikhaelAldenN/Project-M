@@ -1280,11 +1280,15 @@ void SceneBoss::DrawBossPanel()
 namespace
 {
     // Order of the Attacks panel list while the Windowkill phase is active.
-    enum class WindowkillSet { blasters, bouncing, boomerangs, spears, count };
+    enum class WindowkillSet { wall, blasters, bouncing, boomerangs, spears, count };
 
-    constexpr std::array<const char*, 4> k_windowkillSetNames{ "Blasters", "Bouncing", "Boomerangs", "Spears" };
+    constexpr std::array<const char*, 5> k_windowkillSetNames{ "Wall", "Blasters", "Bouncing", "Boomerangs", "Spears" };
     static_assert(k_windowkillSetNames.size() == static_cast<std::size_t>(WindowkillSet::count),
         "one name per WindowkillSet enumerator");
+
+    constexpr std::array<const char*, 3> k_wallStartSideNames{ "Far from player", "Left", "Right" };
+    static_assert(k_wallStartSideNames.size() == static_cast<std::size_t>(WallStartSide::count),
+        "one name per WallStartSide enumerator");
 
     // Row functions: `p` is the live set, `loaded` the same set as of the last file load.
     // A row gets the amber marker while its value differs from `loaded`.
@@ -1342,6 +1346,24 @@ namespace
         DebugProperty::DragFloat("Max speed", p.maxSpeed, 1.0f, 10.0f, 300.0f, "%.1f", p.maxSpeed != loaded.maxSpeed);
         DebugProperty::DragFloat("Ring radius", p.ringRadius, 0.5f, 2.0f, 20.0f, "%.1f units", p.ringRadius != loaded.ringRadius);
         DebugProperty::DragFloat("Angle step", p.angleStep, 0.5f, 0.0f, 360.0f, "%.1f deg", p.angleStep != loaded.angleStep);
+        DebugProperty::SliderInt("Damage", p.damage, 1, 500, p.damage != loaded.damage);
+    }
+
+    void DrawWallRows(WallParams& p, const WallParams& loaded)
+    {
+        // Why ImGui::Combo: DebugProperty has no combo row, so this row has no edited marker.
+        int side{ static_cast<int>(p.startSide) };
+        if (ImGui::Combo("Start side", &side, k_wallStartSideNames.data(), static_cast<int>(k_wallStartSideNames.size())))
+        {
+            p.startSide = static_cast<WallStartSide>(side);
+        }
+        DebugProperty::SliderInt("Bullet count", p.bulletCount, 4, 40, p.bulletCount != loaded.bulletCount);
+        DebugProperty::SliderFloat("Bullet radius", p.bulletRadius, 0.2f, 2.0f, "%.2f units", p.bulletRadius != loaded.bulletRadius);
+        DebugProperty::SliderFloat("Visual scale", p.visualScale, 0.5f, 20.0f, "%.2f", p.visualScale != loaded.visualScale);
+        DebugProperty::DragFloat("Speed", p.speed, 0.5f, 1.0f, 60.0f, "%.1f units/s", p.speed != loaded.speed);
+        DebugProperty::DragFloat("Warning duration", p.warningDuration, 0.05f, 0.0f, 3.0f, "%.2f s", p.warningDuration != loaded.warningDuration);
+        DebugProperty::SliderFloat("Blink interval", p.blinkInterval, 0.02f, 0.5f, "%.2f s", p.blinkInterval != loaded.blinkInterval);
+        DebugProperty::SliderFloat("Window width", p.windowWidth, 20.0f, 400.0f, "%.0f px", p.windowWidth != loaded.windowWidth);
         DebugProperty::SliderInt("Damage", p.damage, 1, 500, p.damage != loaded.damage);
     }
 }
@@ -1530,6 +1552,16 @@ void SceneBoss::DrawAttacksPanel()
 
     switch (static_cast<WindowkillSet>(m_selectedWindowkillSet))
     {
+    case WindowkillSet::wall:
+    {
+        WallParams& params{ manager.GetWallParams() };
+        if (ImGui::Button("Fire")) windowkill->AddAttack(std::make_unique<AttackWall>(params, m_player.get()));
+        ImGui::SameLine();
+        if (ImGui::Button("Revert")) params = loaded.wall;
+        ImGui::Separator();
+        DrawWallRows(params, loaded.wall);
+        break;
+    }
     case WindowkillSet::blasters:
     {
         BlasterParams& params{ manager.GetBlasterParams() };

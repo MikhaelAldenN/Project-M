@@ -39,6 +39,7 @@ bool AttackParamManager::Load(const std::string& filepath) {
             if (p2.contains("Boomerang"))        ParseBoomerangParams(p2["Boomerang"], fresh.boomerang);
             if (p2.contains("Blaster"))          ParseBlasterParams(p2["Blaster"], fresh.blaster);
             if (p2.contains("Spear"))            ParseSpearParams(p2["Spear"], fresh.spear);
+            if (p2.contains("Wall"))             ParseWallParams(p2["Wall"], fresh.wall);
         }
     }
     catch (const json::exception& e) { // syntax errors and wrong value types
@@ -214,4 +215,23 @@ void AttackParamManager::ParseSpearParams(const json& j, UndyneSpearParams& out)
     if (j.contains("damage")) out.damage = j["damage"];
     if (j.contains("startSpeed")) out.startSpeed = j["startSpeed"];
     if (j.contains("acceleration")) out.acceleration = j["acceleration"];
+}
+
+void AttackParamManager::ParseWallParams(const json& j, WallParams& out) {
+    if (j.contains("startSide")) {
+        // A non-string value throws json::exception, which Load reports as a failed load.
+        const std::string side{ j["startSide"].get<std::string>() };
+        if (side == "farFromPlayer") out.startSide = WallStartSide::farFromPlayer;
+        else if (side == "left") out.startSide = WallStartSide::left;
+        else if (side == "right") out.startSide = WallStartSide::right;
+        else std::cerr << "[AttackParamManager] Unknown Wall startSide \"" << side << "\", default kept\n";
+    }
+    if (j.contains("bulletCount")) out.bulletCount = j["bulletCount"];
+    if (j.contains("bulletRadius")) out.bulletRadius = j["bulletRadius"];
+    if (j.contains("visualScale")) out.visualScale = j["visualScale"];
+    if (j.contains("speed")) out.speed = j["speed"];
+    if (j.contains("warningDuration")) out.warningDuration = j["warningDuration"];
+    if (j.contains("blinkInterval")) out.blinkInterval = j["blinkInterval"];
+    if (j.contains("windowWidth")) out.windowWidth = j["windowWidth"];
+    if (j.contains("damage")) out.damage = j["damage"];
 }

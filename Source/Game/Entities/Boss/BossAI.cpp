@@ -178,7 +178,7 @@ void BossAI_Phase02::Update(float dt, CueBoss* boss) {
         // Rotation: Wall -> Bouncing -> Spear -> Blaster, then again from Wall.
         switch (m_currentAttack) {
         case AttackSequence::Wall:
-            m_phase->AddAttack(std::make_unique<AttackWall>(WallParams{}, m_target));
+            m_phase->AddAttack(std::make_unique<AttackWall>(AttackParamManager::Instance().GetWallParams(), m_target));
             m_cooldownTimer = 2.0f;
             m_currentAttack = AttackSequence::Bouncing;
             break;

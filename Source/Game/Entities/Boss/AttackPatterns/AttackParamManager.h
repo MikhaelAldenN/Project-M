@@ -17,6 +17,7 @@
 #include "AttackBoomerangs.h"
 #include "AttackBlasters.h"
 #include "AttackSpears.h"
+#include "AttackWall.h"
 
 using json = nlohmann::json;
 
@@ -40,6 +41,7 @@ struct AttackParamSet {
     BoomerangParams      boomerang{};
     BlasterParams        blaster{};
     UndyneSpearParams    spear{};
+    WallParams           wall{};
 };
 
 class AttackParamManager {
@@ -82,6 +84,7 @@ public:
     BoomerangParams& GetBoomerangParams() { return m_params.boomerang; }
     BlasterParams& GetBlasterParams() { return m_params.blaster; }
     UndyneSpearParams& GetUndyneParams() { return m_params.spear; }
+    WallParams& GetWallParams() { return m_params.wall; }
 
 private:
     AttackParamManager() = default;
@@ -100,6 +103,7 @@ private:
     void ParseBoomerangParams(const json& j, BoomerangParams& outParams);
     void ParseBlasterParams(const json& j, BlasterParams& outParams);
     void ParseSpearParams(const json& j, UndyneSpearParams& outParams);
+    void ParseWallParams(const json& j, WallParams& outParams);
 
     AttackParamSet m_params{};   // live values, edited by the debug panel
     AttackParamSet m_loaded{};   // written only by Load(); baseline for "edited" markers and revert
