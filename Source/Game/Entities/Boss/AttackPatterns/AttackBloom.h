@@ -7,20 +7,20 @@
 // ============================================================
 // AttackBloom (Mekar) - Act 2 attack.
 //
-// Rings of bullets leave Cue, stop at a set distance, hold still while they
-// pulse, then fly on in a straight line from where they stopped. Each ring is
-// turned half a step from the previous one, so the gaps move. The answer is
-// to step into a gap before the ring flies on.
+// Rings of bullets leave Cue and ease out to a stop at a set distance, hold
+// while they pulse and follow Cue, then fly on in a straight line from where
+// they are. Each ring is turned half a step from the previous one, so the
+// gaps move. The answer is to step into a gap before the ring flies on.
 // ============================================================
 
 struct BloomParams {
-    int   ringCount = 3;        // USULAN DESAIN
+    int   ringCount = 5;        // USULAN DESAIN
     int   bulletsPerRing = 16;  // USULAN DESAIN
     float ringDelay = 0.5f;     // USULAN DESAIN: seconds between two rings leaving Cue
-    float outSpeed = 10.0f;     // USULAN DESAIN: units per second on the way out
+    float outSpeed = 15.0f;     // USULAN DESAIN: average units per second on the way out (eased to a stop)
     float stopRadius = 8.0f;    // USULAN DESAIN: distance from the ring centre where bullets stop
     float holdDuration = 0.6f;  // USULAN DESAIN: seconds the ring holds still and pulses
-    float launchSpeed = 14.0f;  // USULAN DESAIN: units per second after the hold
+    float launchSpeed = 25.0f;  // USULAN DESAIN: units per second after the hold
     float bulletRadius = 0.35f;
     float visualScale = 2.0f;
     int   damage = 3;
@@ -40,15 +40,18 @@ public:
 
 private:
     struct Ring {
-        DirectX::XMFLOAT3 centre{};
+        DirectX::XMFLOAT3 centre{};                // Cue's position when the ring left her
         std::vector<ProjectileHandle>  bullets;
         std::vector<DirectX::XMFLOAT2> directions; // unit (x, z), one per bullet
         float age{ 0.0f };                         // seconds since the ring left Cue
+        bool  isHoldStarted{ false };
+        DirectX::XMFLOAT3 bossAtHoldStart{};       // Cue's position when the hold began
     };
 
     void EmitRing(int ringIndex, const DirectX::XMFLOAT3& centre);
-    // Moves the ring through out, hold and launch. Returns false once it has launched.
-    bool UpdateRing(Ring& ring, float dt);
+    // Moves the ring through out, hold and launch; while holding the ring follows
+    // `bossPos`. Returns false once it has launched.
+    bool UpdateRing(Ring& ring, float dt, const DirectX::XMFLOAT3& bossPos);
 
     BloomParams     m_params;
     ProjectilePool* m_pool{ nullptr }; // borrowed from the phase, set in Start

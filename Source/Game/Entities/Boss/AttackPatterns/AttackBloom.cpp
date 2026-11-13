@@ -11,6 +11,13 @@ namespace
 {
     constexpr float k_pulseAmount{ 0.25f };   // USULAN DESAIN: visual scale swings +-25% while holding
     constexpr float k_pulsePerSecond{ 4.0f };
+
+    // USULAN DESAIN: cubic ease-out, fast off Cue and slowing to rest at the stop radius.
+    float EaseOutCubic(float t)
+    {
+        const float remaining{ 1.0f - t };
+        return 1.0f - (remaining * remaining * remaining);
+    }
 }
 
 AttackBloom::AttackBloom(const BloomParams& params)
@@ -35,8 +42,9 @@ void AttackBloom::Update(float dt, CueBoss* boss) {
         ++m_ringsEmitted;
     }
 
+    const XMFLOAT3 bossPos{ boss->GetPosition() };
     for (auto it = m_rings.begin(); it != m_rings.end(); ) {
-        if (!UpdateRing(*it, dt)) {
+        if (!UpdateRing(*it, dt, bossPos)) {
             it = m_rings.erase(it);
             continue;
         }
@@ -69,7 +77,9 @@ void AttackBloom::EmitRing(int ringIndex, const XMFLOAT3& centre) {
         projectile->radius = m_params.bulletRadius;
         projectile->visualScale = m_params.visualScale;
         projectile->damage = m_params.damage;
-        ProjectilePool::Launch(*projectile, centre, { direction.x, 0.0f, direction.y }, m_params.outSpeed);
+        // Why no velocity: UpdateRing places ring bullets itself until they launch.
+        projectile->position = centre;
+        projectile->velocity = { 0.0f, 0.0f, 0.0f };
 
         ring.bullets.push_back(handle);
         ring.directions.push_back(direction);
@@ -79,13 +89,29 @@ void AttackBloom::EmitRing(int ringIndex, const XMFLOAT3& centre) {
     AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Shoot.wav", 0.2f);
 }
 
-bool AttackBloom::UpdateRing(Ring& ring, float dt) {
+bool AttackBloom::UpdateRing(Ring& ring, float dt, const XMFLOAT3& bossPos) {
     ring.age += dt;
+    // The out leg keeps its tuned length (stopRadius / outSpeed); the ease only shapes it.
     const float stopTime{ (m_params.outSpeed > 0.0f) ? m_params.stopRadius / m_params.outSpeed : 0.0f };
     const float launchTime{ stopTime + m_params.holdDuration };
     const bool isLaunching{ ring.age >= launchTime };
     const bool isHolding{ !isLaunching && ring.age >= stopTime };
-    const float pulse{ 1.0f + k_pulseAmount * std::sin(ring.age * XM_2PI * k_pulsePerSecond) };
+
+    // From the hold on, the ring moves with Cue, the way Phalanx bullets orbit her.
+    // Measured from where Cue stood when the hold began, so the ring does not jump.
+    if ((isHolding || isLaunching) && !ring.isHoldStarted) {
+        ring.isHoldStarted = true;
+        ring.bossAtHoldStart = bossPos;
+    }
+    XMFLOAT3 centre{ ring.centre };
+    if (ring.isHoldStarted) {
+        centre.x += bossPos.x - ring.bossAtHoldStart.x;
+        centre.z += bossPos.z - ring.bossAtHoldStart.z;
+    }
+
+    const bool isGoingOut{ !isHolding && !isLaunching && stopTime > 0.0f };
+    const float radius{ isGoingOut ? m_params.stopRadius * EaseOutCubic(ring.age / stopTime) : m_params.stopRadius };
+    const float pulse{ isHolding ? 1.0f + k_pulseAmount * std::sin(ring.age * XM_2PI * k_pulsePerSecond) : 1.0f };
 
     for (std::size_t i{ 0 }; i < ring.bullets.size(); ++i) {
         Projectile* projectile{ m_pool->Get(ring.bullets[i]) };
@@ -93,16 +119,15 @@ bool AttackBloom::UpdateRing(Ring& ring, float dt) {
         if (!projectile) continue;
 
         const XMFLOAT2& direction{ ring.directions[i] };
-        const XMFLOAT3 stopPoint{ ring.centre.x + direction.x * m_params.stopRadius, ring.centre.y,
-            ring.centre.z + direction.y * m_params.stopRadius };
+        const XMFLOAT3 point{ centre.x + direction.x * radius, centre.y, centre.z + direction.y * radius };
 
         if (isLaunching) {
             projectile->visualScale = m_params.visualScale;
-            ProjectilePool::Launch(*projectile, stopPoint, { direction.x, 0.0f, direction.y }, m_params.launchSpeed);
+            ProjectilePool::Launch(*projectile, point, { direction.x, 0.0f, direction.y }, m_params.launchSpeed);
         }
-        else if (isHolding) {
-            // Why snap to the stop point: the ring stays round whatever the frame rate.
-            projectile->position = stopPoint;
+        else {
+            // Why placed, not moved: the ring stays round whatever the frame rate.
+            projectile->position = point;
             projectile->velocity = { 0.0f, 0.0f, 0.0f };
             projectile->visualScale = m_params.visualScale * pulse;
         }
