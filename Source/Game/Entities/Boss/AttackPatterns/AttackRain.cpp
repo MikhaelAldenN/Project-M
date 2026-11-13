@@ -87,7 +87,9 @@ void AttackRain::Update(float dt, CueBoss* boss) {
                     zone.center1 = { m_isPositiveSide ? quarterArena : -quarterArena, 0.0f, 0.0f };
                 }
                 else if (m_mode == RainMode::HorizontalSweep) {
-                    zone.center1 = { 0.0f, 0.0f, m_isPositiveSide ? 7.5f : -7.5f };
+                    // Covers the half of the Act 2 arena above or below its centre.
+                    const float quarterArena{ Beyond::Config::ACT2_ARENA_HEIGHT_UNITS * 0.25f };
+                    zone.center1 = { 0.0f, 0.0f, m_isPositiveSide ? quarterArena : -quarterArena };
                 }
                 else if (m_mode == RainMode::Targeted) {
                     if (m_target) zone.center1 = { m_target->GetPosition().x, 0.0f, 0.0f };
@@ -330,7 +332,7 @@ float AttackRain::GetActualWidth() const {
 float AttackRain::GetActualDepth() const {
     if (m_mode == RainMode::VerticalSweep || m_mode == RainMode::DualPillar) return 45.0f;
     if (m_mode == RainMode::Targeted) return m_params.depth;
-    return 15.0f;
+    return Beyond::Config::ACT2_ARENA_HEIGHT_UNITS * 0.5f; // HorizontalSweep: half the Act 2 arena
 }
 
 void AttackRain::ClearVFX() {

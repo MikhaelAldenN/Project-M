@@ -61,7 +61,7 @@ void BossAI_Phase01::Update(float dt, CueBoss* boss) {
     m_cooldownTimer = LaunchAttack(step.attack, boss);
     if (step.withRain) {
         // A vertical sweep covers the left or right half of the arena the player stands in;
-        // a horizontal sweep covers the band above or below the arena centre on the player's side.
+        // a horizontal sweep covers the top or bottom half the player stands in.
         const DirectX::XMFLOAT3 playerPos{ m_target->GetPosition() };
         const bool isPositiveSide{ (step.comboRain == RainMode::HorizontalSweep) ? playerPos.z > 0.0f : playerPos.x > 0.0f };
         m_phase->TriggerRain(AttackParamManager::Instance().GetRainParams(), step.comboRain, isPositiveSide);

@@ -95,6 +95,7 @@ void AttackParamManager::ParsePhalanxParams(const json& j, PhalanxParams& out) {
     if (j.contains("returnMoveSpeed")) out.returnMoveSpeed = j["returnMoveSpeed"];
     if (j.contains("damage")) out.damage = j["damage"];
     if (j.contains("sfxVolume")) out.sfxVolume = j["sfxVolume"];
+    if (j.contains("homingDuration")) out.homingDuration = j["homingDuration"];
 }
 
 void AttackParamManager::ParseRainParams(const json& j, RainParams& out) {

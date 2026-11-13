@@ -19,6 +19,7 @@ namespace
 {
     constexpr float k_slideOffsetX{ 15.0f }; // USULAN DESAIN: boss stands this far left or right of the player
     constexpr float k_arenaMargin{ 2.0f };   // keeps the boss and its orbit inside the Act 2 arena
+    constexpr float k_maxFlightTime{ 3.0f }; // seconds after launch before a fired bullet is removed
 }
 
 AttackPhalanx::AttackPhalanx(const PhalanxParams& params, Player* target)
@@ -34,27 +35,28 @@ void AttackPhalanx::Start(CueBoss* boss, ProjectilePool* pool) {
     m_fired = 0;
     m_flareTriggered = false;
     m_bullets.clear();
+    m_firedBullets.clear();
 
-    // Slide beside the player, on a random side, at the player's row.
+    // Slide beside the player, on a random side, into the middle of the arena half the Rain leaves free.
     std::mt19937 gen(std::random_device{}());
     float side{ (std::uniform_int_distribution<>(0, 1)(gen) == 0) ? -1.0f : 1.0f };
 
     const XMFLOAT3 playerPos{ m_target ? m_target->GetPosition() : XMFLOAT3{} };
     const float limitX{ Beyond::Config::ACT2_ARENA_WIDTH_UNITS * 0.5f - k_arenaMargin };
-    const float limitZ{ Beyond::Config::ACT2_ARENA_HEIGHT_UNITS * 0.5f - k_arenaMargin };
+
     // Why the flip: near an arena edge that side would put the boss outside the arena.
     if (std::fabs(playerPos.x + side * k_slideOffsetX) > limitX) side = -side;
 
+    const float freeHalfZ{ Beyond::Config::ACT2_ARENA_HEIGHT_UNITS * 0.25f };
     m_moveTarget.position.x = std::clamp(playerPos.x + side * k_slideOffsetX, -limitX, limitX);
-    m_moveTarget.position.z = std::clamp(playerPos.z, -limitZ, limitZ);
+    m_moveTarget.position.z = m_isRainOnPositiveZ ? -freeHalfZ : freeHalfZ;
     m_moveTarget.lerpSpeed = m_params.attackMoveSpeed;
-
-    m_returnPosition = boss ? boss->GetPosition() : XMFLOAT3{};
 }
 
 void AttackPhalanx::Update(float dt, CueBoss* boss) {
     if (m_state == 0 || !m_pool || !boss) return;
 
+    UpdateFiredBullets(dt);
     m_timer += dt;
     XMFLOAT3 bPos = boss->GetPosition();
 
@@ -154,6 +156,7 @@ void AttackPhalanx::Update(float dt, CueBoss* boss) {
                     : XMFLOAT3{ 0.0f, 0.0f, 1.0f };
 
                     ProjectilePool::Launch(*projectile, myPos, dir, m_params.speed);
+                    m_firedBullets.push_back({ m_bullets[m_fired], 0.0f });
                 }
                 AudioManager::Instance().PlaySFX("Data/Sound/SE_Boss_Phalanx_Shoot.wav", 0.1f * m_params.sfxVolume);
                 m_fired++;
@@ -166,22 +169,12 @@ void AttackPhalanx::Update(float dt, CueBoss* boss) {
             }
         }
     }
-    // --- State 4: Post-fire pause ---
+    // --- State 4: Post-fire pause, then the attack ends where the boss stands ---
     else if (m_state == 4) {
         if (m_timer >= m_params.postFireDelay) {
-            m_state = 5;
-            m_moveTarget.position = m_returnPosition;
-            m_moveTarget.lerpSpeed = m_params.returnMoveSpeed;
-        }
-    }
-    // --- State 5: Returning to center ---
-    else if (m_state == 5) {
-        XMFLOAT3 pos = boss->GetPosition();
-        float dx = m_moveTarget.position.x - pos.x;
-        float dz = m_moveTarget.position.z - pos.z;
-        if ((dx * dx + dz * dz) < 1.0f) {
             m_state = 0;
             m_bullets.clear();
+            ReleaseFiredBullets();
         }
     }
 }
@@ -196,9 +189,47 @@ void AttackPhalanx::Stop(CueBoss* boss) {
         for (const ProjectileHandle handle : m_bullets) {
             m_pool->Despawn(handle);
         }
+        for (const FiredBullet& fired : m_firedBullets) {
+            m_pool->Despawn(fired.handle);
+        }
     }
     m_bullets.clear();
+    m_firedBullets.clear();
     m_state = 0;
+}
+
+void AttackPhalanx::UpdateFiredBullets(float dt) {
+    for (auto it = m_firedBullets.begin(); it != m_firedBullets.end(); ) {
+        Projectile* projectile{ m_pool->Get(it->handle) };
+        // Gone already: it hit the player or left the arena.
+        if (!projectile) {
+            it = m_firedBullets.erase(it);
+            continue;
+        }
+
+        it->flightTime += dt;
+        if (it->flightTime >= k_maxFlightTime) {
+            m_pool->Despawn(it->handle);
+            it = m_firedBullets.erase(it);
+            continue;
+        }
+        // Why: a bullet that keeps homing after a miss circles the player forever.
+        if (it->flightTime >= m_params.homingDuration) {
+            projectile->target = ProjectileTarget::none;
+        }
+        ++it;
+    }
+}
+
+void AttackPhalanx::ReleaseFiredBullets() {
+    if (m_pool) {
+        for (const FiredBullet& fired : m_firedBullets) {
+            if (Projectile * projectile{ m_pool->Get(fired.handle) }) {
+                projectile->target = ProjectileTarget::none;
+            }
+        }
+    }
+    m_firedBullets.clear();
 }
 
 bool AttackPhalanx::IsFinished() const {

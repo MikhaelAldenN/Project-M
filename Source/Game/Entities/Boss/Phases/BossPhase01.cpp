@@ -286,17 +286,20 @@ void BossPhase01::StopAllAttacks(CueBoss* boss) {
 void BossPhase01::AddPhalanx(std::unique_ptr<AttackPhalanx> attack) {
     if (!attack) return;
 
+    // The Rain half is chosen first so the boss can take the other half.
+    const bool isRainOnPositiveZ{ rand() % 2 == 0 };
+    attack->SetRainHalf(isRainOnPositiveZ);
+
     const AttackPhalanx* phalanx{ attack.get() }; // still valid after the move: the phase owns it
-    AddAttack(std::move(attack));           // Start picks the side the boss slides to
+    AddAttack(std::move(attack));           // Start picks where the boss slides to
 
     // The Rain sweeps away from the side the boss moved to.
     const float bossDestX{ phalanx->GetBossMoveTarget()->position.x };
     const float sweepDir{ (bossDestX < 0.0f) ? 1.0f : -1.0f };
-    const bool randomSide{ rand() % 2 == 0 };
 
     RainParams p = AttackParamManager::Instance().GetRainParams();
     p.activeDuration = 3.5f;
-    TriggerRain(p, RainMode::HorizontalSweep, randomSide, sweepDir);
+    TriggerRain(p, RainMode::HorizontalSweep, isRainOnPositiveZ, sweepDir);
 }
 
 void BossPhase01::AddUltimate(std::unique_ptr<AttackUltimate> attack) {

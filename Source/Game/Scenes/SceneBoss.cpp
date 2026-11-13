@@ -1444,6 +1444,7 @@ namespace
     {
         DebugProperty::SliderInt("Count", p.count, 3, 10, p.count != loaded.count);
         DebugProperty::SliderFloat("Speed", p.speed, 10.0f, 80.0f, "%.1f", p.speed != loaded.speed);
+        DebugProperty::SliderFloat("Homing duration", p.homingDuration, 0.0f, 3.0f, "%.2f s", p.homingDuration != loaded.homingDuration);
         DebugProperty::SliderInt("Damage", p.damage, 1, 150, p.damage != loaded.damage);
     }
 
