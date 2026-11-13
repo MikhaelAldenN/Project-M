@@ -176,6 +176,16 @@ public:
     void SetAimLocked(bool locked) { m_aimLocked = locked; }
     void ForceAimTarget(const DirectX::XMFLOAT3& target) { m_aimTarget = target; }
 
+    // --- Gamepad aim assist ---
+    // The point right-stick aim bends toward when it already points close to it.
+    // The scene sets it every frame (the boss) and clears it when there is nothing to aim at.
+    void SetAimAssistTarget(const DirectX::XMFLOAT3& target)
+    {
+        m_aimAssistTarget = target;
+        m_hasAimAssistTarget = true;
+    }
+    void ClearAimAssistTarget() { m_hasAimAssistTarget = false; }
+
     void SetCollisionManager(CollisionManager* colMgr) { m_collisionManager = colMgr; }
     CollisionManager* GetCollisionManager() const { return m_collisionManager; }
 
@@ -206,6 +216,10 @@ private:
 
     void HandleMovementInput(float dt);
     void HandleAimInput(Camera* camera);
+    // Turns a right-stick aim direction (x, z; unit length) toward the aim assist target
+    // when the target lies within the assist cone. Returns the direction unchanged otherwise.
+    [[nodiscard]] DirectX::XMFLOAT2 ApplyAimAssist(const DirectX::XMFLOAT2& aimDir) const;
+
     void UpdateHorizontalMovement(float dt);
     void UpdateActionState(float elapsedTime);
     void UpdateFootRotation(float dt, float& outSmoothedYaw);
@@ -285,6 +299,11 @@ private:
     float m_overdriveShootInterval{ PlayerConst::OverdriveShootInterval };
     float m_shootCooldown{ 0.0f }; // seconds until the next shot may fire; negative once it is due
     float m_stickShootThreshold{ 0.5f }; // USULAN DESAIN: starting value, tuned from the Player panel
+
+    DirectX::XMFLOAT3 m_aimAssistTarget{};
+    bool  m_hasAimAssistTarget{ false };
+    float m_aimAssistConeDegrees{ 12.0f }; // USULAN DESAIN: assist only when the stick aims this close to the target
+    float m_aimAssistStrength{ 0.5f };     // USULAN DESAIN: share of the remaining angle that is corrected
 
     // Player bullet damage
     int m_bulletDamage = 5;

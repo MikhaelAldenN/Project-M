@@ -654,6 +654,12 @@ bool SceneBoss::UpdateCue(float scaledDt)
         return true;
     }
 
+    // Gamepad aim bends toward Cue while she can still be hurt.
+    if (m_player) {
+        if (updatedPhase && !updatedPhase->IsDead()) m_player->SetAimAssistTarget(m_cue->GetPosition());
+        else m_player->ClearAimAssistTarget();
+    }
+
     const bool isWindowkillPhase{ IsWindowkill(updatedPhase) };
     UpdatePlayerWindow(isWindowkillPhase);
 

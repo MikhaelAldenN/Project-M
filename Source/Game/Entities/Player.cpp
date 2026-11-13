@@ -491,8 +491,9 @@ void Player::HandleAimInput(Camera* camera)
         {
             const float invLength{ 1.0f / std::sqrt(sqLength) };
 
-            const float dirX{ rx * invLength };
-            const float dirZ{ ry * invLength }; // Change to -ry if Y-axis is inverted in your world
+            const DirectX::XMFLOAT2 aimDir{ ApplyAimAssist({ rx * invLength, ry * invLength }) };
+            const float dirX{ aimDir.x };
+            const float dirZ{ aimDir.y };
 
             const DirectX::XMFLOAT3 pPos{ m_movement->GetPosition() };
             constexpr float aimDistance{ 1000.0f };
@@ -564,6 +565,28 @@ void Player::HandleAimInput(Camera* camera)
             RotateModelToPoint(trueMouseWorldPos);
         }
     }
+}
+
+DirectX::XMFLOAT2 Player::ApplyAimAssist(const DirectX::XMFLOAT2& aimDir) const
+{
+    if (!m_hasAimAssistTarget || m_aimAssistStrength <= 0.0f || !m_movement) return aimDir;
+
+    const DirectX::XMFLOAT3 pPos{ m_movement->GetPosition() };
+    const float toX{ m_aimAssistTarget.x - pPos.x };
+    const float toZ{ m_aimAssistTarget.z - pPos.z };
+    if ((toX * toX) + (toZ * toZ) < 1e-4f) return aimDir;
+
+    // Angles on the ground plane, measured as atan2(x, z) like the rest of the aim code.
+    const float aimAngle{ std::atan2(aimDir.x, aimDir.y) };
+    const float targetAngle{ std::atan2(toX, toZ) };
+    // Why remainder: keeps the difference in [-pi, pi] so the correction takes the short way.
+    const float delta{ std::remainder(targetAngle - aimAngle, DirectX::XM_2PI) };
+
+    const float cone{ DirectX::XMConvertToRadians(m_aimAssistConeDegrees) };
+    if (std::fabs(delta) > cone) return aimDir;
+
+    const float corrected{ aimAngle + (delta * m_aimAssistStrength) };
+    return { std::sin(corrected), std::cos(corrected) };
 }
 
 void Player::UpdateHorizontalMovement(float dt)
@@ -1149,6 +1172,8 @@ void Player::DrawDebugGUI()
         DebugProperty::SliderInt("Damage", m_bulletDamage, 1, 500);
         DebugProperty::DragFloat("Fire interval", m_shootInterval, 0.005f, PlayerConst::MinShootInterval, 1.0f, "%.3f s");
         DebugProperty::SliderFloat("Stick fire threshold", m_stickShootThreshold, 0.3f, 1.0f, "%.2f");
+        DebugProperty::SliderFloat("Aim assist cone", m_aimAssistConeDegrees, 0.0f, 45.0f, "%.0f deg");
+        DebugProperty::SliderFloat("Aim assist strength", m_aimAssistStrength, 0.0f, 1.0f, "%.2f");
         DebugProperty::ColorEdit4("Tint color", &m_playerbulletColor.x);
 
         if (ImGui::TreeNode("Advanced"))
