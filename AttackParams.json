@@ -44,14 +44,14 @@
 
     "FanContinuous": {
       "rows": 5,
-      "waves": 4,
+      "waves": 5,
       "waveDelay": 0.12,
       "spreadAngle": 0.13,
-      "speed": 35.617,
+      "speed": 25.0,
       "damage": 2,
       "sfxVolume": 1.0,
       "triggerCount": 3,
-      "triggerDelay": 1.0
+      "triggerDelay": 0.5
     },
 
     "Phalanx": {

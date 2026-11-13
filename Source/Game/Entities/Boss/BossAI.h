@@ -34,7 +34,7 @@ public:
     // Attacks the Act 2 rotation can launch.
     enum class AttackSequence {
         Radial,       // also stands in for Mekar until that attack exists
-        Fan,          // filler, aimed at the player when launched
+        Fan,          // filler (FanContinuous set), re-aimed at the player on every wave
         Phalanx,      // starts its own HorizontalSweep Rain (BossPhase01::AddPhalanx)
         RainTargeted,
         Meteor,

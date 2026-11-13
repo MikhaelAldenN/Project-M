@@ -75,11 +75,11 @@ float BossAI_Phase01::LaunchAttack(AttackSequence attack, CueBoss* boss) {
 
     case AttackSequence::Fan:
     {
-        // Aimed at where the player stands now; the fan does not track afterwards.
+        // First aim; with a target the fan re-aims at the player on every wave.
         const DirectX::XMFLOAT3 playerPos{ m_target->GetPosition() };
         const DirectX::XMFLOAT3 bossPos{ boss->GetPosition() };
         const float lockedAngle{ std::atan2f(playerPos.x - bossPos.x, playerPos.z - bossPos.z) };
-        m_phase->AddAttack(std::make_unique<AttackFan>(params.GetFanNormalParams(), lockedAngle, m_target));
+        m_phase->AddAttack(std::make_unique<AttackFan>(params.GetFanContinuousParams(), lockedAngle, m_target));
         return 1.0f;
     }
 
