@@ -36,6 +36,7 @@ struct AttackParamSet {
     WaveParams     wave{};
     MeteorParams   meteor{};
     DirectParams   direct{};
+    ConvergeParams converge{};
 
     // Phase 02 (Windowkill)
     BouncingBulletParams bouncing{};
@@ -77,6 +78,7 @@ public:
     WaveParams& GetWaveParams() { return m_params.wave; }
     MeteorParams& GetMeteorParams() { return m_params.meteor; }
     DirectParams& GetDirectParams() { return m_params.direct; }
+    ConvergeParams& GetConvergeParams() { return m_params.converge; }
 
     // ========================================================
     // GETTER: PHASE 02 (WINDOWKILL)
@@ -99,6 +101,7 @@ private:
 	void ParseWaveParams(const json& j, WaveParams& outParams);
 	void ParseMeteorParams(const json& j, MeteorParams& outParams);
     void ParseDirectParams(const json& j, DirectParams& outParams);
+    void ParseConvergeParams(const json& j, ConvergeParams& outParams);
 
     void ParseBouncingParams(const json& j, BouncingBulletParams& outParams);
     void ParseBoomerangParams(const json& j, BoomerangParams& outParams);

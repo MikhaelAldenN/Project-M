@@ -105,7 +105,7 @@ float BossAI_Phase01::LaunchAttack(AttackSequence attack, CueBoss* boss) {
         return 2.5f;
 
     case AttackSequence::Converge:
-        m_phase->AddAttack(std::make_unique<AttackConverge>(ConvergeParams{}, m_target));
+        m_phase->AddAttack(std::make_unique<AttackConverge>(params.GetConvergeParams(), m_target));
         return 2.5f;
     }
     return 1.0f;

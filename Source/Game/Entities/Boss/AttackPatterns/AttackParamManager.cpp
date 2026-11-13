@@ -31,6 +31,7 @@ bool AttackParamManager::Load(const std::string& filepath) {
             if (p1.contains("Wave"))             ParseWaveParams(p1["Wave"], fresh.wave);
             if (p1.contains("Meteor"))           ParseMeteorParams(p1["Meteor"], fresh.meteor);
             if (p1.contains("Direct"))           ParseDirectParams(p1["Direct"], fresh.direct);
+            if (p1.contains("Converge"))         ParseConvergeParams(p1["Converge"], fresh.converge);
         }
 
         if (j.contains("Phase02")) {
@@ -235,4 +236,20 @@ void AttackParamManager::ParseWallParams(const json& j, WallParams& out) {
     if (j.contains("blinkInterval")) out.blinkInterval = j["blinkInterval"];
     if (j.contains("windowWidth")) out.windowWidth = j["windowWidth"];
     if (j.contains("damage")) out.damage = j["damage"];
+}
+
+void AttackParamManager::ParseConvergeParams(const json& j, ConvergeParams& out) {
+    if (j.contains("waves")) out.waves = j["waves"];
+    if (j.contains("bulletsPerWave")) out.bulletsPerWave = j["bulletsPerWave"];
+    if (j.contains("waveDelay")) out.waveDelay = j["waveDelay"];
+    if (j.contains("travelTime")) out.travelTime = j["travelTime"];
+    if (j.contains("bulletRadius")) out.bulletRadius = j["bulletRadius"];
+    if (j.contains("visualScale")) out.visualScale = j["visualScale"];
+    if (j.contains("absorbRadius")) out.absorbRadius = j["absorbRadius"];
+    if (j.contains("damage")) out.damage = j["damage"];
+    if (j.contains("chargeDuration")) out.chargeDuration = j["chargeDuration"];
+    if (j.contains("blastDuration")) out.blastDuration = j["blastDuration"];
+    if (j.contains("blastRadiusBase")) out.blastRadiusBase = j["blastRadiusBase"];
+    if (j.contains("blastRadiusPerBullet")) out.blastRadiusPerBullet = j["blastRadiusPerBullet"];
+    if (j.contains("blastRadiusMax")) out.blastRadiusMax = j["blastRadiusMax"];
 }
