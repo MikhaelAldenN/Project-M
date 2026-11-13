@@ -4,9 +4,7 @@
 #include "WindowManager.h"
 #include "Player.h"
 #include "System/Graphics.h"
-#include <algorithm>
 #include <cassert>
-#include <random>
 
 using namespace DirectX;
 
@@ -21,14 +19,6 @@ void AttackSpears::Start(CueBoss* boss, ProjectilePool* pool) {
     m_isSpawning = true;
     m_spawnedCount = 0;
     m_spawnTimer = 0.0f;
-
-    // Prepare randomized spawn indices
-    m_spawnIndices.clear();
-    for (int i = 0; i < m_params.count; ++i) {
-        m_spawnIndices.push_back(i);
-    }
-    static std::mt19937 gen(std::random_device{}());
-    std::shuffle(m_spawnIndices.begin(), m_spawnIndices.end(), gen);
 }
 
 void AttackSpears::Update(float dt, CueBoss* boss) {
@@ -43,8 +33,9 @@ void AttackSpears::Update(float dt, CueBoss* boss) {
             float angleRange = m_params.arcMaxAngle - m_params.arcMinAngle;
             float step = (m_params.count > 1) ? (angleRange / (m_params.count - 1)) : 0.0f;
 
-            int randomPositionIndex = m_spawnIndices[m_spawnedCount];
-            float angleDeg = m_params.arcMinAngle + (randomPositionIndex * step);
+            // Why the spawn count: spears appear in a fixed sweep from arcMinAngle to
+            // arcMaxAngle, so the player can read the next position.
+            float angleDeg = m_params.arcMinAngle + (static_cast<float>(m_spawnedCount) * step);
             float rad = XMConvertToRadians(angleDeg);
 
             DirectX::XMFLOAT3 spawnPos = {

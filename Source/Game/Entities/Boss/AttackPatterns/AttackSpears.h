@@ -57,5 +57,4 @@ private:
     bool  m_isSpawning = false;
     int   m_spawnedCount = 0;
     float m_spawnTimer = 0.0f;
-    std::vector<int> m_spawnIndices;
 };
