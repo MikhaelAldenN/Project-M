@@ -61,7 +61,6 @@ void AttackBloom::EmitRing(int ringIndex, const XMFLOAT3& centre) {
     if (m_params.bulletsPerRing <= 0) return;
 
     Ring ring{};
-    ring.centre = centre;
     const float step{ XM_2PI / static_cast<float>(m_params.bulletsPerRing) };
     // Every other ring is turned half a step, so its bullets fill the previous ring's gaps.
     const float offset{ (ringIndex % 2 == 1) ? step * 0.5f : 0.0f };
@@ -97,17 +96,9 @@ bool AttackBloom::UpdateRing(Ring& ring, float dt, const XMFLOAT3& bossPos) {
     const bool isLaunching{ ring.age >= launchTime };
     const bool isHolding{ !isLaunching && ring.age >= stopTime };
 
-    // From the hold on, the ring moves with Cue, the way Phalanx bullets orbit her.
-    // Measured from where Cue stood when the hold began, so the ring does not jump.
-    if ((isHolding || isLaunching) && !ring.isHoldStarted) {
-        ring.isHoldStarted = true;
-        ring.bossAtHoldStart = bossPos;
-    }
-    XMFLOAT3 centre{ ring.centre };
-    if (ring.isHoldStarted) {
-        centre.x += bossPos.x - ring.bossAtHoldStart.x;
-        centre.z += bossPos.z - ring.bossAtHoldStart.z;
-    }
+    // Until it launches the ring is centred on Cue and moves with her, the way
+    // Phalanx bullets orbit her.
+    const XMFLOAT3& centre{ bossPos };
 
     const bool isGoingOut{ !isHolding && !isLaunching && stopTime > 0.0f };
     const float radius{ isGoingOut ? m_params.stopRadius * EaseOutCubic(ring.age / stopTime) : m_params.stopRadius };

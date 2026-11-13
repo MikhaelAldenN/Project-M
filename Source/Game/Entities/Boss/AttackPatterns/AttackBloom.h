@@ -8,9 +8,10 @@
 // AttackBloom (Mekar) - Act 2 attack.
 //
 // Rings of bullets leave Cue and ease out to a stop at a set distance, hold
-// while they pulse and follow Cue, then fly on in a straight line from where
-// they are. Each ring is turned half a step from the previous one, so the
-// gaps move. The answer is to step into a gap before the ring flies on.
+// while they pulse, then fly on in a straight line from where they are. Until
+// it flies on, a ring stays centred on Cue and moves with her. Each ring is
+// turned half a step from the previous one, so the gaps move. The answer is to
+// step into a gap before the ring flies on.
 // ============================================================
 
 struct BloomParams {
@@ -40,17 +41,14 @@ public:
 
 private:
     struct Ring {
-        DirectX::XMFLOAT3 centre{};                // Cue's position when the ring left her
         std::vector<ProjectileHandle>  bullets;
         std::vector<DirectX::XMFLOAT2> directions; // unit (x, z), one per bullet
         float age{ 0.0f };                         // seconds since the ring left Cue
-        bool  isHoldStarted{ false };
-        DirectX::XMFLOAT3 bossAtHoldStart{};       // Cue's position when the hold began
     };
 
     void EmitRing(int ringIndex, const DirectX::XMFLOAT3& centre);
-    // Moves the ring through out, hold and launch; while holding the ring follows
-    // `bossPos`. Returns false once it has launched.
+    // Moves the ring through out, hold and launch, centred on `bossPos` (Cue) until
+    // it launches. Returns false once it has launched.
     bool UpdateRing(Ring& ring, float dt, const DirectX::XMFLOAT3& bossPos);
 
     BloomParams     m_params;
