@@ -20,6 +20,7 @@ namespace
     constexpr float k_slideOffsetX{ 15.0f }; // USULAN DESAIN: boss stands this far left or right of the player
     constexpr float k_arenaMargin{ 2.0f };   // keeps the boss and its orbit inside the Act 2 arena
     constexpr float k_maxFlightTime{ 3.0f }; // seconds after launch before a fired bullet is removed
+    constexpr float k_arrivalRadius{ 2.0f }; // the boss counts as in place within this distance
 }
 
 AttackPhalanx::AttackPhalanx(const PhalanxParams& params, Player* target)
@@ -92,7 +93,8 @@ void AttackPhalanx::Update(float dt, CueBoss* boss) {
         float dx = m_moveTarget.position.x - bPos.x;
         float dz = m_moveTarget.position.z - bPos.z;
 
-        if ((dx * dx + dz * dz) > 1.0f) {
+        // Why 2 units: the phase sways the boss around its target while it waits (about 1.3 units).
+        if ((dx * dx + dz * dz) > k_arrivalRadius * k_arrivalRadius) {
             m_timer = 0.0f; // Not at position yet, keep waiting
         }
         else {

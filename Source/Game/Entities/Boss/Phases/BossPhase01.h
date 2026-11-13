@@ -89,11 +89,17 @@ private:
     Player* m_aiTarget = nullptr;
 
     // ---- Boss movement state ----
+    // The boss is drawn at m_basePosition plus a hover sway. The base eases toward
+    // m_targetPosition: an attack's move target, or m_hoverAnchor while no attack moves it.
     DirectX::XMFLOAT3 m_targetPosition = { 0.0f, 0.0f, 0.0f };
+    DirectX::XMFLOAT3 m_basePosition = { 0.0f, 0.0f, 0.0f };
+    DirectX::XMFLOAT3 m_hoverAnchor = { 0.0f, 0.0f, 0.0f };  // where the last attack left the boss
+    bool              m_hasBasePosition = false;               // false until the first movement update after Enter
     float             m_moveLerpSpeed = 3.5f;
     float             m_currentMoveLerpSpeed = 0.0f;
     float             m_moveAcceleration = 8.0f;
     float             m_idleHoverTimer = 0.0f;
+    float             m_hoverSwayScale = 1.0f;                 // 1 while idle, smaller while an attack holds the boss
     bool              m_isAttackMovingBoss = false; // result of the previous frame's hover check
 
     // ---- Boss HP & hit flash ----

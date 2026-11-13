@@ -22,6 +22,15 @@
 
 using namespace DirectX;
 
+namespace
+{
+    // USULAN DESAIN: hover sway. Full size while idle; scaled down while an attack holds the boss.
+    constexpr float k_hoverSwayX{ 6.0f };
+    constexpr float k_hoverSwayZ{ 3.0f };
+    constexpr float k_attackSwayScale{ 0.2f };
+    constexpr float k_swayBlendRate{ 3.0f }; // per second
+}
+
 BossPhase01::BossPhase01(Player* target)
     : m_aiTarget(target) {}
 
@@ -77,6 +86,9 @@ void BossPhase01::Enter(CueBoss* boss) {
         boss->SetPosition({ 0.0f, 0.0f, 3.0f });
         boss->SetCoreBreathParams(1.0f, 0.0f);
     }
+    // The first movement update takes the boss's position as its base and hover anchor.
+    m_hasBasePosition = false;
+    m_hoverSwayScale = 1.0f;
 
     // ----- Reset player -----
     if (m_aiTarget) {
@@ -332,6 +344,7 @@ DamageResult BossPhase01::TakeDamage(const DamageInfo& damage) {
 
 void BossPhase01::UpdateIdleHover(float dt, CueBoss* boss) {
     // Runs after finished attacks are erased, so an attack that ended this frame no longer holds the boss.
+    const bool wasAttackMovingBoss{ m_isAttackMovingBoss };
     m_isAttackMovingBoss = false;
     for (const auto& attack : m_activeAttacks) {
         if (attack->GetBossMoveTarget()) {
@@ -339,21 +352,38 @@ void BossPhase01::UpdateIdleHover(float dt, CueBoss* boss) {
             break;
         }
     }
+
+    // The sway keeps running during attacks; only its size changes.
+    m_idleHoverTimer += dt;
     if (m_isAttackMovingBoss) return;
 
-    m_idleHoverTimer += dt;
-    m_targetPosition.x = sinf(m_idleHoverTimer * 0.8f) * 6.0f;
-    m_targetPosition.z = cosf(m_idleHoverTimer * 1.1f) * 3.0f;
+    // An attack just let go: the boss stays where that attack left it.
+    if (wasAttackMovingBoss) m_hoverAnchor = m_basePosition;
+
+    m_targetPosition.x = m_hoverAnchor.x;
+    m_targetPosition.z = m_hoverAnchor.z;
     m_moveLerpSpeed += (1.5f - m_moveLerpSpeed) * MathUtils::ExpDecayFactor(2.0f, dt);
 }
 
 void BossPhase01::UpdateBossMovement(float dt, CueBoss* boss) {
+    if (!m_hasBasePosition) {
+        m_basePosition = boss->GetPosition();
+        m_hoverAnchor = m_basePosition;
+        m_hasBasePosition = true;
+    }
+
     m_currentMoveLerpSpeed += (m_moveLerpSpeed - m_currentMoveLerpSpeed) * MathUtils::ExpDecayFactor(m_moveAcceleration, dt);
 
     const float follow{ MathUtils::ExpDecayFactor(m_currentMoveLerpSpeed, dt) };
-    XMFLOAT3 pos = boss->GetPosition();
-    pos.x += (m_targetPosition.x - pos.x) * follow;
-    pos.z += (m_targetPosition.z - pos.z) * follow;
+    m_basePosition.x += (m_targetPosition.x - m_basePosition.x) * follow;
+    m_basePosition.z += (m_targetPosition.z - m_basePosition.z) * follow;
+
+    const float targetSwayScale{ m_isAttackMovingBoss ? k_attackSwayScale : 1.0f };
+    m_hoverSwayScale += (targetSwayScale - m_hoverSwayScale) * MathUtils::ExpDecayFactor(k_swayBlendRate, dt);
+
+    XMFLOAT3 pos{ boss->GetPosition() }; // keeps the boss's own height
+    pos.x = m_basePosition.x + sinf(m_idleHoverTimer * 0.8f) * k_hoverSwayX * m_hoverSwayScale;
+    pos.z = m_basePosition.z + cosf(m_idleHoverTimer * 1.1f) * k_hoverSwayZ * m_hoverSwayScale;
     boss->SetPosition(pos);
 }
 
