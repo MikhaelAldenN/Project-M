@@ -31,8 +31,8 @@ namespace
         { Attack::RainTargeted, true, RainMode::HorizontalSweep }, { Attack::Fan, true },
         { Attack::Meteor, true },        { Attack::Fan, true },
         { Attack::Phalanx, false },      { Attack::Fan, true },
-        { Attack::Ultimate, false },     { Attack::Fan, true },
-    } };
+        { Attack::Converge, false },     { Attack::Fan, true },
+        } };
 }
 
 BossAI_Phase01::BossAI_Phase01(BossPhase01* phase, Player* target)
@@ -102,6 +102,10 @@ float BossAI_Phase01::LaunchAttack(AttackSequence attack, CueBoss* boss) {
 
     case AttackSequence::Ultimate:
         m_phase->AddUltimate(std::make_unique<AttackUltimate>(params.GetUltimateParams(), m_target));
+        return 2.5f;
+
+    case AttackSequence::Converge:
+        m_phase->AddAttack(std::make_unique<AttackConverge>(ConvergeParams{}, m_target));
         return 2.5f;
     }
     return 1.0f;

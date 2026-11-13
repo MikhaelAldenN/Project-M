@@ -381,6 +381,9 @@
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackWall.cpp">
       <Filter>Source\Game\Entities\Boss\AttackPatterns\PhaseTwo</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackConverge.cpp">
+      <Filter>Source\Game\Entities\Boss\AttackPatterns\PhaseOne</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\BasicShader.h">
@@ -780,6 +783,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackWall.h">
       <Filter>Source\Game\Entities\Boss\AttackPatterns\PhaseTwo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackConverge.h">
+      <Filter>Source\Game\Entities\Boss\AttackPatterns\PhaseOne</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

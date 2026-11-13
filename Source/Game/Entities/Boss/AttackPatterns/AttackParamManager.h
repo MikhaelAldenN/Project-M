@@ -11,6 +11,7 @@
 #include "AttackWave.h"
 #include "AttackMeteor.h"
 #include "AttackDirect.h"
+#include "AttackConverge.h"
 
 // --- Phase 2 Attacks ---
 #include "AttackBouncing.h"

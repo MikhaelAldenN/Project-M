@@ -181,6 +181,7 @@ copy /Y "$(ProjectDir)External\SDL3-3.4.0\lib\x64\SDL3.dll" "$(OutDir)"</Command
     <ClInclude Include="Source\Game\Collision\KinematicMover.h" />
     <ClInclude Include="Source\Game\Collision\LevelTriggerSystem.h" />
     <ClInclude Include="Source\Game\Collision\StageCollider.h" />
+    <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackConverge.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackDirect.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackMeteor.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.h" />
@@ -303,6 +304,7 @@ copy /Y "$(ProjectDir)External\SDL3-3.4.0\lib\x64\SDL3.dll" "$(OutDir)"</Command
     <ClCompile Include="Source\Game\Collision\KinematicMover.cpp" />
     <ClCompile Include="Source\Game\Collision\LevelTriggerSystem.cpp" />
     <ClCompile Include="Source\Game\Collision\StageCollider.cpp" />
+    <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackConverge.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackDirect.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackMeteor.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.cpp" />

@@ -38,7 +38,8 @@ public:
         Phalanx,      // starts its own HorizontalSweep Rain (BossPhase01::AddPhalanx)
         RainTargeted,
         Meteor,
-        Ultimate      // old ultimate, stands in for the new one; starts its own DualPillar Rain
+        Ultimate,      // old ultimate, stands in for the new one; starts its own DualPillar Rain
+        Converge      // new ultimate: bullets gather on Cue from outside the view
     };
 
     // One entry of a rotation. withRain adds a VerticalSweep Rain after the attack;
