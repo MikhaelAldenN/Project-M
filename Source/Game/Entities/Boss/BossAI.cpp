@@ -175,8 +175,14 @@ void BossAI_Phase02::Update(float dt, CueBoss* boss) {
     m_cooldownTimer -= dt;
 
     if (m_cooldownTimer <= 0.0f) {
-        // Rotation: Bouncing -> Spear -> Blaster, then again from Bouncing.
+        // Rotation: Wall -> Bouncing -> Spear -> Blaster, then again from Wall.
         switch (m_currentAttack) {
+        case AttackSequence::Wall:
+            m_phase->AddAttack(std::make_unique<AttackWall>(WallParams{}, m_target));
+            m_cooldownTimer = 2.0f;
+            m_currentAttack = AttackSequence::Bouncing;
+            break;
+
         case AttackSequence::Bouncing:
             m_phase->AddAttack(std::make_unique<AttackBouncing>(AttackParamManager::Instance().GetBouncingParams()));
             m_cooldownTimer = 2.0f;
@@ -192,7 +198,7 @@ void BossAI_Phase02::Update(float dt, CueBoss* boss) {
         case AttackSequence::Blaster:
             m_phase->AddAttack(std::make_unique<AttackBlasters>(AttackParamManager::Instance().GetBlasterParams(), m_target));
             m_cooldownTimer = 2.0f;
-            m_currentAttack = AttackSequence::Bouncing;
+            m_currentAttack = AttackSequence::Wall;
             break;
         }
     }

@@ -18,6 +18,7 @@
 #include "AttackBoomerangs.h"
 #include "AttackBlasters.h"
 #include "AttackSpears.h"
+#include "AttackWall.h"
 
 class BossPhase01;
 class BossPhase02;
@@ -72,6 +73,7 @@ class BossAI_Phase02 {
 public:
 
     enum class AttackSequence {
+        Wall,
         Bouncing,
         Spear,
         Blaster
@@ -89,7 +91,7 @@ private:
     Player* m_target = nullptr;
     bool          m_enabled = false;
 
-    // Next attack in the fixed rotation
-    AttackSequence m_currentAttack = AttackSequence::Bouncing;
-    float m_cooldownTimer = 3.0f; // delay before the first attack of the phase
+    // Next attack in the fixed rotation; the phase opens with the wall.
+    AttackSequence m_currentAttack = AttackSequence::Wall;
+    float m_cooldownTimer = 0.5f; // USULAN DESAIN: delay after the opening dialogue before the first wall
 };

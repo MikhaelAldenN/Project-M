@@ -184,6 +184,7 @@ copy /Y "$(ProjectDir)External\SDL3-3.4.0\lib\x64\SDL3.dll" "$(OutDir)"</Command
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackDirect.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackMeteor.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.h" />
+    <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackWall.h" />
     <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackWave.h" />
     <ClInclude Include="Source\Game\Entities\Boss\CueBoss.h" />
     <ClInclude Include="Source\Game\Entities\Boss\BossAI.h" />
@@ -305,6 +306,7 @@ copy /Y "$(ProjectDir)External\SDL3-3.4.0\lib\x64\SDL3.dll" "$(OutDir)"</Command
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackDirect.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackMeteor.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackParamManager.cpp" />
+    <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackWall.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackWave.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\CueBoss.cpp" />
     <ClCompile Include="Source\Game\Entities\Boss\BossAI.cpp" />

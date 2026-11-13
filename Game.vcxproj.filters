@@ -378,6 +378,9 @@
     <ClCompile Include="Source\Game\Entities\ProjectileMesh.cpp">
       <Filter>Source\Game\Entities</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Entities\Boss\AttackPatterns\AttackWall.cpp">
+      <Filter>Source\Game\Entities\Boss\AttackPatterns\PhaseTwo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System\BasicShader.h">
@@ -774,6 +777,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Entities\ProjectileMesh.h">
       <Filter>Source\Game\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Entities\Boss\AttackPatterns\AttackWall.h">
+      <Filter>Source\Game\Entities\Boss\AttackPatterns\PhaseTwo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
