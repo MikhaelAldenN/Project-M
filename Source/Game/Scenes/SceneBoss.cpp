@@ -276,6 +276,7 @@ void SceneBoss::Update(float elapsedTime)
     {
         m_player->Update(scaledDt, activeCam);
     }
+    ClampPlayerToArena();
 
     UpdatePlayerStretch(scaledDt);
 
@@ -535,7 +536,38 @@ void SceneBoss::UpdateCameraFocus(float elapsedTime)
     m_cameraFocus.y += (goalZ - m_cameraFocus.y) * follow;
 }
 
-void SceneBoss::UpdatePlayerStretch(float scaledDt)
+void SceneBoss::ClampPlayerToArena()
+{
+    // Windowkill plays on the monitor area, which this arena does not describe.
+    const bool isWindowkill{ m_cue && IsWindowkill(m_cue->GetCurrentPhase()) };
+    if (!m_player || isWindowkill) return;
+
+    // The limit is for the body, not only its centre.
+    const float limitX{ Beyond::Config::ACT2_ARENA_WIDTH_UNITS * 0.5f - PlayerConst::CollisionRadius };
+    const float limitZ{ Beyond::Config::ACT2_ARENA_HEIGHT_UNITS * 0.5f - PlayerConst::CollisionRadius };
+
+    const DirectX::XMFLOAT3 pos{ m_player->GetPosition() };
+    const float clampedX{ std::clamp(pos.x, -limitX, limitX) };
+    const float clampedZ{ std::clamp(pos.z, -limitZ, limitZ) };
+    const bool isClampedX{ clampedX != pos.x };
+    const bool isClampedZ{ clampedZ != pos.z };
+    if (!isClampedX && !isClampedZ) return;
+
+    // The float overload moves the body without a ground snap; this scene's stage is empty.
+    m_player->SetPosition(clampedX, pos.y, clampedZ);
+
+    // Drop the speed into the edge: otherwise the player window keeps stretching and
+    // bullets that lead the player aim past the edge.
+    CharacterMovement* movement{ m_player->GetMovement() };
+    if (!movement) return;
+
+    DirectX::XMFLOAT3 velocity{ movement->GetVelocity() };
+    if (isClampedX) velocity.x = 0.0f;
+    if (isClampedZ) velocity.z = 0.0f;
+    movement->SetVelocity(velocity);
+}
+
+void SceneBoss::UpdatePlayerStretch(float scaledDt) 
 {
     if (!m_player) return;
 

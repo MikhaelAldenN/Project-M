@@ -371,10 +371,10 @@ void BossPhase01::UpdateBulletPool(float dt, CueBoss* boss) {
     }
     m_projectiles.Update(dt, targets);
 
-    // Projectiles are recycled once they are this far outside the arena edge.
+    // Projectiles are recycled once they are this far outside the Act 2 arena edge.
     constexpr float k_despawnMargin{ 30.0f };
-    const float limitX{ (Beyond::Config::ARENA_WIDTH_UNITS * 0.5f) + k_despawnMargin };
-    const float limitZ{ (Beyond::Config::ARENA_HEIGHT_UNITS * 0.5f) + k_despawnMargin };
+    const float limitX{ (Beyond::Config::ACT2_ARENA_WIDTH_UNITS * 0.5f) + k_despawnMargin };
+    const float limitZ{ (Beyond::Config::ACT2_ARENA_HEIGHT_UNITS * 0.5f) + k_despawnMargin };
 
     const std::vector<Projectile>& slots{ m_projectiles.Slots() };
     for (std::size_t i{ 0 }; i < slots.size(); ++i) {
