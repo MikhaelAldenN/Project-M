@@ -23,14 +23,15 @@ namespace
         { Attack::Phalanx, false },      { Attack::Fan, false },
     } };
 
-    // Phase B: the same order with an area-denial Rain on every main attack, then the
-    // ultimate. RainTargeted and Phalanx already run a Rain, so they get no second one.
+    // Phase B: the same order with an area-denial Rain on every attack, fillers included,
+    // then the ultimate. RainTargeted, Phalanx and Ultimate already run a Rain, so they
+    // get no second one.
     constexpr std::array<Step, 10> k_phaseBRotation{ {
-        { Attack::Radial, true },        { Attack::Fan, false },
-        { Attack::RainTargeted, false }, { Attack::Fan, false },
-        { Attack::Meteor, true },        { Attack::Fan, false },
-        { Attack::Phalanx, false },      { Attack::Fan, false },
-        { Attack::Ultimate, false },     { Attack::Fan, false },
+        { Attack::Radial, true },        { Attack::Fan, true },
+        { Attack::RainTargeted, false }, { Attack::Fan, true },
+        { Attack::Meteor, true },        { Attack::Fan, true },
+        { Attack::Phalanx, false },      { Attack::Fan, true },
+        { Attack::Ultimate, false },     { Attack::Fan, true },
     } };
 }
 
