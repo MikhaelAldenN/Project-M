@@ -286,6 +286,7 @@ void SceneBoss::Update(float elapsedTime)
     const float scaledDt = elapsedTime * activeTimeScale;
 
     UpdatePlayerDeathSequence(elapsedTime);
+    UpdateFightMusic();
 
     Camera* activeCam = CameraController::Instance().GetActiveCamera().get();
 
@@ -994,6 +995,22 @@ void SceneBoss::StartPlayerDeathSequence()
     {
         if (ICuePhase * phase{ m_cue->GetCurrentPhase() }) phase->SetAIEnabled(false);
     }
+
+    // The phases stop the music while the player is dead; the respawn starts it again.
+    m_isFightMusicPlaying = false;
+}
+
+void SceneBoss::UpdateFightMusic()
+{
+    if (m_isFightMusicPlaying || !m_cue) return;
+
+    const ICuePhase* phase{ m_cue->GetCurrentPhase() };
+    if (!phase || !phase->IsAIEnabled()) return;
+
+    constexpr const char* k_fightMusicPath{ "Data/Sound/BGM_Boss_Phase_01.wav" };
+    AudioManager::Instance().PlayMusic(k_fightMusicPath,
+        0.05f * AttackParamManager::Instance().GetUltimateParams().sfxVolume, true);
+    m_isFightMusicPlaying = true;
 }
 
 void SceneBoss::QueueArenaDebugGrid()
@@ -1157,12 +1174,6 @@ void SceneBoss::DrawBossPanel()
     if (ImGui::Checkbox("AI enabled", &isAIEnabled))
     {
         phase->SetAIEnabled(isAIEnabled);
-        if (isBulletHell && isAIEnabled)
-        {
-            // Why here: there is no other fight-start trigger yet, so enabling the AI starts the BGM.
-            AudioManager::Instance().PlayMusic("Data/Sound/BGM_Boss_Phase_01.wav",
-                0.05f * AttackParamManager::Instance().GetUltimateParams().sfxVolume, true);
-        }
         AddLog(isAIEnabled ? "Boss AI enabled." : "Boss AI disabled.");
     }
     ImGui::SameLine();

@@ -192,11 +192,6 @@ void BossPhase01::Update(float dt, CueBoss* boss) {
             m_isOpeningEvent = false;
             m_aiEnabled = true;
             if (m_aiTarget) m_aiTarget->SetInputEnabled(true);
-
-            float sfxVol = AttackParamManager::Instance().GetUltimateParams().sfxVolume;
-            AudioManager::Instance().PlayMusic(
-                "Data/Sound/BGM_Boss_Phase_01.wav",
-                0.05f * sfxVol, true);
         }
     }
 #endif
@@ -287,6 +282,21 @@ void BossPhase01::AddAttack(std::unique_ptr<IBossAttackPattern> attack) {
 
     attack->Start(m_bossRef, &m_projectiles);
     m_activeAttacks.push_back(std::move(attack));
+}
+
+void BossPhase01::ResetFight(CueBoss* boss) {
+    // Why this order: attacks despawn the projectiles they still hold when stopped.
+    StopAllAttacks(boss);
+    m_projectiles.Clear();
+
+    m_bossHP = m_bossMaxHP;
+
+    // Cue starts where Enter puts it; the next movement update re-anchors the hover there.
+    if (boss) boss->SetPosition({ 0.0f, 0.0f, 3.0f });
+    m_hasBasePosition = false;
+
+    // A fresh AI starts the rotation at its first step, in phase A.
+    m_ai = std::make_unique<BossAI_Phase01>(this, m_aiTarget);
 }
 
 void BossPhase01::StopAllAttacks(CueBoss* boss) {

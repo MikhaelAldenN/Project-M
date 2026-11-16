@@ -204,6 +204,11 @@ private:
     void StartPlayerDeathSequence();
     void ResetLevel();
 
+    // The fight BGM starts the first frame the active phase's AI is on, and again after a
+    // respawn. Phases stop the music while the player is dead.
+    void UpdateFightMusic();
+    bool m_isFightMusicPlaying{ false };
+
 private:
     bool m_isPendingSceneChange{ false };
     std::unique_ptr<Sprite> m_whiteSprite{};
