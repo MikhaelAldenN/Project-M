@@ -377,7 +377,7 @@ void BossPhase02::Update(float dt, CueBoss* boss) {
         m_aiEnabled = false;
     }
 
-    UpdateBossPosition(boss);
+    UpdateBossPosition(dt, boss);
 
     UpdateWingState(dt);
 
@@ -496,7 +496,7 @@ void BossPhase02::UpdateOpeningDialogue(float dt, CueBoss* boss) {
     m_aiEnabled = (m_aiTarget != nullptr);
 }
 
-void BossPhase02::UpdateBossPosition(CueBoss* boss) {
+void BossPhase02::UpdateBossPosition(float dt, CueBoss* boss) {
     if (!boss) return;
 
     float centerX = 0.0f;
@@ -505,8 +505,26 @@ void BossPhase02::UpdateBossPosition(CueBoss* boss) {
     float rangeZ = 1.0f;
     float newX = centerX + sinf(m_glitchTimer * 0.6f) * rangeX;
     float newZ = centerZ + cosf(m_glitchTimer * 0.4f) * rangeZ;
-    boss->SetPosition({ newX, 0.0f, newZ });
+
+    // An attack that holds Cue (the clock ultimate) blends it off the sway onto its hold
+    // position over 1 / lerpSpeed seconds; once the attack lets go, Cue blends back.
+    const BossMoveTarget* hold{ FindBossMoveTarget() };
+    if (hold) m_holdPosition = hold->position;
+    const float blendRate{ hold ? hold->lerpSpeed : -k_holdReleaseRate };
+    m_holdBlend = std::clamp(m_holdBlend + blendRate * dt, 0.0f, 1.0f);
     const float t{ m_holdBlend * m_holdBlend * (3.0f - 2.0f * m_holdBlend) }; // smoothstep
+
+    boss->SetPosition({
+        newX + (m_holdPosition.x - newX) * t,
+        0.0f,
+        newZ + (m_holdPosition.z - newZ) * t });
+}
+
+const BossMoveTarget* BossPhase02::FindBossMoveTarget() const {
+    for (const auto& attack : m_activeAttacks) {
+        if (const BossMoveTarget* target{ attack->GetBossMoveTarget() }) return target;
+    }
+    return nullptr;
 }
 
 void BossPhase02::UpdateWingState(float dt) {

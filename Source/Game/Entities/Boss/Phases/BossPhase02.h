@@ -106,7 +106,10 @@ private:
     [[nodiscard]] bool UpdateBossDeath(float dt, CueBoss* boss);
     // Closes the opening dialogue after m_openingDialogueDuration and enables the AI.
     void UpdateOpeningDialogue(float dt, CueBoss* boss);
-    void UpdateBossPosition(CueBoss* boss);
+    // Sways Cue around its idle point; an attack's move target blends Cue onto a still hold position.
+    void UpdateBossPosition(float dt, CueBoss* boss);
+    // The first active attack's move target, or null while no attack holds Cue.
+    [[nodiscard]] const BossMoveTarget* FindBossMoveTarget() const;
     void UpdateWingState(float dt);
     void UpdateWingNodes(float dt);
     void UpdateAttacks(float dt, CueBoss* boss);
@@ -138,6 +141,12 @@ private:
     float m_spawnChaos = 0.5f;
 
     float m_glitchTimer = 0.0f;
+
+    // 0 = idle sway, 1 = at m_holdPosition. Rises at the target's lerpSpeed while an attack
+    // holds Cue, falls at k_holdReleaseRate after it lets go.
+    float m_holdBlend = 0.0f;
+    DirectX::XMFLOAT3 m_holdPosition = { 0.0f, 0.0f, 0.0f };
+    static constexpr float k_holdReleaseRate = 1.25f; // USULAN DESAIN: per second, back to the sway in 0.8 s
     float m_wingXOffset = 4.2f;
     float m_wingZOffset = -0.856f;
     float m_wingFlapSpeed = 0.7f;
