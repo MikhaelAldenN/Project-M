@@ -506,6 +506,7 @@ void BossPhase02::UpdateBossPosition(CueBoss* boss) {
     float newX = centerX + sinf(m_glitchTimer * 0.6f) * rangeX;
     float newZ = centerZ + cosf(m_glitchTimer * 0.4f) * rangeZ;
     boss->SetPosition({ newX, 0.0f, newZ });
+    const float t{ m_holdBlend * m_holdBlend * (3.0f - 2.0f * m_holdBlend) }; // smoothstep
 }
 
 void BossPhase02::UpdateWingState(float dt) {

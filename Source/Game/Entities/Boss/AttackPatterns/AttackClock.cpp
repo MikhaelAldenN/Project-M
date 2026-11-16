@@ -15,16 +15,26 @@ using namespace DirectX;
 namespace
 {
     constexpr int      k_ringSegments{ 48 };
+    constexpr float    k_arriveDistance{ 0.05f };                   // units; Cue counts as arrived
+    constexpr float    k_approachGrace{ 0.5f };                     // seconds past approachDuration before the hands start anyway
     constexpr float    k_handWidth{ 6.0f };                        // pixels
     constexpr XMFLOAT4 k_handColor{ 1.0f, 1.0f, 1.0f, 1.0f };
     constexpr XMFLOAT4 k_bulletColor{ 1.0f, 0.85f, 0.2f, 1.0f };   // USULAN DESAIN
     constexpr XMFLOAT4 k_blastColor{ 1.0f, 0.2f, 0.2f, 1.0f };     // USULAN DESAIN
+    constexpr float    k_speedStep{ 0.61803399f };                  // golden ratio: speeds never repeat in a visible order
 
     // Unit vector for a clockwise angle from +Z (12 o'clock), seen from above.
     XMFLOAT3 HandDirection(float angleDegrees)
     {
         const float radians{ XMConvertToRadians(angleDegrees) };
         return { std::sin(radians), 0.0f, std::cos(radians) };
+    }
+
+    // Fractional part of index * step: an even spread over [0, 1) with no visible order.
+    float SequenceValue(int index, float step)
+    {
+        const float value{ static_cast<float>(index) * step };
+        return value - std::floor(value);
     }
 }
 
@@ -40,15 +50,21 @@ void AttackClock::Start(CueBoss* boss, ProjectilePool* pool) {
     if (!m_mesh.IsLoaded()) m_mesh.Load("Data/Model/Character/PLACEHOLDER_mdl_Ball.glb");
     m_lineRenderer = std::make_unique<Primitive>(Graphics::Instance().GetDevice());
 
-    // Why fixed: Cue sways in Windowkill, but every bullet must come home to the point it left.
-    m_centre = boss ? boss->GetPosition() : XMFLOAT3{};
+    // The clock runs at x = 0 and Cue's depth at Start. Cue glides there and stays still until
+    // the attack ends (BossPhase02 follows GetBossMoveTarget), so every bullet comes home to the
+    // point it left.
+    const float startZ{ boss ? boss->GetPosition().z : 0.0f };
+    m_centre = XMFLOAT3{ 0.0f, 0.0f, startZ };
+    m_hold.position = m_centre;
+    m_hold.lerpSpeed = (m_params.approachDuration > 0.0f) ? 1.0f / m_params.approachDuration : 1000.0f;
 
     m_bullets.clear();
+    m_bulletsFired = 0;
     // Why one interval: the three hands do not all fire at 12 o'clock on the first frame.
     for (std::size_t i{ 0 }; i < m_fireTimers.size(); ++i) {
         m_fireTimers[i] = m_params.hands[i].fireInterval;
     }
-    m_stage = Stage::spin;
+    m_stage = Stage::approach;
     m_stageTimer = 0.0f;
     m_spinElapsed = 0.0f;
 }
@@ -58,6 +74,19 @@ void AttackClock::Update(float dt, CueBoss* boss) {
 
     m_stageTimer += dt;
     switch (m_stage) {
+    case Stage::approach: {
+        const XMFLOAT3 bossPos{ boss ? boss->GetPosition() : m_centre };
+        const float dx{ bossPos.x - m_centre.x };
+        const float dz{ bossPos.z - m_centre.z };
+        const bool hasArrived{ dx * dx + dz * dz <= k_arriveDistance * k_arriveDistance };
+        // Why the time limit: the hands still start if the phase does not move Cue.
+        if (hasArrived || m_stageTimer >= m_params.approachDuration + k_approachGrace) {
+            m_stage = Stage::spin;
+            m_stageTimer = 0.0f;
+        }
+        break;
+    }
+
     case Stage::spin:
         UpdateSpin(dt);
         if (m_stageTimer >= m_params.spinDuration) {
@@ -76,8 +105,10 @@ void AttackClock::Update(float dt, CueBoss* boss) {
 
     case Stage::rewind:
         UpdateRewind(dt);
+        // Why per second: the shake stays the same strength at any frame rate.
+        CameraController::Instance().AddTrauma(m_params.rewindTrauma * dt);
         // The hands are back at 12 o'clock after as long as they turned forward.
-        if (m_bullets.empty() && m_stageTimer >= m_spinElapsed) {
+            if (m_bullets.empty() && m_stageTimer >= m_spinElapsed) {
             m_stage = Stage::blast;
             m_stageTimer = 0.0f;
             CameraController::Instance().AddTrauma(0.8f);
@@ -130,10 +161,14 @@ void AttackClock::FireBullet(const ClockHandParams& hand) {
         m_centre.y,
         m_centre.z + direction.z * hand.length };
 
+    const float speed{ m_params.bulletSpeedMin
+        + (m_params.bulletSpeedMax - m_params.bulletSpeedMin) * SequenceValue(m_bulletsFired, k_speedStep) };
+    ++m_bulletsFired;
+
     projectile->radius = m_params.bulletRadius;
     projectile->visualScale = m_params.visualScale;
     projectile->damage = m_params.damage;
-    ProjectilePool::Launch(*projectile, tip, direction, m_params.bulletSpeed);
+    ProjectilePool::Launch(*projectile, tip, direction, speed);
     m_bullets.push_back({ handle, 0.0f });
 }
 
@@ -227,6 +262,7 @@ void AttackClock::Render(ID3D11DeviceContext* context, Camera* camera, CueBoss* 
         break;
     }
 
+    case Stage::approach:
     case Stage::done:
         return;
     }
@@ -281,6 +317,10 @@ void AttackClock::Stop(CueBoss* boss) {
     }
     m_bullets.clear();
     m_stage = Stage::done;
+}
+
+const BossMoveTarget* AttackClock::GetBossMoveTarget() const {
+    return (m_stage == Stage::done) ? nullptr : &m_hold;
 }
 
 bool AttackClock::IsFinished() const {
