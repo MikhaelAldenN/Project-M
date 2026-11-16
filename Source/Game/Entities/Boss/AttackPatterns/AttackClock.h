@@ -42,7 +42,7 @@ struct ClockParams {
     float freezeDuration = 0.8f; // USULAN DESAIN: seconds the clock and the bullets stand still
     float bulletSpeedMin = 6.0f; // USULAN DESAIN: units per second; a bullet keeps its speed out and back
     float bulletSpeedMax = 12.0f;// USULAN DESAIN
-    float rewindTrauma = 1.0f;   // USULAN DESAIN: camera trauma added per second while bullets fly home
+    float rewindTrauma = 0.2f;   // USULAN DESAIN: camera trauma added per second while bullets fly home
     float bulletRadius = 0.35f;
     float visualScale = 2.0f;
     int   damage = 10;

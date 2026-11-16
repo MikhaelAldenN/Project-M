@@ -105,8 +105,9 @@ void AttackClock::Update(float dt, CueBoss* boss) {
 
     case Stage::rewind:
         UpdateRewind(dt);
-        // Why per second: the shake stays the same strength at any frame rate.
-        CameraController::Instance().AddTrauma(m_params.rewindTrauma * dt);
+        // AddTrauma keeps the larger value, so calling it every frame holds the shake at this
+        // level, at any frame rate; it decays on its own once the rewind ends.
+        CameraController::Instance().AddTrauma(m_params.rewindTrauma);
         // The hands are back at 12 o'clock after as long as they turned forward.
             if (m_bullets.empty() && m_stageTimer >= m_spinElapsed) {
             m_stage = Stage::blast;
