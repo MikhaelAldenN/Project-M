@@ -19,6 +19,7 @@
 #include "AttackBlasters.h"
 #include "AttackSpears.h"
 #include "AttackWall.h"
+#include "AttackClock.h"
 
 class BossPhase01;
 class BossPhase02;
@@ -82,7 +83,8 @@ public:
         Wall,
         Bouncing,
         Spear,
-        Blaster
+        Blaster,
+        Clock      // ultimate
     };
 
     BossAI_Phase02(BossPhase02* phase, Player* target);

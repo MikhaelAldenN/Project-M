@@ -1297,9 +1297,9 @@ void SceneBoss::DrawBossPanel()
 namespace
 {
     // Order of the Attacks panel list while the Windowkill phase is active.
-    enum class WindowkillSet { wall, blasters, bouncing, boomerangs, spears, count };
+    enum class WindowkillSet { wall, blasters, bouncing, boomerangs, spears, clock, count };
 
-    constexpr std::array<const char*, 5> k_windowkillSetNames{ "Wall", "Blasters", "Bouncing", "Boomerangs", "Spears" };
+    constexpr std::array<const char*, 6> k_windowkillSetNames{ "Wall", "Blasters", "Bouncing", "Boomerangs", "Spears", "Clock" };
     static_assert(k_windowkillSetNames.size() == static_cast<std::size_t>(WindowkillSet::count),
         "one name per WindowkillSet enumerator");
 
@@ -1656,6 +1656,13 @@ void SceneBoss::DrawAttacksPanel()
         if (ImGui::Button("Revert")) params = loaded.spear;
         ImGui::Separator();
         DrawSpearRows(params, loaded.spear);
+        break;
+    }
+    case WindowkillSet::clock:
+    {
+        if (ImGui::Button("Fire")) windowkill->AddAttack(std::make_unique<AttackClock>(ClockParams{}, m_player.get()));
+        ImGui::Separator();
+        ImGui::TextDisabled("Params are the ClockParams defaults in AttackClock.h for now.");
         break;
     }
     case WindowkillSet::count:
