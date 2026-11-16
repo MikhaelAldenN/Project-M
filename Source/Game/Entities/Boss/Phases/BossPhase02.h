@@ -82,6 +82,7 @@ public:
 
     bool IsReadyToChangeScene() const override { return m_isDying && m_deathTimer >= 7.0f; }
     void AddAttack(std::unique_ptr<IBossAttackPattern> attack) override;
+    void ResetFight(CueBoss* boss) override;
     bool HasActiveAttacks() const override { return !m_activeAttacks.empty(); }
     Player* GetAITarget() const override { return m_aiTarget; }
 

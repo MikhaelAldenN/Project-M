@@ -32,6 +32,8 @@ public:
     // ----- Attack Management -----
     // Starts `attack` on this phase's shared bullet pool.
     void AddAttack(std::unique_ptr<IBossAttackPattern> attack) override;
+    void ResetFight(CueBoss* boss) override;
+
     // Phalanx and Ultimate each start a companion Rain. Adding one through
     // AddAttack starts the attack without its Rain.
     void AddPhalanx(std::unique_ptr<AttackPhalanx> attack);

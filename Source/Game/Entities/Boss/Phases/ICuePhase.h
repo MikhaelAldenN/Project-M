@@ -62,6 +62,10 @@ public:
 
     // Takes ownership of `attack` and starts it. A null `attack` is ignored.
     virtual void AddAttack(std::unique_ptr<IBossAttackPattern> attack) = 0;
+    // Puts the fight back to its start after the player dies, without reloading the scene:
+    // stops every attack, empties the projectile pool, refills boss HP and restarts the
+    // AI rotation. Whether the AI runs stays with the caller (SetAIEnabled).
+    virtual void ResetFight(CueBoss* boss) = 0;
     // Optional hooks: the defaults fit a phase without attacks or AI target.
     virtual bool HasActiveAttacks() const { return false; }
     virtual Player* GetAITarget() const { return nullptr; }
