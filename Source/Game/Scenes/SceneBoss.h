@@ -190,9 +190,10 @@ private:
     UberShader::UberData m_uberParams{};
     std::unique_ptr<Sprite> m_fadeSprite{};
 
-    static constexpr float DEATH_DELAY_DURATION{ 0.5f };
-    static constexpr float DEATH_FADE_DURATION{ 3.0f };
-    static constexpr float RESPAWN_FADE_DURATION{ 3.0f };
+    static constexpr float DEATH_DELAY_DURATION{ 0.3f };      // player hidden, bullets frozen
+    static constexpr float DEATH_FADE_DURATION{ 0.3f };       // fade to black, the fight resets at black
+    static constexpr float RESPAWN_FADE_IN_DURATION{ 0.4f };  // fade back in, input locked
+    static constexpr float RESPAWN_FADE_DURATION{ 3.0f };     // fade out when returning to Title
 
     // Post-Process Values for Fading to Black
     static constexpr float FX_BASE_SMOOTHNESS{ 0.2f };

@@ -406,7 +406,7 @@ void SceneBoss::UpdatePlayerDeathSequence(float elapsedTime)
             {
                 ResetLevel();
                 m_isDying = false;
-                m_respawnTimer = RESPAWN_FADE_DURATION;
+                m_respawnTimer = RESPAWN_FADE_IN_DURATION;
 
                 m_uberParams.smoothness = FX_BLACK_SMOOTHNESS;
                 m_uberParams.intensity = FX_BLACK_INTENSITY;
@@ -420,7 +420,7 @@ void SceneBoss::UpdatePlayerDeathSequence(float elapsedTime)
 
         if (m_player) m_player->SetInputEnabled(false);
 
-        const float linearT{ std::clamp(m_respawnTimer / RESPAWN_FADE_DURATION, 0.0f, 1.0f) };
+        const float linearT{ std::clamp(m_respawnTimer / RESPAWN_FADE_IN_DURATION, 0.0f, 1.0f) };
         const float t{ linearT * linearT }; // Quadratic Ease-Out
 
         m_uberParams.smoothness = FX_BASE_SMOOTHNESS + (FX_BLACK_SMOOTHNESS - FX_BASE_SMOOTHNESS) * t;
@@ -1950,18 +1950,14 @@ void SceneBoss::AddLog(const std::string& message)
             m_player->SetAimLocked(false);
         }
 
-        // Reset Boss 
+        // Reset the fight: attacks, bullets, Cue HP and the AI rotation start over.
         if (m_cue)
         {
-            if (auto* normalPhase = dynamic_cast<BossPhase01*>(m_cue->GetCurrentPhase()))
+            if (ICuePhase * phase{ m_cue->GetCurrentPhase() })
             {
-                normalPhase->SetHP(normalPhase->GetMaxHP());
-                m_playerWindowTransparent = false; // Normal mode = solid player
-            }
-            else if (auto* wkPhase = dynamic_cast<BossPhase02*>(m_cue->GetCurrentPhase()))
-            {
-                wkPhase->SetHP(wkPhase->GetMaxHP());
-                m_playerWindowTransparent = true;  // Windowkill mode = transparent player
+                phase->ResetFight(m_cue.get());
+                // Bullet hell draws the player in its own window; Windowkill on the FX layer.
+                m_playerWindowTransparent = (phase->GetKind() == BossPhaseKind::windowkill);
             }
         }
 

@@ -334,6 +334,26 @@ void BossPhase02::AddAttack(std::unique_ptr<IBossAttackPattern> attack) {
     }
 }
 
+void BossPhase02::ResetFight(CueBoss* boss) {
+    // Why stopped first: attacks remove their own windows and despawn the projectiles they hold.
+    for (auto& attack : m_activeAttacks) {
+        attack->Stop(boss);
+    }
+    m_activeAttacks.clear();
+    m_projectiles.Clear();
+
+    m_bossHP = m_bossMaxHP;
+    m_hitFlashTimer = 0.0f;
+
+    // StopForDeadPlayer hid the head window, and tracking shows a window only when it is added.
+    if (boss && boss->GetMainWindow() && boss->GetMainWindow()->GetSDLWindow()) {
+        SDL_ShowWindow(boss->GetMainWindow()->GetSDLWindow());
+    }
+
+    // A fresh AI starts the rotation again with the wall. The opening dialogue is not replayed.
+    m_ai = std::make_unique<BossAI_Phase02>(this, m_aiTarget);
+}
+
 void BossPhase02::Update(float dt, CueBoss* boss) {
     m_glitchTimer += dt;
     
