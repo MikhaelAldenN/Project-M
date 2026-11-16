@@ -148,8 +148,8 @@ private:
     Player* m_aiTarget = nullptr;
     bool    m_aiEnabled = false;
 
-    int   m_bossMaxHP = 10000;
-    int   m_bossHP = 10000;
+    int   m_bossMaxHP = 4000;
+    int   m_bossHP = 4000;
     float m_hitFlashTimer = 0.0f;
 
     CueBoss* m_bossRef = nullptr;
