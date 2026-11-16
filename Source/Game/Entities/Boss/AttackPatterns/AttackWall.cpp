@@ -28,9 +28,21 @@ void AttackWall::Start(CueBoss* boss, ProjectilePool* pool) {
     const float halfWindowUnits{ m_params.windowWidth * 0.5f / Beyond::Config::PIXEL_TO_UNIT_RATIO };
     const float edgeX{ Beyond::Config::ARENA_WIDTH_UNITS * 0.5f - halfWindowUnits };
 
-    // Why the far side: the player gets the full screen width to read the wall and dash.
-    const float playerX{ m_target ? m_target->GetPosition().x : 1.0f };
-    m_direction = (playerX >= 0.0f) ? 1.0f : -1.0f;
+    switch (m_params.startSide) {
+    case WallStartSide::left:
+        m_direction = 1.0f;
+        break;
+    case WallStartSide::right:
+        m_direction = -1.0f;
+        break;
+    case WallStartSide::farFromPlayer:
+    default: {
+        // Why the far side: the player gets the full screen width to read the wall and dash.
+        const float playerX{ m_target ? m_target->GetPosition().x : 1.0f };
+        m_direction = (playerX >= 0.0f) ? 1.0f : -1.0f;
+        break;
+    }
+    }
     m_wallX = -m_direction * edgeX;
     m_endX = m_direction * edgeX;
 

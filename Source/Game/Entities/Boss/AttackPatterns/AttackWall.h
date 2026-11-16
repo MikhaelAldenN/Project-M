@@ -32,9 +32,9 @@ struct WallParams {
 
 class AttackWall : public IBossAttackPattern {
 public:
-    // The wall starts on the side farther from `target` and sweeps to the other side.
+    // The wall starts on params.startSide and sweeps to the opposite side.
+    // With farFromPlayer it starts on the side farther from `target`, or on the left with no target.
     // `target` is borrowed: the scene owns the player and outlives the attack.
-    // With no target the wall starts on the left.
     AttackWall(const WallParams& params, const Player* target);
     ~AttackWall() override = default;
 
